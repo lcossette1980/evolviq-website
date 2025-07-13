@@ -13,8 +13,21 @@ RUN apt-get update && apt-get install -y \
 # Copy everything first
 COPY . /tmp/build
 
+# Debug: List what's actually in the build context
+RUN echo "=== Contents of /tmp/build ===" && \
+    ls -la /tmp/build && \
+    echo "=== Contents of /tmp/build/src ===" && \
+    ls -la /tmp/build/src/ || echo "src directory not found" && \
+    echo "=== Looking for requirements.txt ===" && \
+    find /tmp/build -name "requirements.txt" -type f
+
 # Copy requirements and install dependencies
-RUN cp /tmp/build/src/api/requirements.txt ./requirements.txt && \
+RUN if [ -f /tmp/build/src/api/requirements.txt ]; then \
+        cp /tmp/build/src/api/requirements.txt ./requirements.txt; \
+    else \
+        echo "requirements.txt not found at expected location"; \
+        exit 1; \
+    fi && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy API code to working directory
