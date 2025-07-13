@@ -10,20 +10,19 @@ RUN apt-get update && apt-get install -y \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY ./src/api/requirements.txt ./requirements.txt
+# Copy everything first
+COPY . /tmp/build
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy requirements and install dependencies
+RUN cp /tmp/build/src/api/requirements.txt ./requirements.txt && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Copy API code
-COPY ./src/api ./
-
-# Create regression directory if it doesn't exist
-RUN mkdir -p regression
+# Copy API code to working directory
+RUN cp -r /tmp/build/src/api/* . && \
+    rm -rf /tmp/build
 
 # Expose port
 EXPOSE 8000
 
-# Command to run the application
+# Command to run the application  
 CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
