@@ -1,0 +1,124 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lato:wght@400;500&display=swap');
+
+/* Custom CSS Variables for EvolvIQ Brand Colors */
+:root {
+  --color-charcoal: #2A2A2A;
+  --color-chestnut: #A44A3F;
+  --color-khaki: #A59E8C;
+  --color-pearl: #D7CEB2;
+  --color-bone: #F5F2EA;
+}
+
+/* Typography */
+.font-serif {
+  font-family: 'Playfair Display', serif;
+}
+
+.font-sans {
+  font-family: 'Lato', sans-serif;
+}
+
+/* Custom color classes for Tailwind */
+.text-charcoal { 
+  color: var(--color-charcoal); 
+}
+
+.text-chestnut { 
+  color: var(--color-chestnut); 
+}
+
+.text-khaki { 
+  color: var(--color-khaki); 
+}
+
+.text-pearl { 
+  color: var(--color-pearl); 
+}
+
+.bg-bone { 
+  background-color: var(--color-bone); 
+}
+
+.bg-charcoal { 
+  background-color: var(--color-charcoal); 
+}
+
+.bg-chestnut { 
+  background-color: var(--color-chestnut); 
+}
+
+.bg-khaki { 
+  background-color: var(--color-khaki); 
+}
+
+.bg-pearl { 
+  background-color: var(--color-pearl); 
+}
+
+.border-chestnut { 
+  border-color: var(--color-chestnut); 
+}
+
+.border-khaki { 
+  border-color: var(--color-khaki); 
+}
+
+.border-pearl { 
+  border-color: var(--color-pearl); 
+}
+
+/* Line clamp utilities */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Smooth transitions for interactive elements */
+button, a {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Focus styles for accessibility */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-chestnut);
+  outline-offset: 2px;
+}
+
+/* Prose styles for blog content */
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  color: var(--color-charcoal);
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+}
+
+.prose h2 {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.prose h3 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 1.25rem;
+}
+
+.prose p {
+  margin-bottom: 1rem;
+  line-height: 1.7;
+}
