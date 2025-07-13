@@ -145,6 +145,7 @@ async def root():
     return {
         "message": "EvolvIQ Linear Regression API",
         "status": "running",
+        "version": "1.0.1",
         "timestamp": datetime.now().isoformat()
     }
 
