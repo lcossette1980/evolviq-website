@@ -67,11 +67,8 @@ class RegressionAPI {
 
   async updateSession(sessionId, updateData) {
     try {
-      const sessionRef = doc(db, 'regressionSessions', sessionId);
-      await updateDoc(sessionRef, {
-        ...updateData,
-        updatedAt: serverTimestamp()
-      });
+      // Skip Firebase updates for now
+      console.log('Session update skipped (Firebase bypass):', sessionId, updateData);
     } catch (error) {
       console.error('Error updating session:', error);
       throw error;
@@ -178,11 +175,8 @@ class RegressionAPI {
       
       const result = await response.json();
       
-      // Update session with validation results
-      await this.updateSession(sessionId, {
-        validation: result,
-        status: result.is_valid ? 'data_validated' : 'validation_failed'
-      });
+      // Skip Firebase update
+      console.log('Validation complete:', result.is_valid);
       
       return result;
     } catch (error) {
@@ -210,15 +204,8 @@ class RegressionAPI {
       
       const result = await response.json();
       
-      // Update session with preprocessing results
-      await this.updateSession(sessionId, {
-        preprocessing: {
-          config: preprocessingConfig,
-          results: result,
-          completedAt: serverTimestamp()
-        },
-        status: 'data_preprocessed'
-      });
+      // Skip Firebase update
+      console.log('Preprocessing complete');
       
       return result;
     } catch (error) {
@@ -246,15 +233,8 @@ class RegressionAPI {
       
       const result = await response.json();
       
-      // Update session with training results
-      await this.updateSession(sessionId, {
-        training: {
-          config: trainingConfig,
-          results: result,
-          completedAt: serverTimestamp()
-        },
-        status: 'models_trained'
-      });
+      // Skip Firebase update
+      console.log('Training complete');
       
       return result;
     } catch (error) {
@@ -288,10 +268,8 @@ class RegressionAPI {
       
       const result = await response.json();
       
-      // Update session with results access
-      await this.updateSession(sessionId, {
-        lastAccessedAt: serverTimestamp()
-      });
+      // Skip Firebase update
+      console.log('Results accessed');
       
       return result;
     } catch (error) {
@@ -319,18 +297,8 @@ class RegressionAPI {
       
       const result = await response.json();
       
-      // Log prediction to session
-      const session = await this.getSession(sessionId);
-      const predictions = session.predictions || [];
-      predictions.push({
-        input: predictionData,
-        output: result,
-        timestamp: serverTimestamp()
-      });
-      
-      await this.updateSession(sessionId, {
-        predictions: predictions.slice(-50) // Keep last 50 predictions
-      });
+      // Skip Firebase prediction logging
+      console.log('Prediction made:', result);
       
       return result;
     } catch (error) {
