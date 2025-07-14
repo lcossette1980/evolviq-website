@@ -1,9 +1,10 @@
 # FastAPI Backend for Linear Regression Integration
 # Optimized for React frontend and Firebase integration
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks, Query
+from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel, Field
 from typing import Dict, List, Optional, Any, Union
 import pandas as pd
@@ -36,15 +37,34 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000", 
+        "http://localhost:3001",
         "https://evolviq.com",
         "https://*.vercel.app",
         "https://*.netlify.app",
         "https://*.railway.app"
     ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
+
+# Add custom CORS middleware for additional debugging
+class CORSDebugMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        logger.info(f"CORS Debug: {request.method} {request.url}")
+        logger.info(f"Origin: {request.headers.get('origin', 'None')}")
+        
+        response = await call_next(request)
+        
+        # Add additional CORS headers
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        
+        return response
+
+app.add_middleware(CORSDebugMiddleware)
 
 # Global session storage (in production, use Redis or database)
 active_sessions: Dict[str, RegressionWorkflow] = {}
@@ -353,10 +373,17 @@ async def get_training_status(session_id: str):
         logger.error(f"Failed to get training status: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.options("/api/regression/results/{session_id}")
+async def options_results(session_id: str):
+    """Handle OPTIONS request for results endpoint."""
+    return {"message": "OK"}
+
 @app.get("/api/regression/results/{session_id}")
 async def get_results(session_id: str):
     """Get training results and visualizations."""
     try:
+        logger.info(f"Getting results for session: {session_id}")
+        
         # Get workflow
         workflow = get_session_workflow(session_id)
         
