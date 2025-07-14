@@ -142,12 +142,22 @@ def cleanup_temp_file(file_path: str):
 @app.get("/")
 async def root():
     """Health check endpoint."""
-    return {
-        "message": "EvolvIQ Linear Regression API",
-        "status": "running",
-        "version": "1.0.1",
-        "timestamp": datetime.now().isoformat()
-    }
+    try:
+        return {
+            "message": "EvolvIQ Linear Regression API",
+            "status": "running",
+            "version": "1.0.1",
+            "timestamp": datetime.now().isoformat(),
+            "health": "ok"
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        raise HTTPException(status_code=500, detail="Health check failed")
+
+@app.get("/health")
+async def health_check():
+    """Alternative health check endpoint."""
+    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
 @app.post("/api/regression/session", response_model=SessionResponse)
 async def create_session(request: SessionCreateRequest):
@@ -481,8 +491,17 @@ async def not_found_handler(request, exc):
 async def internal_error_handler(request, exc):
     return {"error": "Internal server error", "status_code": 500}
 
+@app.on_event("startup")
+async def startup_event():
+    """Log startup information."""
+    logger.info("🚀 EvolvIQ Linear Regression API starting up...")
+    logger.info(f"📊 Active sessions storage initialized")
+    logger.info(f"🔧 Environment: {os.getenv('RAILWAY_ENVIRONMENT', 'local')}")
+    logger.info(f"🌐 Port: {os.getenv('PORT', '8000')}")
+
 if __name__ == "__main__":
     import uvicorn
     import os
     port = int(os.getenv("PORT", 8000))
+    logger.info(f"🚀 Starting server on port {port}")
     uvicorn.run(app, host="0.0.0.0", port=port)
