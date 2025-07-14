@@ -56,6 +56,12 @@ const DataUpload = ({ onUpload, isLoading, error }) => {
     }
   };
 
+  const handleSampleData = (csvData, filename) => {
+    const blob = new Blob([csvData], { type: 'text/csv' });
+    const file = new File([blob], filename, { type: 'text/csv' });
+    handleFile(file);
+  };
+
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -184,17 +190,18 @@ const DataUpload = ({ onUpload, isLoading, error }) => {
         <div className="flex justify-center space-x-4 text-sm">
           <button
             onClick={() => {
-              // Create sample housing data
               const sampleData = `price,bedrooms,bathrooms,sqft,age,location
 320000,3,2,1800,5,suburban
 450000,4,3,2400,2,urban
 280000,2,1,1200,15,rural
 520000,4,4,3000,1,urban
-350000,3,2,2000,8,suburban`;
-              
-              const blob = new Blob([sampleData], { type: 'text/csv' });
-              const file = new File([blob], 'sample_housing_data.csv', { type: 'text/csv' });
-              handleFile(file);
+350000,3,2,2000,8,suburban
+380000,3,2.5,1950,7,suburban
+425000,4,3,2200,3,urban
+310000,2,2,1400,12,rural
+540000,5,4,3200,1,urban
+365000,3,2,1850,9,suburban`;
+              handleSampleData(sampleData, 'sample_housing_data.csv');
             }}
             className="text-chestnut hover:text-chestnut/80"
           >
@@ -203,17 +210,18 @@ const DataUpload = ({ onUpload, isLoading, error }) => {
           <span className="text-charcoal/40">|</span>
           <button
             onClick={() => {
-              // Create sample sales data
               const sampleData = `sales,marketing_spend,employees,region,season
 45000,8000,12,north,spring
 62000,12000,18,south,summer
 38000,6000,10,east,fall
 71000,15000,22,west,summer
-52000,9500,15,north,winter`;
-              
-              const blob = new Blob([sampleData], { type: 'text/csv' });
-              const file = new File([blob], 'sample_sales_data.csv', { type: 'text/csv' });
-              handleFile(file);
+52000,9500,15,north,winter
+48000,8500,13,north,spring
+65000,13000,19,south,summer
+41000,6500,11,east,fall
+74000,16000,24,west,summer
+55000,10000,16,north,winter`;
+              handleSampleData(sampleData, 'sample_sales_data.csv');
             }}
             className="text-chestnut hover:text-chestnut/80"
           >

@@ -36,10 +36,8 @@ const LinearRegressionPage = () => {
   const createNewSession = async () => {
     try {
       setIsLoading(true);
-      const newSessionId = await regressionAPI.createSession(user?.uid || 'anonymous', {
-        name: `Linear Regression - ${new Date().toLocaleDateString()}`,
-        description: 'Interactive linear regression analysis'
-      });
+      // Create simple session ID without Firebase for now
+      const newSessionId = 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
       setSessionId(newSessionId);
       setCurrentStep(1);
       resetState();
@@ -63,10 +61,7 @@ const LinearRegressionPage = () => {
       setIsLoading(true);
       setError(null);
       
-      // Upload file to Firebase Storage
-      const uploadResult = await regressionAPI.uploadDataFile(file, sessionId, user?.uid || 'anonymous');
-      
-      // Validate data with API
+      // Skip Firebase upload for now - validate directly with API
       const validation = await regressionAPI.validateData(sessionId, file);
       setValidationResults(validation);
       
