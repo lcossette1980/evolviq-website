@@ -1,8 +1,27 @@
 import React, { useState } from 'react';
 import { CheckCircle, Phone, FileText, Zap } from 'lucide-react';
 
+// Import all service modal components
+import QuickAIAssessmentModal from '../components/services/QuickAIAssessmentModal';
+import HalfDayStrategySessionModal from '../components/services/HalfDayStrategySessionModal';
+import AIBasicsTrainingModal from '../components/services/AIBasicsTrainingModal';
+import ChangeReadinessWorkshopModal from '../components/services/ChangeReadinessWorkshopModal';
+import SimpleGovernanceSetupModal from '../components/services/SimpleGovernanceSetupModal';
+import PilotProjectSupportModal from '../components/services/PilotProjectSupportModal';
+import GenAIWorkshopsModal from '../components/services/GenAIWorkshopsModal';
+import WebsiteDesignDevelopmentModal from '../components/services/WebsiteDesignDevelopmentModal';
+
 const ServicesPage = () => {
   const [selectedTab, setSelectedTab] = useState('phased');
+  const [activeModal, setActiveModal] = useState(null);
+
+  const openModal = (modalName) => {
+    setActiveModal(modalName);
+  };
+
+  const closeModal = () => {
+    setActiveModal(null);
+  };
 
   const phasedServices = [
     {
@@ -52,43 +71,57 @@ const ServicesPage = () => {
       title: "Quick AI Assessment",
       description: "Rapid evaluation of AI opportunities for your organization",
       investment: "$1.5K - $4K",
-      popular: true
+      popular: true,
+      modalKey: "quickAssessment"
     },
     {
       title: "Half-Day Strategy Session", 
       description: "Focused workshop to identify your best AI opportunities",
       investment: "$2K - $5K",
-      popular: true
+      popular: true,
+      modalKey: "strategySession"
     },
     {
       title: "AI Basics Training",
       description: "Practical AI literacy training for your team", 
       investment: "$750 - $2.5K",
-      popular: false
+      popular: false,
+      modalKey: "aiBasics"
     },
     {
       title: "Change Readiness Workshop",
       description: "Prepare your team for AI transformation",
       investment: "$1.5K - $4K", 
-      popular: false
+      popular: false,
+      modalKey: "changeReadiness"
     },
     {
       title: "Simple Governance Setup",
       description: "Basic guidelines for responsible AI use",
       investment: "$2.5K - $7.5K",
-      popular: false
+      popular: false,
+      modalKey: "governance"
     },
     {
       title: "Pilot Project Support",
       description: "Hands-on help with your first AI implementation",
       investment: "$3K - $12K",
-      popular: false
+      popular: false,
+      modalKey: "pilotSupport"
     },
     {
-      title: "Vendor Selection Support", 
-      description: "Help choosing the right AI tools for your needs",
-      investment: "$1K - $3.5K",
-      popular: false
+      title: "Generative AI Workshops", 
+      description: "Focused GenAI training sessions, from half-day to full two-day immersive workshops",
+      investment: "$2K - $8K",
+      popular: false,
+      modalKey: "genaiWorkshops"
+    },
+    {
+      title: "Website Design & Development",
+      description: "Modern, responsive websites built with React and Tailwind CSS",
+      investment: "$2.5K - $12K",
+      popular: false,
+      modalKey: "websiteDesign"
     }
   ];
 
@@ -244,7 +277,10 @@ const ServicesPage = () => {
                   <p className="text-charcoal/70 mb-4 text-sm">{service.description}</p>
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-chestnut text-lg">{service.investment}</span>
-                    <button className="bg-chestnut text-white px-4 py-2 rounded-lg hover:bg-chestnut/90 transition-colors text-sm">
+                    <button 
+                      onClick={() => openModal(service.modalKey)}
+                      className="bg-chestnut text-white px-4 py-2 rounded-lg hover:bg-chestnut/90 transition-colors text-sm"
+                    >
                       Learn More
                     </button>
                   </div>
@@ -318,6 +354,40 @@ const ServicesPage = () => {
             </button>
           </div>
         </div>
+
+        {/* Modal Components */}
+        <QuickAIAssessmentModal 
+          isOpen={activeModal === 'quickAssessment'} 
+          onClose={closeModal} 
+        />
+        <HalfDayStrategySessionModal 
+          isOpen={activeModal === 'strategySession'} 
+          onClose={closeModal} 
+        />
+        <AIBasicsTrainingModal 
+          isOpen={activeModal === 'aiBasics'} 
+          onClose={closeModal} 
+        />
+        <ChangeReadinessWorkshopModal 
+          isOpen={activeModal === 'changeReadiness'} 
+          onClose={closeModal} 
+        />
+        <SimpleGovernanceSetupModal 
+          isOpen={activeModal === 'governance'} 
+          onClose={closeModal} 
+        />
+        <PilotProjectSupportModal 
+          isOpen={activeModal === 'pilotSupport'} 
+          onClose={closeModal} 
+        />
+        <GenAIWorkshopsModal 
+          isOpen={activeModal === 'genaiWorkshops'} 
+          onClose={closeModal} 
+        />
+        <WebsiteDesignDevelopmentModal 
+          isOpen={activeModal === 'websiteDesign'} 
+          onClose={closeModal} 
+        />
       </div>
     </div>
   );

@@ -10,15 +10,15 @@ const MembersPage = () => {
       category: "Assessment Tools",
       items: [
         {
-          title: "AIMI Self-Assessment Tool",
-          description: "Interactive assessment to evaluate your organization's AI maturity",
+          title: "AI Ready Check",
+          description: "Interactive/agentic assessment that determines a business' readiness for AI",
           type: "tool",
           icon: <Target className="w-6 h-6" />,
           premium: false
         },
         {
-          title: "Change Readiness Diagnostic", 
-          description: "Comprehensive evaluation of organizational change capacity",
+          title: "AI Knowledge Navigator", 
+          description: "Smart agentic assessment that determines user's AI knowledge/ability level and prepares curated lessons and plans",
           type: "tool",
           icon: <CheckCircle className="w-6 h-6" />,
           premium: true

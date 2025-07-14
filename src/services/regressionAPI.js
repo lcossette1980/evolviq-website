@@ -162,9 +162,8 @@ class RegressionAPI {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('session_id', sessionId);
       
-      const response = await fetch(`${this.baseURL}/api/regression/validate-data`, {
+      const response = await fetch(`${this.baseURL}/api/regression/validate-data?session_id=${sessionId}`, {
         method: 'POST',
         body: formData
       });
@@ -187,25 +186,34 @@ class RegressionAPI {
 
   async preprocessData(sessionId, preprocessingConfig) {
     try {
-      const response = await fetch(`${this.baseURL}/api/regression/preprocess`, {
+      console.log('Preprocessing request:', {
+        sessionId,
+        config: preprocessingConfig.config,
+        target_column: preprocessingConfig.target_column
+      });
+
+      const response = await fetch(`${this.baseURL}/api/regression/preprocess?session_id=${sessionId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          session_id: sessionId,
-          config: preprocessingConfig
+          config: preprocessingConfig.config,
+          target_column: preprocessingConfig.target_column
         })
       });
       
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+      
       if (!response.ok) {
-        throw new Error(`Preprocessing failed: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('Error response body:', errorText);
+        throw new Error(`Preprocessing failed: ${response.status} - ${response.statusText} - ${errorText}`);
       }
       
       const result = await response.json();
-      
-      // Skip Firebase update
-      console.log('Preprocessing complete');
+      console.log('Preprocessing result:', result);
       
       return result;
     } catch (error) {
@@ -216,14 +224,14 @@ class RegressionAPI {
 
   async trainModels(sessionId, trainingConfig) {
     try {
-      const response = await fetch(`${this.baseURL}/api/regression/train`, {
+      const response = await fetch(`${this.baseURL}/api/regression/train?session_id=${sessionId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          session_id: sessionId,
-          config: trainingConfig
+          config: trainingConfig.config,
+          target_column: trainingConfig.target_column
         })
       });
       
@@ -280,13 +288,12 @@ class RegressionAPI {
 
   async makePrediction(sessionId, predictionData) {
     try {
-      const response = await fetch(`${this.baseURL}/api/regression/predict`, {
+      const response = await fetch(`${this.baseURL}/api/regression/predict?session_id=${sessionId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          session_id: sessionId,
           data: predictionData
         })
       });

@@ -88,8 +88,11 @@ const LinearRegressionPage = () => {
       setIsLoading(true);
       setError(null);
       
+      console.log('Preprocessing config:', config);
+      console.log('Target column:', validationResults.selectedTarget);
+      
       const result = await regressionAPI.preprocessData(sessionId, {
-        ...config,
+        config: config,
         target_column: validationResults.selectedTarget
       });
       
@@ -107,8 +110,11 @@ const LinearRegressionPage = () => {
       setIsLoading(true);
       setError(null);
       
+      console.log('Training config:', config);
+      console.log('Target column:', validationResults.selectedTarget);
+      
       const result = await regressionAPI.trainModels(sessionId, {
-        ...config,
+        config: config,
         target_column: validationResults.selectedTarget
       });
       
