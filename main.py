@@ -365,23 +365,20 @@ async def get_results(session_id: str):
         if session_id not in session_data or session_data[session_id]['status'] != 'models_trained':
             raise HTTPException(status_code=400, detail="No trained models found for session")
         
-        # Get visualizations
-        viz_result = workflow.get_visualizations()
+        # Skip visualization generation for now to fix CORS issue
+        # viz_result = workflow.get_visualizations()
         
-        if viz_result['success']:
-            training_results = session_data[session_id]['training_results']
-            
-            return {
-                "success": True,
-                "model_results": training_results['model_results'],
-                "comparison_data": training_results['comparison_data'],
-                "best_model": training_results['best_model'],
-                "feature_importance": training_results['feature_importance'],
-                "visualizations": viz_result['visualizations'],
-                "training_summary": training_results['training_summary']
-            }
-        else:
-            raise HTTPException(status_code=400, detail=viz_result['error'])
+        training_results = session_data[session_id]['training_results']
+        
+        return {
+            "success": True,
+            "model_results": training_results['model_results'],
+            "comparison_data": training_results['comparison_data'],
+            "best_model": training_results['best_model'],
+            "feature_importance": training_results['feature_importance'],
+            "visualizations": {},  # Empty for now
+            "training_summary": training_results['training_summary']
+        }
         
     except Exception as e:
         logger.error(f"Failed to get results: {e}")
