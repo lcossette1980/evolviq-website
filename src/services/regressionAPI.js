@@ -23,8 +23,8 @@ import { db, storage } from './firebase';
 
 class RegressionAPI {
   constructor() {
-    // Update with your actual Railway URL when you have it
-    this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+    // Railway production API URL
+    this.baseURL = process.env.REACT_APP_API_URL || 'https://evolviq-website-production.up.railway.app';
   }
 
   // Session Management
