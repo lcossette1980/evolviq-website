@@ -1,7 +1,7 @@
 # FastAPI Backend for Linear Regression Integration
 # Optimized for React frontend and Firebase integration
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks
+from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
@@ -190,7 +190,7 @@ async def create_session(request: SessionCreateRequest):
 @app.post("/api/regression/validate-data")
 async def validate_data(
     file: UploadFile = File(...),
-    session_id: str = None
+    session_id: str = Query(...)
 ):
     """Validate uploaded data file."""
     temp_file_path = None
@@ -250,7 +250,7 @@ async def validate_data(
             cleanup_temp_file(temp_file_path)
 
 @app.post("/api/regression/preprocess")
-async def preprocess_data(request: PreprocessingRequest, session_id: str):
+async def preprocess_data(request: PreprocessingRequest, session_id: str = Query(...)):
     """Preprocess the uploaded data."""
     try:
         # Get workflow and session data
@@ -291,7 +291,7 @@ async def preprocess_data(request: PreprocessingRequest, session_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/regression/train")
-async def train_models(request: TrainingRequest, session_id: str, background_tasks: BackgroundTasks):
+async def train_models(request: TrainingRequest, session_id: str = Query(...), background_tasks: BackgroundTasks = None):
     """Train regression models."""
     try:
         # Get workflow and session data
@@ -386,7 +386,7 @@ async def get_results(session_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/regression/predict")
-async def make_prediction(request: PredictionRequest, session_id: str):
+async def make_prediction(request: PredictionRequest, session_id: str = Query(...)):
     """Make a prediction with the trained model."""
     try:
         # Get workflow
