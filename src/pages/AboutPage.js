@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Target, Zap, Users, Shield, User, Linkedin, Mail, CheckCircle } from 'lucide-react';
+import InteractiveResume from '../components/about/InteractiveResume';
 
 const AboutPage = () => {
   const [selectedTab, setSelectedTab] = useState('mission');
@@ -200,57 +201,73 @@ const AboutPage = () => {
     founder: {
       title: "Meet Our Founder",
       content: (
-        <div className="bg-white p-12 rounded-2xl">
-          <div className="grid lg:grid-cols-2 gap-8 items-center">
-            <div className="relative">
-              <div className="rounded-2xl h-96 overflow-hidden">
-                <img 
-                  src="/images/about/loren-cossette-photo.jpg" 
-                  alt="Loren Cossette, Founder & Principal Consultant"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'flex';
-                  }}
-                />
-                <div className="bg-pearl/30 rounded-2xl h-96 flex items-center justify-center" style={{display: 'none'}}>
-                  <div className="text-center">
-                    <User className="w-20 h-20 text-chestnut mx-auto mb-4" />
-                    <div className="text-charcoal/60 text-sm">loren-cossette-photo.jpg</div>
+        <div className="space-y-12">
+          {/* Founder Introduction */}
+          <div className="bg-white p-12 rounded-2xl">
+            <div className="grid lg:grid-cols-2 gap-8 items-center">
+              <div className="relative">
+                <div className="rounded-2xl h-96 overflow-hidden">
+                  <img 
+                    src="/images/about/loren-cossette-photo.jpg" 
+                    alt="Loren Cossette, Founder & Principal Consultant"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                  <div className="bg-pearl/30 rounded-2xl h-96 flex items-center justify-center" style={{display: 'none'}}>
+                    <div className="text-center">
+                      <User className="w-20 h-20 text-chestnut mx-auto mb-4" />
+                      <div className="text-charcoal/60 text-sm">loren-cossette-photo.jpg</div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            <div>
-              <h3 className="font-serif font-bold text-2xl text-charcoal mb-4">Loren Cossette</h3>
-              <div className="text-chestnut font-medium mb-4">Founder & Principal Consultant</div>
-              <p className="text-charcoal/80 mb-4">
-                After years of watching small businesses struggle with technology implementations designed for enterprises, 
-                Loren founded EvolvIQ to bridge the gap between AI's potential and practical application for smaller organizations.
-              </p>
-              <p className="text-charcoal/80 mb-4">
-                "I've seen too many great organizations miss out on AI's benefits because existing solutions don't fit their 
-                reality. Every business deserves access to tools that help them serve their customers better and grow sustainably."
-              </p>
-              <div className="bg-pearl/20 p-4 rounded-lg mb-6">
-                <h4 className="font-medium text-charcoal mb-2">Experience Includes:</h4>
-                <ul className="text-sm text-charcoal/80 space-y-1">
-                  <li>• 15+ years in organizational transformation</li>
-                  <li>• Former consultant to Fortune 500 companies</li>
-                  <li>• Specialized in change management for technology adoption</li>
-                  <li>• Certified in multiple AI and project management frameworks</li>
-                </ul>
-              </div>
-              <div className="flex space-x-4">
-                <button className="text-chestnut hover:text-chestnut/80 transition-colors">
-                  <Linkedin className="w-6 h-6" />
-                </button>
-                <button className="text-chestnut hover:text-chestnut/80 transition-colors">
-                  <Mail className="w-6 h-6" />
-                </button>
+              <div>
+                <h3 className="font-serif font-bold text-2xl text-charcoal mb-4">Loren Cossette</h3>
+                <div className="text-chestnut font-medium mb-4">Founder & Principal Consultant</div>
+                <p className="text-charcoal/80 mb-4">
+                  After years of watching small businesses struggle with technology implementations designed for enterprises, 
+                  Loren founded EvolvIQ to bridge the gap between AI's potential and practical application for smaller organizations.
+                </p>
+                <p className="text-charcoal/80 mb-4">
+                  "I've seen too many great organizations miss out on AI's benefits because existing solutions don't fit their 
+                  reality. Every business deserves access to tools that help them serve their customers better and grow sustainably."
+                </p>
+                <div className="bg-pearl/20 p-4 rounded-lg mb-6">
+                  <h4 className="font-medium text-charcoal mb-2">Experience Includes:</h4>
+                  <ul className="text-sm text-charcoal/80 space-y-1">
+                    <li>• 20+ years in organizational transformation</li>
+                    <li>• Led AI strategy for $126B portfolio at USAA</li>
+                    <li>• Published researcher in AI ethics and education</li>
+                    <li>• Military leadership experience across global operations</li>
+                  </ul>
+                </div>
+                <div className="flex space-x-4">
+                  <a 
+                    href="https://linkedin.com/in/loren-cossette" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-chestnut hover:text-chestnut/80 transition-colors"
+                  >
+                    <Linkedin className="w-6 h-6" />
+                  </a>
+                  <a 
+                    href="https://github.com/lcossette1980" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-chestnut hover:text-chestnut/80 transition-colors"
+                  >
+                    <Mail className="w-6 h-6" />
+                  </a>
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Interactive Resume */}
+          <InteractiveResume />
         </div>
       )
     },
