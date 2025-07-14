@@ -1,28 +1,24 @@
-# Test Dockerfile to debug Railway build context
+# Simple Dockerfile with API files in root
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copy everything and debug
-COPY . .
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
-# List what we actually have
-RUN echo "=== Root directory contents ===" && \
-    ls -la && \
-    echo "=== Looking for api directory ===" && \
-    ls -la api/ || echo "api directory not found" && \
-    echo "=== Looking for requirements.txt ===" && \
-    find . -name "requirements.txt" -type f
+# Copy requirements and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# If api directory exists, install and run
-RUN if [ -d "api" ]; then \
-        cd api && \
-        pip install -r requirements.txt; \
-    else \
-        echo "API directory not found, exiting"; \
-        exit 1; \
-    fi
+# Copy API files
+COPY main.py .
+COPY regression/ ./regression/
 
-WORKDIR /app/api
+# Expose port
+EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Command to run the application
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
