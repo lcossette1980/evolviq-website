@@ -20,10 +20,12 @@ import os
 
 # Import all ML frameworks
 from regression.enhanced_regression_framework import RegressionWorkflow, RegressionConfig
-from eda.enhanced_eda_framework import EDAWorkflow, EDAConfig
-from classification.enhanced_classification_framework import ClassificationWorkflow, ClassificationConfig
-from clustering.enhanced_clustering_framework import ClusteringWorkflow, ClusteringConfig
-from nlp.enhanced_nlp_framework import NLPWorkflow, NLPConfig
+from ml_frameworks import (
+    EDAWorkflow, EDAConfig,
+    ClassificationWorkflow, ClassificationConfig,
+    ClusteringWorkflow, ClusteringConfig,
+    NLPWorkflow, NLPConfig
+)
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
