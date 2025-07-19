@@ -1,4 +1,4 @@
-# FastAPI Backend for Linear Regression Integration
+# FastAPI Backend for ML Tools Integration
 # Optimized for React frontend and Firebase integration
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks, Query, Request
@@ -18,7 +18,12 @@ from pathlib import Path
 import tempfile
 import os
 
+# Import all ML frameworks
 from regression.enhanced_regression_framework import RegressionWorkflow, RegressionConfig
+from eda.enhanced_eda_framework import EDAWorkflow, EDAConfig
+from classification.enhanced_classification_framework import ClassificationWorkflow, ClassificationConfig
+from clustering.enhanced_clustering_framework import ClusteringWorkflow, ClusteringConfig
+from nlp.enhanced_nlp_framework import NLPWorkflow, NLPConfig
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -26,9 +31,9 @@ logger = logging.getLogger(__name__)
 
 # Create FastAPI app
 app = FastAPI(
-    title="EvolvIQ Linear Regression API",
-    description="Interactive Linear Regression Analysis API",
-    version="1.0.0"
+    title="EvolvIQ ML Tools API",
+    description="Interactive Machine Learning Analysis API with EDA, Classification, Clustering, NLP & Regression",
+    version="2.0.0"
 )
 
 # Configure CORS for React frontend
@@ -42,8 +47,8 @@ app.add_middleware(
 )
 
 # Global session storage (in production, use Redis or database)
-active_sessions: Dict[str, RegressionWorkflow] = {}
-session_data: Dict[str, Dict] = {}
+active_sessions: Dict[str, Dict[str, Any]] = {}  # session_id -> {tool_type: workflow_instance}
+session_data: Dict[str, Dict] = {}  # session_id -> session metadata
 
 # Pydantic Models
 class SessionCreateRequest(BaseModel):
@@ -87,16 +92,36 @@ class PreprocessingRequest(BaseModel):
     target_column: str
 
 # Utility Functions
-def get_session_workflow(session_id: str) -> RegressionWorkflow:
-    """Get workflow for session, create if doesn't exist."""
+def get_session_workflow(session_id: str, tool_type: str = 'regression') -> Any:
+    """Get workflow for session and tool type, create if doesn't exist."""
     if session_id not in active_sessions:
-        active_sessions[session_id] = RegressionWorkflow()
+        active_sessions[session_id] = {}
         session_data[session_id] = {
             'created_at': datetime.now(),
             'status': 'created',
-            'data': None
+            'data': None,
+            'tools_used': []
         }
-    return active_sessions[session_id]
+    
+    if tool_type not in active_sessions[session_id]:
+        if tool_type == 'regression':
+            active_sessions[session_id][tool_type] = RegressionWorkflow()
+        elif tool_type == 'eda':
+            active_sessions[session_id][tool_type] = EDAWorkflow()
+        elif tool_type == 'classification':
+            active_sessions[session_id][tool_type] = ClassificationWorkflow()
+        elif tool_type == 'clustering':
+            active_sessions[session_id][tool_type] = ClusteringWorkflow()
+        elif tool_type == 'nlp':
+            active_sessions[session_id][tool_type] = NLPWorkflow()
+        else:
+            raise ValueError(f"Unknown tool type: {tool_type}")
+        
+        # Track which tools have been used
+        if tool_type not in session_data[session_id]['tools_used']:
+            session_data[session_id]['tools_used'].append(tool_type)
+    
+    return active_sessions[session_id][tool_type]
 
 def save_uploaded_file(upload_file: UploadFile) -> str:
     """Save uploaded file temporarily and return path."""
@@ -139,11 +164,19 @@ async def root():
     """Health check endpoint."""
     try:
         return {
-            "message": "EvolvIQ Linear Regression API",
+            "message": "EvolvIQ ML Tools API",
             "status": "running",
-            "version": "1.0.1",
+            "version": "2.0.0",
             "timestamp": datetime.now().isoformat(),
-            "health": "ok"
+            "health": "ok",
+            "available_tools": ["regression", "eda", "classification", "clustering", "nlp"],
+            "endpoints": {
+                "regression": "/api/regression/*",
+                "eda": "/api/eda/*",
+                "classification": "/api/classification/*",
+                "clustering": "/api/clustering/*",
+                "nlp": "/api/nlp/*"
+            }
         }
     except Exception as e:
         logger.error(f"Health check failed: {e}")
@@ -161,7 +194,7 @@ async def create_session(request: SessionCreateRequest):
         session_id = f"regression_{uuid.uuid4().hex[:12]}"
         
         # Initialize workflow
-        workflow = get_session_workflow(session_id)
+        workflow = get_session_workflow(session_id, 'regression')
         
         # Update session data
         session_data[session_id].update({
@@ -205,7 +238,7 @@ async def validate_data(
         data = load_data_file(temp_file_path)
         
         # Get workflow and validate
-        workflow = get_session_workflow(session_id)
+        workflow = get_session_workflow(session_id, 'regression')
         
         # For validation, we need a target column - let's use the last numeric column as default
         numeric_columns = data.select_dtypes(include=[np.number]).columns.tolist()
@@ -249,7 +282,7 @@ async def preprocess_data(request: PreprocessingRequest, session_id: str = Query
     """Preprocess the uploaded data."""
     try:
         # Get workflow and session data
-        workflow = get_session_workflow(session_id)
+        workflow = get_session_workflow(session_id, 'regression')
         
         if session_id not in session_data or session_data[session_id]['data'] is None:
             raise HTTPException(status_code=400, detail="No data found for session")
@@ -290,7 +323,7 @@ async def train_models(request: TrainingRequest, session_id: str = Query(...), b
     """Train regression models."""
     try:
         # Get workflow and session data
-        workflow = get_session_workflow(session_id)
+        workflow = get_session_workflow(session_id, 'regression')
         
         if session_id not in session_data or 'preprocessed_data' not in session_data[session_id]:
             raise HTTPException(status_code=400, detail="No preprocessed data found for session")
@@ -360,7 +393,7 @@ async def get_results(session_id: str):
         logger.info(f"Getting results for session: {session_id}")
         
         # Get workflow
-        workflow = get_session_workflow(session_id)
+        workflow = get_session_workflow(session_id, 'regression')
         
         if session_id not in session_data or session_data[session_id]['status'] != 'models_trained':
             raise HTTPException(status_code=400, detail="No trained models found for session")
@@ -389,7 +422,7 @@ async def make_prediction(request: PredictionRequest, session_id: str = Query(..
     """Make a prediction with the trained model."""
     try:
         # Get workflow
-        workflow = get_session_workflow(session_id)
+        workflow = get_session_workflow(session_id, 'regression')
         
         if session_id not in session_data or session_data[session_id]['status'] != 'models_trained':
             raise HTTPException(status_code=400, detail="No trained models found for session")
@@ -411,7 +444,7 @@ async def export_model(session_id: str):
     """Export the trained model."""
     try:
         # Get workflow
-        workflow = get_session_workflow(session_id)
+        workflow = get_session_workflow(session_id, 'regression')
         
         if session_id not in session_data or session_data[session_id]['status'] != 'models_trained':
             raise HTTPException(status_code=400, detail="No trained models found for session")
@@ -481,6 +514,458 @@ async def delete_session(session_id: str):
         logger.error(f"Failed to delete session: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# =============================================================================
+# EDA ENDPOINTS
+# =============================================================================
+
+@app.post("/api/eda/validate-data")
+async def validate_eda_data(
+    file: UploadFile = File(...),
+    session_id: str = Query(...)
+):
+    """Validate uploaded data file for EDA analysis."""
+    temp_file_path = None
+    
+    try:
+        # Save uploaded file temporarily
+        temp_file_path = save_uploaded_file(file)
+        
+        # Load data
+        data = load_data_file(temp_file_path)
+        
+        # Get workflow and validate
+        workflow = get_session_workflow(session_id, 'eda')
+        validation_result = workflow.validate_data(data)
+        
+        # Store data in session
+        session_data[session_id]['data'] = data
+        session_data[session_id]['status'] = 'data_uploaded'
+        session_data[session_id]['columns'] = data.columns.tolist()
+        
+        return validation_result
+        
+    except Exception as e:
+        logger.error(f"EDA data validation failed: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    finally:
+        if temp_file_path:
+            cleanup_temp_file(temp_file_path)
+
+@app.post("/api/eda/quality-assessment")
+async def perform_quality_assessment(session_id: str = Query(...)):
+    """Perform data quality assessment."""
+    try:
+        workflow = get_session_workflow(session_id, 'eda')
+        
+        if session_id not in session_data or session_data[session_id]['data'] is None:
+            raise HTTPException(status_code=400, detail="No data found for session")
+        
+        data = session_data[session_id]['data']
+        result = workflow.perform_quality_assessment(data)
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Quality assessment failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/eda/univariate-analysis")
+async def perform_univariate_analysis(session_id: str = Query(...)):
+    """Perform univariate analysis."""
+    try:
+        workflow = get_session_workflow(session_id, 'eda')
+        
+        if session_id not in session_data or session_data[session_id]['data'] is None:
+            raise HTTPException(status_code=400, detail="No data found for session")
+        
+        data = session_data[session_id]['data']
+        result = workflow.perform_univariate_analysis(data)
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Univariate analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/eda/bivariate-analysis")
+async def perform_bivariate_analysis(session_id: str = Query(...)):
+    """Perform bivariate analysis."""
+    try:
+        workflow = get_session_workflow(session_id, 'eda')
+        
+        if session_id not in session_data or session_data[session_id]['data'] is None:
+            raise HTTPException(status_code=400, detail="No data found for session")
+        
+        data = session_data[session_id]['data']
+        result = workflow.perform_bivariate_analysis(data)
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Bivariate analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/eda/clean-data")
+async def clean_eda_data(session_id: str = Query(...)):
+    """Clean the dataset."""
+    try:
+        workflow = get_session_workflow(session_id, 'eda')
+        
+        if session_id not in session_data or session_data[session_id]['data'] is None:
+            raise HTTPException(status_code=400, detail="No data found for session")
+        
+        data = session_data[session_id]['data']
+        result = workflow.clean_data(data)
+        
+        if result['success']:
+            # Store cleaned data
+            session_data[session_id]['cleaned_data'] = pd.DataFrame(result['cleaned_data'])
+            session_data[session_id]['status'] = 'data_cleaned'
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Data cleaning failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# =============================================================================
+# CLASSIFICATION ENDPOINTS
+# =============================================================================
+
+@app.post("/api/classification/validate-data")
+async def validate_classification_data(
+    file: UploadFile = File(...),
+    session_id: str = Query(...),
+    target_column: str = Query(...)
+):
+    """Validate uploaded data file for classification analysis."""
+    temp_file_path = None
+    
+    try:
+        # Save uploaded file temporarily
+        temp_file_path = save_uploaded_file(file)
+        
+        # Load data
+        data = load_data_file(temp_file_path)
+        
+        # Get workflow and validate
+        workflow = get_session_workflow(session_id, 'classification')
+        validation_result = workflow.validate_data(data, target_column)
+        
+        # Store data in session
+        session_data[session_id]['data'] = data
+        session_data[session_id]['status'] = 'data_uploaded'
+        session_data[session_id]['target_column'] = target_column
+        session_data[session_id]['columns'] = data.columns.tolist()
+        
+        return validation_result
+        
+    except Exception as e:
+        logger.error(f"Classification data validation failed: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    finally:
+        if temp_file_path:
+            cleanup_temp_file(temp_file_path)
+
+class ClassificationPreprocessingRequest(BaseModel):
+    target_column: str
+
+@app.post("/api/classification/preprocess")
+async def preprocess_classification_data(
+    request: ClassificationPreprocessingRequest, 
+    session_id: str = Query(...)
+):
+    """Preprocess the uploaded data for classification."""
+    try:
+        workflow = get_session_workflow(session_id, 'classification')
+        
+        if session_id not in session_data or session_data[session_id]['data'] is None:
+            raise HTTPException(status_code=400, detail="No data found for session")
+        
+        data = session_data[session_id]['data']
+        result = workflow.preprocess_data(data, request.target_column)
+        
+        if result['success']:
+            # Store preprocessed data
+            session_data[session_id]['preprocessed_data'] = pd.DataFrame(result['processed_data'])
+            session_data[session_id]['target_column'] = request.target_column
+            session_data[session_id]['feature_columns'] = result['feature_columns']
+            session_data[session_id]['status'] = 'data_preprocessed'
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Classification preprocessing failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class ClassificationTrainingRequest(BaseModel):
+    target_column: str
+    models_to_include: Optional[List[str]] = None
+
+@app.post("/api/classification/train")
+async def train_classification_models(
+    request: ClassificationTrainingRequest, 
+    session_id: str = Query(...)
+):
+    """Train classification models."""
+    try:
+        workflow = get_session_workflow(session_id, 'classification')
+        
+        if session_id not in session_data or 'preprocessed_data' not in session_data[session_id]:
+            raise HTTPException(status_code=400, detail="No preprocessed data found for session")
+        
+        data = session_data[session_id]['preprocessed_data']
+        
+        # Update config if models specified
+        if request.models_to_include:
+            workflow.config.models_to_include = request.models_to_include
+        
+        result = workflow.train_models(data, request.target_column)
+        
+        if result['success']:
+            session_data[session_id]['status'] = 'models_trained'
+            session_data[session_id]['training_results'] = result
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Classification training failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/classification/results/{session_id}")
+async def get_classification_results(session_id: str):
+    """Get classification training results."""
+    try:
+        if session_id not in session_data or session_data[session_id]['status'] != 'models_trained':
+            raise HTTPException(status_code=400, detail="No trained models found for session")
+        
+        training_results = session_data[session_id]['training_results']
+        
+        return {
+            "success": True,
+            "model_results": training_results['model_results'],
+            "comparison_data": training_results['comparison_data'],
+            "best_model": training_results['best_model'],
+            "feature_importance": training_results['feature_importance'],
+            "confusion_matrix": training_results['confusion_matrix'],
+            "training_summary": training_results['training_summary']
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get classification results: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# =============================================================================
+# CLUSTERING ENDPOINTS
+# =============================================================================
+
+@app.post("/api/clustering/validate-data")
+async def validate_clustering_data(
+    file: UploadFile = File(...),
+    session_id: str = Query(...)
+):
+    """Validate uploaded data file for clustering analysis."""
+    temp_file_path = None
+    
+    try:
+        # Save uploaded file temporarily
+        temp_file_path = save_uploaded_file(file)
+        
+        # Load data
+        data = load_data_file(temp_file_path)
+        
+        # Get workflow and validate
+        workflow = get_session_workflow(session_id, 'clustering')
+        validation_result = workflow.validate_data(data)
+        
+        # Store data in session
+        session_data[session_id]['data'] = data
+        session_data[session_id]['status'] = 'data_uploaded'
+        session_data[session_id]['columns'] = data.columns.tolist()
+        
+        return validation_result
+        
+    except Exception as e:
+        logger.error(f"Clustering data validation failed: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    finally:
+        if temp_file_path:
+            cleanup_temp_file(temp_file_path)
+
+@app.post("/api/clustering/preprocess")
+async def preprocess_clustering_data(session_id: str = Query(...)):
+    """Preprocess the uploaded data for clustering."""
+    try:
+        workflow = get_session_workflow(session_id, 'clustering')
+        
+        if session_id not in session_data or session_data[session_id]['data'] is None:
+            raise HTTPException(status_code=400, detail="No data found for session")
+        
+        data = session_data[session_id]['data']
+        result = workflow.preprocess_data(data)
+        
+        if result['success']:
+            session_data[session_id]['status'] = 'data_preprocessed'
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Clustering preprocessing failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/clustering/find-optimal-clusters")
+async def find_optimal_clusters(session_id: str = Query(...)):
+    """Find optimal number of clusters."""
+    try:
+        workflow = get_session_workflow(session_id, 'clustering')
+        result = workflow.find_optimal_clusters()
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Finding optimal clusters failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class ClusteringRequest(BaseModel):
+    n_clusters: Optional[int] = None
+    algorithms_to_include: Optional[List[str]] = None
+
+@app.post("/api/clustering/perform-clustering")
+async def perform_clustering_analysis(
+    request: ClusteringRequest, 
+    session_id: str = Query(...)
+):
+    """Perform clustering analysis."""
+    try:
+        workflow = get_session_workflow(session_id, 'clustering')
+        
+        # Update config if algorithms specified
+        if request.algorithms_to_include:
+            workflow.config.algorithms_to_include = request.algorithms_to_include
+        
+        result = workflow.perform_clustering(request.n_clusters)
+        
+        if result['success']:
+            session_data[session_id]['status'] = 'clustering_complete'
+            session_data[session_id]['clustering_results'] = result
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Clustering analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/clustering/insights/{session_id}")
+async def get_clustering_insights(session_id: str):
+    """Get clustering insights."""
+    try:
+        workflow = get_session_workflow(session_id, 'clustering')
+        result = workflow.get_cluster_insights()
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Failed to get clustering insights: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# =============================================================================
+# NLP ENDPOINTS
+# =============================================================================
+
+@app.post("/api/nlp/validate-data")
+async def validate_nlp_data(
+    file: UploadFile = File(...),
+    session_id: str = Query(...),
+    text_column: str = Query(...)
+):
+    """Validate uploaded data file for NLP analysis."""
+    temp_file_path = None
+    
+    try:
+        # Save uploaded file temporarily
+        temp_file_path = save_uploaded_file(file)
+        
+        # Load data
+        data = load_data_file(temp_file_path)
+        
+        # Get workflow and validate
+        workflow = get_session_workflow(session_id, 'nlp')
+        validation_result = workflow.validate_data(data, text_column)
+        
+        # Store data in session
+        session_data[session_id]['data'] = data
+        session_data[session_id]['status'] = 'data_uploaded'
+        session_data[session_id]['text_column'] = text_column
+        session_data[session_id]['columns'] = data.columns.tolist()
+        
+        return validation_result
+        
+    except Exception as e:
+        logger.error(f"NLP data validation failed: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    finally:
+        if temp_file_path:
+            cleanup_temp_file(temp_file_path)
+
+class NLPAnalysisRequest(BaseModel):
+    text_column: str
+    sentiment_analysis: bool = True
+    topic_modeling: bool = True
+    named_entity_recognition: bool = True
+    n_topics: int = 5
+
+@app.post("/api/nlp/analyze")
+async def perform_nlp_analysis(
+    request: NLPAnalysisRequest, 
+    session_id: str = Query(...)
+):
+    """Perform comprehensive NLP analysis."""
+    try:
+        workflow = get_session_workflow(session_id, 'nlp')
+        
+        if session_id not in session_data or session_data[session_id]['data'] is None:
+            raise HTTPException(status_code=400, detail="No data found for session")
+        
+        data = session_data[session_id]['data']
+        
+        # Update config based on request
+        workflow.config.sentiment_analysis = request.sentiment_analysis
+        workflow.config.topic_modeling = request.topic_modeling
+        workflow.config.named_entity_recognition = request.named_entity_recognition
+        workflow.config.n_topics = request.n_topics
+        
+        # Extract text documents
+        text_documents = data[request.text_column].dropna().astype(str).tolist()
+        
+        result = workflow.analyze_text(text_documents)
+        
+        if result['success']:
+            session_data[session_id]['status'] = 'analysis_complete'
+            session_data[session_id]['nlp_results'] = result
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"NLP analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/nlp/insights/{session_id}")
+async def get_nlp_insights(session_id: str):
+    """Get NLP analysis insights."""
+    try:
+        workflow = get_session_workflow(session_id, 'nlp')
+        result = workflow.generate_insights()
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Failed to get NLP insights: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Error handlers
 @app.exception_handler(404)
 async def not_found_handler(request, exc):
@@ -493,8 +978,9 @@ async def internal_error_handler(request, exc):
 @app.on_event("startup")
 async def startup_event():
     """Log startup information."""
-    logger.info("🚀 EvolvIQ Linear Regression API starting up...")
+    logger.info("🚀 EvolvIQ ML Tools API starting up...")
     logger.info(f"📊 Active sessions storage initialized")
+    logger.info(f"🤖 Available tools: Regression, EDA, Classification, Clustering, NLP")
     logger.info(f"🔧 Environment: {os.getenv('RAILWAY_ENVIRONMENT', 'local')}")
     logger.info(f"🌐 Port: {os.getenv('PORT', '8000')}")
 
