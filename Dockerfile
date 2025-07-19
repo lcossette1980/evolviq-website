@@ -16,6 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy API files
 COPY main.py .
 COPY regression/ ./regression/
+COPY ml_frameworks/ ./ml_frameworks/
 COPY start.sh .
 
 # Make start script executable
