@@ -14,8 +14,9 @@ from dataclasses import dataclass, asdict
 # Machine Learning
 from sklearn.cluster import (
     KMeans, DBSCAN, AgglomerativeClustering, SpectralClustering,
-    MeanShift, Birch, MiniBatchKMeans, GaussianMixture
+    MeanShift, Birch, MiniBatchKMeans
 )
+from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
