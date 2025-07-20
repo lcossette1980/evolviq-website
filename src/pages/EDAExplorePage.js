@@ -316,6 +316,15 @@ const EDAExplorePage = () => {
           ...prev,
           [stepId]: processedResult
         }));
+        
+        // Auto-advance to next step after successful analysis (except for last step)
+        const currentStepIndex = edaSteps.findIndex(step => step.id === stepId);
+        if (currentStepIndex >= 0 && currentStepIndex < edaSteps.length - 1) {
+          setTimeout(() => {
+            console.log(`Auto-advancing from step ${stepId} to next step`);
+            // Don't auto-advance, let user decide when to move forward
+          }, 1000);
+        }
       } else {
         const error = await response.json();
         alert(`Analysis failed: ${error.detail}`);
@@ -328,22 +337,36 @@ const EDAExplorePage = () => {
     }
   };
 
-  const QualityMetrics = ({ results }) => (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-      <div className="bg-pearl/20 p-4 rounded-lg border border-khaki/30">
-        <div className="text-sm font-medium text-charcoal/70">Overall Score</div>
-        <div className="text-2xl font-bold text-chestnut">{results?.score || 0}/100</div>
+  const QualityMetrics = ({ results }) => {
+    console.log('QualityMetrics results:', results);
+    
+    // Handle the nested structure from API response
+    const overallScore = results?.overall_score || 0;
+    const completenessScore = results?.completeness?.score || 0;
+    const uniquenessScore = results?.uniqueness?.score || 0;
+    const validityScore = results?.validity?.score || 0;
+    
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+        <div className="bg-pearl/20 p-4 rounded-lg border border-khaki/30">
+          <div className="text-sm font-medium text-charcoal/70">Overall Score</div>
+          <div className="text-2xl font-bold text-chestnut">{overallScore.toFixed(1)}/100</div>
+        </div>
+        <div className="bg-pearl/20 p-4 rounded-lg border border-khaki/30">
+          <div className="text-sm font-medium text-charcoal/70">Completeness</div>
+          <div className="text-2xl font-bold text-charcoal">{completenessScore.toFixed(1)}%</div>
+        </div>
+        <div className="bg-pearl/20 p-4 rounded-lg border border-khaki/30">
+          <div className="text-sm font-medium text-charcoal/70">Uniqueness</div>
+          <div className="text-2xl font-bold text-charcoal">{uniquenessScore.toFixed(1)}%</div>
+        </div>
+        <div className="bg-pearl/20 p-4 rounded-lg border border-khaki/30">
+          <div className="text-sm font-medium text-charcoal/70">Validity</div>
+          <div className="text-2xl font-bold text-charcoal">{validityScore.toFixed(1)}%</div>
+        </div>
       </div>
-      <div className="bg-pearl/20 p-4 rounded-lg border border-khaki/30">
-        <div className="text-sm font-medium text-charcoal/70">Completeness</div>
-        <div className="text-2xl font-bold text-charcoal">{results?.completeness || 0}%</div>
-      </div>
-      <div className="bg-pearl/20 p-4 rounded-lg border border-khaki/30">
-        <div className="text-sm font-medium text-charcoal/70">Validity</div>
-        <div className="text-2xl font-bold text-charcoal">{results?.validity || 0}%</div>
-      </div>
-    </div>
-  );
+    );
+  };
 
   const CorrelationMatrix = ({ data }) => {
     // Ensure data is an array
@@ -457,11 +480,26 @@ const EDAExplorePage = () => {
                 Analysis Steps
               </h2>
               
+              {/* Progress Bar */}
+              <div className="mb-6">
+                <div className="flex justify-between text-xs text-charcoal/70 mb-1">
+                  <span>Progress</span>
+                  <span>{Object.keys(analysisResults).length} / {edaSteps.length}</span>
+                </div>
+                <div className="w-full bg-pearl h-2 rounded-full">
+                  <div 
+                    className="bg-chestnut h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${(Object.keys(analysisResults).length / edaSteps.length) * 100}%` }}
+                  />
+                </div>
+              </div>
+              
               <div className="space-y-2">
                 {edaSteps.map((step, index) => {
                   const Icon = step.icon;
                   const isActive = activeStep === index;
                   const isComplete = analysisResults[step.id];
+                  const isPrevious = index < activeStep;
                   
                   return (
                     <button
@@ -470,13 +508,23 @@ const EDAExplorePage = () => {
                       className={`w-full p-3 rounded-lg text-left transition-all ${
                         isActive 
                           ? 'bg-chestnut text-white' 
-                          : 'bg-bone text-charcoal hover:bg-pearl/20'
+                          : isComplete 
+                            ? 'bg-green-50 text-charcoal hover:bg-green-100 border border-green-200'
+                            : isPrevious 
+                              ? 'bg-pearl/50 text-charcoal hover:bg-pearl/70'
+                              : 'bg-bone text-charcoal hover:bg-pearl/20'
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <Icon size={20} />
                         <div className="flex-1">
                           <div className="font-medium text-sm">{step.title}</div>
+                          {isComplete && (
+                            <div className="text-xs opacity-70 mt-1">✓ Completed</div>
+                          )}
+                          {isActive && !isComplete && (
+                            <div className="text-xs opacity-70 mt-1">→ Active</div>
+                          )}
                         </div>
                         {isComplete && (
                           <CheckCircle size={16} className="text-green-600" />
@@ -534,18 +582,31 @@ const EDAExplorePage = () => {
                 <div className="bg-white rounded-lg shadow-sm border p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-semibold text-charcoal">Analysis Controls</h3>
-                    <button
-                      onClick={() => runAnalysis(edaSteps[activeStep].id)}
-                      disabled={isAnalyzing || !dataset}
-                      className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
-                        (isAnalyzing || !dataset) 
-                          ? 'bg-khaki/50 text-charcoal/50 cursor-not-allowed' 
-                          : 'bg-chestnut text-white hover:bg-chestnut/90'
-                      }`}
-                    >
-                      <Play size={16} />
-                      {isAnalyzing ? 'Analyzing...' : 'Run Analysis'}
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => runAnalysis(edaSteps[activeStep].id)}
+                        disabled={isAnalyzing || !dataset}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                          (isAnalyzing || !dataset) 
+                            ? 'bg-khaki/50 text-charcoal/50 cursor-not-allowed' 
+                            : 'bg-chestnut text-white hover:bg-chestnut/90'
+                        }`}
+                      >
+                        <Play size={16} />
+                        {isAnalyzing ? 'Analyzing...' : 'Run Analysis'}
+                      </button>
+                      
+                      {/* Next Step button - only show if current step is complete and not last step */}
+                      {analysisResults[edaSteps[activeStep].id] && activeStep < edaSteps.length - 1 && (
+                        <button
+                          onClick={() => setActiveStep(activeStep + 1)}
+                          className="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 bg-pearl text-charcoal hover:bg-pearl/80 border border-khaki"
+                        >
+                          <ChevronRight size={16} />
+                          Next Step
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* File Upload */}
