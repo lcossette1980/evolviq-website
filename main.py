@@ -597,9 +597,13 @@ async def perform_univariate_analysis(session_id: str = Query(...)):
         
         return result
         
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Univariate analysis failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        error_details = f"Univariate analysis failed: {str(e) or 'Unknown error'}\nTraceback: {traceback.format_exc()}"
+        logger.error(error_details)
+        raise HTTPException(status_code=500, detail=str(e) or f"Unknown error: {type(e).__name__}")
 
 
 @app.post("/api/eda/bivariate-analysis")
@@ -616,9 +620,13 @@ async def perform_bivariate_analysis(session_id: str = Query(...)):
         
         return result
         
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Bivariate analysis failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        error_details = f"Bivariate analysis failed: {str(e) or 'Unknown error'}\nTraceback: {traceback.format_exc()}"
+        logger.error(error_details)
+        raise HTTPException(status_code=500, detail=str(e) or f"Unknown error: {type(e).__name__}")
 
 
 @app.post("/api/eda/clean-data")
