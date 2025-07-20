@@ -18,32 +18,27 @@ const API_CONFIG = {
     // Classification Tool endpoints
     CLASSIFICATION: {
       UPLOAD: '/upload',
-      VALIDATE: '/api/classification/validate',
+      VALIDATE: '/api/classification/validate-data',
       PREPROCESS: '/api/classification/preprocess',
       TRAIN: '/api/classification/train',
-      PREDICT: '/api/classification/predict',
-      EVALUATE: '/api/classification/evaluate',
       RESULTS: '/api/classification/results'
     },
     
     // Clustering Tool endpoints
     CLUSTERING: {
       UPLOAD: '/upload',
-      VALIDATE: '/api/clustering/validate',
+      VALIDATE: '/api/clustering/validate-data',
       PREPROCESS: '/api/clustering/preprocess',
-      CLUSTER: '/api/clustering/cluster',
-      OPTIMIZE: '/api/clustering/optimize',
-      VISUALIZE: '/api/clustering/visualize',
+      FIND_OPTIMAL: '/api/clustering/find-optimal-clusters',
+      PERFORM_CLUSTERING: '/api/clustering/perform-clustering',
       INSIGHTS: '/api/clustering/insights'
     },
     
     // NLP Tool endpoints
     NLP: {
       UPLOAD: '/upload',
-      VALIDATE: '/api/nlp/validate',
-      ANALYZE: '/api/nlp/analyze',
-      SENTIMENT: '/api/nlp/sentiment',
-      EXTRACT: '/api/nlp/extract'
+      VALIDATE: '/api/nlp/validate-data',
+      ANALYZE: '/api/nlp/analyze'
     },
     
     // Assessment endpoints

@@ -260,11 +260,11 @@ const EDAExplorePage = () => {
           const mockResults = {
             setup: { status: 'complete', libraries: 15, seed: 42 },
             inspection: { 
-              rows: validationResults?.summary?.shape?.[0] || 53940, 
-              columns: validationResults?.summary?.shape?.[1] || 10, 
-              memory: '4.2 MB',
-              missing: 0,
-              duplicates: 146
+              rows: validationResults?.summary?.shape?.[0] || 0, 
+              columns: validationResults?.summary?.shape?.[1] || 0, 
+              memory: validationResults?.summary?.memory_usage || 'Unknown',
+              missing: Object.values(validationResults?.summary?.missing_values || {}).reduce((a, b) => a + b, 0),
+              duplicates: 0  // This should come from backend quality assessment
             }
           };
           
@@ -346,7 +346,7 @@ const EDAExplorePage = () => {
       // If univariate analysis fails, use fallback data
       if (stepId === 'univariate') {
         console.log('Using fallback data for univariate analysis');
-        const fallbackData = sampleData; // Use the sample data defined at the top
+        const fallbackData = generateFallbackData(validationResults?.summary?.columns);
         setAnalysisResults(prev => ({
           ...prev,
           [stepId]: fallbackData
@@ -360,7 +360,7 @@ const EDAExplorePage = () => {
       // If bivariate analysis fails, use fallback data
       if (stepId === 'bivariate') {
         console.log('Using fallback data for bivariate analysis');
-        const fallbackData = correlationData; // Use the correlation data defined at the top
+        const fallbackData = generateFallbackCorrelations(validationResults?.summary?.columns);
         setAnalysisResults(prev => ({
           ...prev,
           [stepId]: fallbackData
@@ -1304,18 +1304,24 @@ const EDAExplorePage = () => {
                           <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
                             <CheckCircle size={16} className="text-green-600 mt-0.5" />
                             <div>
-                              <div className="font-medium text-green-800">Excellent Data Quality</div>
+                              <div className="font-medium text-green-800">
+                                {analysisResults.quality?.overall_score >= 90 ? 'Excellent' : 
+                                 analysisResults.quality?.overall_score >= 70 ? 'Good' : 'Fair'} Data Quality
+                              </div>
                               <div className="text-sm text-green-700">
-                                Overall quality score of 95/100 indicates dataset is well-prepared for analysis
+                                Overall quality score of {analysisResults.quality?.overall_score || 'N/A'}/100
                               </div>
                             </div>
                           </div>
                           <div className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                             <AlertCircle size={16} className="text-yellow-600 mt-0.5" />
                             <div>
-                              <div className="font-medium text-yellow-800">Minor Duplicates Detected</div>
+                              <div className="font-medium text-yellow-800">
+                                {analysisResults.quality?.duplicates > 0 ? 'Duplicates Detected' : 'No Duplicates Found'}
+                              </div>
                               <div className="text-sm text-yellow-700">
-                                146 duplicate rows found - recommend removal before modeling
+                                {analysisResults.quality?.duplicates || 0} duplicate rows found
+                                {analysisResults.quality?.duplicates > 0 ? ' - recommend removal before modeling' : ''}
                               </div>
                             </div>
                           </div>
@@ -1327,18 +1333,22 @@ const EDAExplorePage = () => {
                           <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                             <Info size={16} className="text-blue-600 mt-0.5" />
                             <div>
-                              <div className="font-medium text-blue-800">Skewness Patterns</div>
+                              <div className="font-medium text-blue-800">Distribution Analysis</div>
                               <div className="text-sm text-blue-700">
-                                Price and carat show moderate positive skewness - consider log transformation
+                                {Array.isArray(analysisResults.univariate) && analysisResults.univariate.length > 0 ? 
+                                  `${analysisResults.univariate.filter(f => f.skewness > 1).length} features show high skewness` :
+                                  'Feature distributions analyzed'}
                               </div>
                             </div>
                           </div>
                           <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
                             <CheckCircle size={16} className="text-green-600 mt-0.5" />
                             <div>
-                              <div className="font-medium text-green-800">Well-Distributed Features</div>
+                              <div className="font-medium text-green-800">Feature Quality</div>
                               <div className="text-sm text-green-700">
-                                Most physical measurements (depth, table) show normal distributions
+                                {Array.isArray(analysisResults.univariate) && analysisResults.univariate.length > 0 ? 
+                                  `${analysisResults.univariate.filter(f => f.skewness < 0.5).length} features show normal-like distributions` :
+                                  'Feature statistics calculated'}
                               </div>
                             </div>
                           </div>
@@ -1350,9 +1360,11 @@ const EDAExplorePage = () => {
                           <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
                             <TrendingUp size={16} className="text-green-600 mt-0.5" />
                             <div>
-                              <div className="font-medium text-green-800">Strong Predictive Features</div>
+                              <div className="font-medium text-green-800">Correlation Analysis</div>
                               <div className="text-sm text-green-700">
-                                Carat (0.92), x (0.88), y (0.87), z (0.86) show strong correlations with price
+                                {analysisResults.bivariate?.strongCorrelations?.length > 0 ? 
+                                  `${analysisResults.bivariate.strongCorrelations.length} strong correlations detected` :
+                                  'Correlation patterns analyzed'}
                               </div>
                             </div>
                           </div>
