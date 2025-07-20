@@ -920,7 +920,7 @@ const ClusteringExplorePage = () => {
                     )}
 
                     {/* Optimization Results */}
-                    {clusteringSteps[activeStep].id === 'optimization' && (
+                    {clusteringSteps[activeStep].id === 'optimization' && Array.isArray(analysisResults[clusteringSteps[activeStep].id]) && (
                       <OptimizationCharts data={analysisResults[clusteringSteps[activeStep].id]} />
                     )}
 
