@@ -14,6 +14,14 @@ const EDAExplorePage = () => {
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [validationResults, setValidationResults] = useState(null);
+  const [availableColumns, setAvailableColumns] = useState([]);
+  const [cleaningOptions, setCleaningOptions] = useState({
+    handleMissing: 'median', // median, mean, mode, drop
+    removeOutliers: false,
+    outlierMethod: 'iqr', // iqr, zscore
+    removeDuplicates: true,
+    columnsToClean: []
+  });
 
   // Sample data for demonstration
   const sampleData = [
@@ -192,6 +200,19 @@ const EDAExplorePage = () => {
         setValidationResults(result);
         setDataset(file.name);
         
+        // Store available columns for cleaning options
+        if (result.summary && result.summary.columns) {
+          setAvailableColumns(result.summary.columns);
+          setCleaningOptions(prev => ({
+            ...prev,
+            columnsToClean: result.summary.columns.filter(col => 
+              // Auto-select numeric columns for cleaning
+              result.summary.dtypes && 
+              (result.summary.dtypes[col] === 'float64' || result.summary.dtypes[col] === 'int64')
+            )
+          }));
+        }
+        
         // Auto-advance to next step after successful upload
         if (result.validation && result.validation.is_valid) {
           setActiveStep(1);
@@ -270,11 +291,21 @@ const EDAExplorePage = () => {
       }
       
       const apiUrl = 'https://evolviq-website-production.up.railway.app';
+      
+      // For cleaning step, include cleaning options in request body
+      let requestBody = null;
+      if (stepId === 'cleaning') {
+        requestBody = JSON.stringify({
+          cleaning_options: cleaningOptions
+        });
+      }
+      
       const response = await fetch(`${apiUrl}${endpoint}?session_id=${sessionId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        }
+        },
+        body: requestBody
       });
       
       if (response.ok) {
@@ -392,6 +423,131 @@ const EDAExplorePage = () => {
     </div>
     );
   };
+
+  const CleaningOptionsPanel = () => (
+    <div className="space-y-4">
+      <h4 className="font-semibold text-charcoal">Data Cleaning Configuration</h4>
+      
+      {/* Missing Values Handling */}
+      <div className="p-4 rounded-lg border border-khaki bg-bone">
+        <h5 className="font-medium mb-3 text-charcoal">Missing Values</h5>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { value: 'median', label: 'Fill with Median' },
+            { value: 'mean', label: 'Fill with Mean' },
+            { value: 'mode', label: 'Fill with Mode' },
+            { value: 'drop', label: 'Drop Rows' }
+          ].map(option => (
+            <label key={option.value} className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="handleMissing"
+                value={option.value}
+                checked={cleaningOptions.handleMissing === option.value}
+                onChange={(e) => setCleaningOptions(prev => ({ ...prev, handleMissing: e.target.value }))}
+                className="accent-chestnut"
+              />
+              {option.label}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Outlier Handling */}
+      <div className="p-4 rounded-lg border border-khaki bg-bone">
+        <h5 className="font-medium mb-3 text-charcoal">Outlier Handling</h5>
+        <div className="space-y-3">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={cleaningOptions.removeOutliers}
+              onChange={(e) => setCleaningOptions(prev => ({ ...prev, removeOutliers: e.target.checked }))}
+              className="accent-chestnut"
+            />
+            Remove outliers from numeric columns
+          </label>
+          
+          {cleaningOptions.removeOutliers && (
+            <div className="ml-6 space-y-2">
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="outlierMethod"
+                    value="iqr"
+                    checked={cleaningOptions.outlierMethod === 'iqr'}
+                    onChange={(e) => setCleaningOptions(prev => ({ ...prev, outlierMethod: e.target.value }))}
+                    className="accent-chestnut"
+                  />
+                  IQR Method
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="outlierMethod"
+                    value="zscore"
+                    checked={cleaningOptions.outlierMethod === 'zscore'}
+                    onChange={(e) => setCleaningOptions(prev => ({ ...prev, outlierMethod: e.target.value }))}
+                    className="accent-chestnut"
+                  />
+                  Z-Score Method
+                </label>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Column Selection */}
+      <div className="p-4 rounded-lg border border-khaki bg-bone">
+        <h5 className="font-medium mb-3 text-charcoal">Columns to Clean ({cleaningOptions.columnsToClean.length} selected)</h5>
+        <div className="max-h-32 overflow-y-auto space-y-1">
+          {availableColumns.map(column => (
+            <label key={column} className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={cleaningOptions.columnsToClean.includes(column)}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setCleaningOptions(prev => ({ 
+                      ...prev, 
+                      columnsToClean: [...prev.columnsToClean, column] 
+                    }));
+                  } else {
+                    setCleaningOptions(prev => ({ 
+                      ...prev, 
+                      columnsToClean: prev.columnsToClean.filter(col => col !== column) 
+                    }));
+                  }
+                }}
+                className="accent-chestnut"
+              />
+              <span className="font-mono text-xs">{column}</span>
+              {validationResults?.summary?.dtypes?.[column] && (
+                <span className="text-xs text-charcoal/60">
+                  ({validationResults.summary.dtypes[column]})
+                </span>
+              )}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Other Options */}
+      <div className="p-4 rounded-lg border border-khaki bg-bone">
+        <h5 className="font-medium mb-3 text-charcoal">Other Options</h5>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={cleaningOptions.removeDuplicates}
+            onChange={(e) => setCleaningOptions(prev => ({ ...prev, removeDuplicates: e.target.checked }))}
+            className="accent-chestnut"
+          />
+          Remove duplicate rows
+        </label>
+      </div>
+    </div>
+  );
 
   const FeatureStatsTable = ({ data }) => {
     // Ensure data is an array
@@ -577,6 +733,13 @@ const EDAExplorePage = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Data Cleaning Configuration - only show for cleaning step */}
+                {edaSteps[activeStep].id === 'cleaning' && (
+                  <div className="bg-white rounded-lg shadow-sm border p-6">
+                    <CleaningOptionsPanel />
+                  </div>
+                )}
 
                 {/* Analysis Controls */}
                 <div className="bg-white rounded-lg shadow-sm border p-6">
