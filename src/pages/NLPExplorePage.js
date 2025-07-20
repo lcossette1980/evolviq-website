@@ -310,9 +310,7 @@ const NLPExplorePage = () => {
         setValidationResults(result);
         setDataset(file.name);
         
-        if (result.validation && result.validation.is_valid) {
-          setActiveStep(1);
-        }
+        // Don't auto-advance - let user control navigation
       } else {
         const errorText = await response.text();
         console.error('Upload failed:', response.status, errorText);
