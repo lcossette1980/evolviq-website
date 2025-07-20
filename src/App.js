@@ -18,7 +18,7 @@ import AccountSettings from './pages/AccountSettings';
 import AdminDashboard from './pages/AdminDashboard';
 import LinearRegressionPage from './pages/LinearRegressionPage';
 import EDAExplorePage from './pages/EDAExplorePageNew';
-import ClassificationExplorePage from './pages/ClassificationExplorePage';
+import ClassificationExplorePage from './pages/ClassificationExplorePageNew';
 import ClusteringExplorePage from './pages/ClusteringExplorePage';
 import NLPExplorePage from './pages/NLPExplorePage';
 import PrivacyPolicy from './pages/PrivacyPolicy';
