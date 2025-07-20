@@ -9,10 +9,10 @@ const API_CONFIG = {
     EDA: {
       UPLOAD: '/upload',
       VALIDATE: '/api/eda/validate-data',
-      UNIVARIATE_ANALYSIS: '/eda/univariate-analysis',
-      BIVARIATE_ANALYSIS: '/eda/bivariate-analysis',
-      QUALITY_ASSESSMENT: '/eda/quality-assessment',
-      DATA_CLEANING: '/eda/data-cleaning'
+      UNIVARIATE_ANALYSIS: '/api/eda/univariate-analysis',
+      BIVARIATE_ANALYSIS: '/api/eda/bivariate-analysis',
+      QUALITY_ASSESSMENT: '/api/eda/quality-assessment',
+      DATA_CLEANING: '/api/eda/clean-data'
     },
     
     // Classification Tool endpoints
