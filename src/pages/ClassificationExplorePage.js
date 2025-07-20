@@ -247,7 +247,7 @@ const ClassificationExplorePage = () => {
       }
       
       if (stepId === 'preprocessing') {
-        const response = await fetch(`${buildUrl('/api/classification/preprocess')}?session_id=${sessionId}`, 
+        const response = await fetch(`${buildUrl(API_CONFIG.ENDPOINTS.CLASSIFICATION.PREPROCESS)}?session_id=${sessionId}`, 
           createRequestConfig('POST', {
             target_column: targetColumn
           })

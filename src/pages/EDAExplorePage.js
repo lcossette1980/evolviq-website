@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Upload, Play, BookOpen, BarChart3, Settings, Download, ChevronRight, ChevronDown, AlertCircle, CheckCircle, Info, TrendingUp, Database, Zap } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, ScatterChart, Scatter, PieChart, Pie, Cell } from 'recharts';
 import { useAuth } from '../contexts/AuthContext';
@@ -6,7 +7,9 @@ import API_CONFIG, { buildUrl, createRequestConfig } from '../config/apiConfig';
 
 const EDAExplorePage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState(0);
+  const [isCompleted, setIsCompleted] = useState(false);
   const [expandedSections, setExpandedSections] = useState({});
   const [dataset, setDataset] = useState(null);
   const [analysisResults, setAnalysisResults] = useState({});
@@ -1046,7 +1049,10 @@ const EDAExplorePage = () => {
                   return (
                     <button
                       key={step.id}
-                      onClick={() => setActiveStep(index)}
+                      onClick={() => {
+                        setActiveStep(index);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
                       className={`w-full p-3 rounded-lg text-left transition-all ${
                         isActive 
                           ? 'bg-chestnut text-white' 
@@ -1148,11 +1154,26 @@ const EDAExplorePage = () => {
                       {/* Next Step button - only show if current step is complete and not last step */}
                       {analysisResults[edaSteps[activeStep].id] && activeStep < edaSteps.length - 1 && (
                         <button
-                          onClick={() => setActiveStep(activeStep + 1)}
+                          onClick={() => {
+                            setActiveStep(activeStep + 1);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
                           className="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 bg-pearl text-charcoal hover:bg-pearl/80 border border-khaki"
                         >
                           <ChevronRight size={16} />
                           Next Step
+                        </button>
+                      )}
+                      {analysisResults[edaSteps[activeStep].id] && activeStep === edaSteps.length - 1 && (
+                        <button
+                          onClick={() => {
+                            setIsCompleted(true);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          className="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 bg-green-600 text-white hover:bg-green-700"
+                        >
+                          <CheckCircle size={16} />
+                          Complete Analysis
                         </button>
                       )}
                     </div>
@@ -1236,6 +1257,36 @@ const EDAExplorePage = () => {
                     {edaSteps[activeStep].id === 'bivariate' && analysisResults.bivariate && (
                       <BivariateAnalysisSection data={analysisResults.bivariate} validationResults={validationResults} />
                     )}
+                  </div>
+                )}
+
+                {/* Completion State */}
+                {isCompleted && (
+                  <div className="bg-green-50 rounded-lg shadow-sm border border-green-200 p-8 text-center">
+                    <CheckCircle size={48} className="text-green-600 mx-auto mb-4" />
+                    <h3 className="text-2xl font-bold text-charcoal mb-2">Analysis Complete!</h3>
+                    <p className="text-charcoal/70 mb-6 max-w-2xl mx-auto">
+                      Your exploratory data analysis has been completed successfully. 
+                      You've gained valuable insights into your dataset's structure, quality, and relationships.
+                    </p>
+                    <div className="flex gap-4 justify-center">
+                      <button
+                        onClick={() => navigate('/dashboard')}
+                        className="px-6 py-3 bg-chestnut text-white rounded-lg hover:bg-chestnut/90 transition-all"
+                      >
+                        Return to Dashboard
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsCompleted(false);
+                          setActiveStep(0);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="px-6 py-3 bg-pearl text-charcoal rounded-lg hover:bg-pearl/90 border border-khaki transition-all"
+                      >
+                        Start New Analysis
+                      </button>
+                    </div>
                   </div>
                 )}
 
