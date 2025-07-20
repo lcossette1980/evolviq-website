@@ -19,7 +19,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import LinearRegressionPage from './pages/LinearRegressionPage';
 import EDAExplorePage from './pages/EDAExplorePageNew';
 import ClassificationExplorePage from './pages/ClassificationExplorePageNew';
-import ClusteringExplorePage from './pages/ClusteringExplorePage';
+import ClusteringExplorePage from './pages/ClusteringExplorePageNew';
 import NLPExplorePage from './pages/NLPExplorePage';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
