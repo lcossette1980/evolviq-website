@@ -20,7 +20,7 @@ import LinearRegressionPage from './pages/LinearRegressionPage';
 import EDAExplorePage from './pages/EDAExplorePageNew';
 import ClassificationExplorePage from './pages/ClassificationExplorePageNew';
 import ClusteringExplorePage from './pages/ClusteringExplorePageNew';
-import NLPExplorePage from './pages/NLPExplorePage';
+import NLPExplorePage from './pages/NLPExplorePageNew';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import CookiePolicy from './pages/CookiePolicy';
