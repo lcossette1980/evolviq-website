@@ -317,18 +317,12 @@ const EDAExplorePage = () => {
             missing: 0
           }));
         } else if (stepId === 'bivariate' && result.success && result.correlation_analysis) {
-          // Convert correlation analysis to expected format
-          const correlations = result.correlation_analysis.strong_correlations || [];
-          processedResult = correlations.map(corr => ({
-            x: corr.feature1,
-            y: corr.feature2,
-            correlation: corr.correlation
-          }));
-          
-          // If no strong correlations, use mock data for now
-          if (processedResult.length === 0) {
-            processedResult = correlationData;
-          }
+          // Store the full correlation analysis result for proper visualization
+          processedResult = {
+            correlationMatrix: result.correlation_analysis.pearson_correlation || {},
+            strongCorrelations: result.correlation_analysis.strong_correlations || [],
+            multicollinearity: result.correlation_analysis.multicollinearity_detected || false
+          };
         } else if (stepId === 'quality' && result.success && result.assessment) {
           processedResult = result.assessment;
         }
@@ -338,14 +332,7 @@ const EDAExplorePage = () => {
           [stepId]: processedResult
         }));
         
-        // Auto-advance to next step after successful analysis (except for last step)
-        const currentStepIndex = edaSteps.findIndex(step => step.id === stepId);
-        if (currentStepIndex >= 0 && currentStepIndex < edaSteps.length - 1) {
-          setTimeout(() => {
-            console.log(`Auto-advancing from step ${stepId} to next step`);
-            // Don't auto-advance, let user decide when to move forward
-          }, 1000);
-        }
+        // Don't auto-advance - let user control navigation
       } else {
         const error = await response.json();
         alert(`Analysis failed: ${error.detail}`);
@@ -569,198 +556,177 @@ const EDAExplorePage = () => {
   );
 
   const BivariateAnalysisSection = ({ data, validationResults }) => {
-    const [chartType, setChartType] = useState('correlation');
-    const [xFeature, setXFeature] = useState(0);
-    const [yFeature, setYFeature] = useState(1);
+    console.log('BivariateAnalysisSection received data:', data);
+    
+    // Extract real correlation data from the backend response
+    const correlationMatrix = data?.correlationMatrix || {};
+    const strongCorrelations = data?.strongCorrelations || [];
+    const multicollinearity = data?.multicollinearity || false;
     
     // Get available features from validation results
-    const features = validationResults?.summary?.columns || ['carat', 'depth', 'table', 'price', 'x', 'y', 'z'];
+    const features = validationResults?.summary?.columns || Object.keys(correlationMatrix);
     const numericFeatures = features.filter(col => 
       validationResults?.summary?.dtypes?.[col]?.includes('float') || 
       validationResults?.summary?.dtypes?.[col]?.includes('int') ||
-      ['carat', 'depth', 'table', 'price', 'x', 'y', 'z'].includes(col)
+      correlationMatrix[col] // If it has correlation data, it's numeric
     );
     
-    // Ensure data is an array
-    const correlationData = Array.isArray(data) ? data : [];
-    
-    // Generate scatter plot data
-    const generateScatterData = (xCol, yCol) => {
-      const points = [];
-      for (let i = 0; i < 100; i++) {
-        // Generate correlated data points
-        const correlation = correlationData.find(d => 
-          (d.x === xCol && d.y === yCol) || (d.x === yCol && d.y === xCol)
-        )?.correlation || 0.3;
-        
-        const x = Math.random() * 100;
-        const y = x * correlation + Math.random() * (100 - Math.abs(correlation * 100));
-        
-        points.push({ x: x.toFixed(2), y: y.toFixed(2), name: `Point ${i+1}` });
-      }
-      return points;
+    // Create heatmap data from the correlation matrix
+    const createHeatmapData = () => {
+      const heatmapData = [];
+      numericFeatures.forEach(feature1 => {
+        numericFeatures.forEach(feature2 => {
+          const correlation = correlationMatrix[feature1]?.[feature2] || 0;
+          heatmapData.push({
+            x: feature1,
+            y: feature2,
+            correlation: correlation,
+            absCorrelation: Math.abs(correlation)
+          });
+        });
+      });
+      return heatmapData;
     };
     
-    const scatterData = generateScatterData(numericFeatures[xFeature], numericFeatures[yFeature]);
+    const heatmapData = createHeatmapData();
+    
+    // Get correlation strength color
+    const getCorrelationColor = (correlation) => {
+      const abs = Math.abs(correlation);
+      if (correlation > 0) {
+        return `rgba(164, 74, 63, ${abs})` // Red for positive
+      } else {
+        return `rgba(59, 130, 246, ${abs})` // Blue for negative
+      }
+    };
     
     return (
       <div className="space-y-6">
-        {/* Chart Type and Feature Selectors */}
-        <div className="flex flex-wrap gap-4 items-center">
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-charcoal">Chart Type:</label>
-            <select 
-              value={chartType} 
-              onChange={(e) => setChartType(e.target.value)}
-              className="px-3 py-1 border border-pearl rounded text-sm bg-bone"
-            >
-              <option value="correlation">Correlation Matrix</option>
-              <option value="scatter">Scatter Plot</option>
-              <option value="heatmap">Correlation Heatmap</option>
-            </select>
+        {/* Correlation Heatmap */}
+        <div className="bg-white p-4 rounded-lg border">
+          <h4 className="font-semibold mb-4 text-charcoal">Correlation Heatmap</h4>
+          
+          <div className="overflow-x-auto">
+            <div className="inline-block min-w-full">
+              <div className="grid gap-1" style={{ gridTemplateColumns: `80px repeat(${numericFeatures.length}, 80px)` }}>
+                {/* Header row */}
+                <div></div>
+                {numericFeatures.map(feature => (
+                  <div key={feature} className="text-xs font-medium text-center p-2 transform -rotate-45 origin-bottom-left">
+                    {feature}
+                  </div>
+                ))}
+                
+                {/* Data rows */}
+                {numericFeatures.map(feature1 => (
+                  <React.Fragment key={feature1}>
+                    <div className="text-xs font-medium p-2 text-right">{feature1}</div>
+                    {numericFeatures.map(feature2 => {
+                      const correlation = correlationMatrix[feature1]?.[feature2] || 0;
+                      return (
+                        <div 
+                          key={`${feature1}-${feature2}`}
+                          className="h-16 w-16 flex items-center justify-center text-xs font-bold text-white rounded"
+                          style={{ backgroundColor: getCorrelationColor(correlation) }}
+                          title={`${feature1} × ${feature2}: ${correlation.toFixed(3)}`}
+                        >
+                          {correlation.toFixed(2)}
+                        </div>
+                      );
+                    })}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
           </div>
           
-          {chartType === 'scatter' && (
-            <>
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-charcoal">X-Axis:</label>
-                <select 
-                  value={xFeature} 
-                  onChange={(e) => setXFeature(parseInt(e.target.value))}
-                  className="px-3 py-1 border border-pearl rounded text-sm bg-bone"
-                >
-                  {numericFeatures.map((feature, idx) => (
-                    <option key={idx} value={idx}>{feature}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-charcoal">Y-Axis:</label>
-                <select 
-                  value={yFeature} 
-                  onChange={(e) => setYFeature(parseInt(e.target.value))}
-                  className="px-3 py-1 border border-pearl rounded text-sm bg-bone"
-                >
-                  {numericFeatures.map((feature, idx) => (
-                    <option key={idx} value={idx}>{feature}</option>
-                  ))}
-                </select>
-              </div>
-            </>
-          )}
+          {/* Legend */}
+          <div className="mt-4 flex items-center justify-center space-x-4 text-sm">
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 bg-red-600 rounded"></div>
+              <span>Strong Positive</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 bg-red-300 rounded"></div>
+              <span>Weak Positive</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 bg-gray-200 rounded"></div>
+              <span>No Correlation</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 bg-blue-300 rounded"></div>
+              <span>Weak Negative</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 bg-blue-600 rounded"></div>
+              <span>Strong Negative</span>
+            </div>
+          </div>
         </div>
         
-        {/* Visualization Area */}
-        <div className="bg-white p-4 rounded-lg border">
-          <h4 className="font-semibold mb-4 text-charcoal">
-            {chartType === 'correlation' ? 'Feature Correlations' :
-             chartType === 'scatter' ? `${numericFeatures[xFeature]} vs ${numericFeatures[yFeature]}` :
-             'Correlation Heatmap'}
-          </h4>
-          
-          {chartType === 'correlation' && (
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={correlationData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#A59E8C" />
-                <XAxis 
-                  dataKey="x" 
-                  tick={{ fill: '#2A2A2A', fontSize: 11 }}
-                  angle={-45}
-                  textAnchor="end"
-                  height={80}
-                />
-                <YAxis tick={{ fill: '#2A2A2A', fontSize: 12 }} />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#F5F2EA', 
-                    border: '1px solid #A59E8C',
-                    borderRadius: '8px'
-                  }}
-                  formatter={(value, name) => [value.toFixed(3), 'Correlation']}
-                />
-                <Bar 
-                  dataKey="correlation" 
-                  fill={(entry) => entry > 0 ? "#A44A3F" : "#5A7A8A"}
-                  radius={[2, 2, 0, 0]} 
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-          
-          {chartType === 'scatter' && (
-            <ResponsiveContainer width="100%" height={400}>
-              <ScatterChart data={scatterData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#A59E8C" />
-                <XAxis 
-                  dataKey="x" 
-                  tick={{ fill: '#2A2A2A', fontSize: 12 }}
-                  name={numericFeatures[xFeature]}
-                />
-                <YAxis 
-                  dataKey="y" 
-                  tick={{ fill: '#2A2A2A', fontSize: 12 }}
-                  name={numericFeatures[yFeature]}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#F5F2EA', 
-                    border: '1px solid #A59E8C',
-                    borderRadius: '8px'
-                  }}
-                  formatter={(value, name, props) => [value, name.charAt(0).toUpperCase() + name.slice(1)]}
-                />
-                <Scatter dataKey="y" fill="#A44A3F" />
-              </ScatterChart>
-            </ResponsiveContainer>
-          )}
-          
-          {chartType === 'heatmap' && (
-            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
-              {correlationData.map((corr, idx) => (
-                <div 
-                  key={idx}
-                  className="p-3 rounded text-center text-white text-sm font-medium"
-                  style={{ 
-                    backgroundColor: corr.correlation > 0 
-                      ? `rgba(164, 74, 63, ${Math.abs(corr.correlation)})` 
-                      : `rgba(90, 122, 138, ${Math.abs(corr.correlation)})`
-                  }}
-                >
-                  <div className="text-xs">{corr.x} × {corr.y}</div>
-                  <div className="font-bold">{corr.correlation.toFixed(2)}</div>
+        {/* Strong Correlations */}
+        {strongCorrelations.length > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h5 className="font-medium text-blue-900 mb-3">Strong Correlations Found</h5>
+            <div className="space-y-2">
+              {strongCorrelations.map((corr, idx) => (
+                <div key={idx} className="flex justify-between items-center">
+                  <span className="text-blue-700 font-medium">{corr.feature1} × {corr.feature2}</span>
+                  <div className="flex items-center space-x-2">
+                    <span className={`px-2 py-1 rounded text-xs font-bold text-white ${
+                      Math.abs(corr.correlation) > 0.8 ? 'bg-red-600' :
+                      Math.abs(corr.correlation) > 0.6 ? 'bg-orange-500' : 'bg-yellow-500'
+                    }`}>
+                      {corr.correlation.toFixed(3)}
+                    </span>
+                    <span className="text-blue-900 text-sm">
+                      {Math.abs(corr.correlation) > 0.8 ? 'Very Strong' :
+                       Math.abs(corr.correlation) > 0.6 ? 'Strong' : 'Moderate'}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
-          )}
-        </div>
-        
-        {/* Correlation Insights */}
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <h5 className="font-medium text-green-900 mb-2">Correlation Insights</h5>
-          <div className="space-y-2 text-sm">
-            {correlationData
-              .sort((a, b) => Math.abs(b.correlation) - Math.abs(a.correlation))
-              .slice(0, 3)
-              .map((corr, idx) => (
-                <div key={idx} className="flex justify-between">
-                  <span className="text-green-700">{corr.x} × {corr.y}:</span>
-                  <span className="font-medium text-green-900">
-                    {Math.abs(corr.correlation) > 0.7 ? 'Strong' :
-                     Math.abs(corr.correlation) > 0.3 ? 'Moderate' : 'Weak'} 
-                    {corr.correlation > 0 ? ' Positive' : ' Negative'} ({corr.correlation.toFixed(3)})
-                  </span>
-                </div>
-              ))}
           </div>
-        </div>
+        )}
         
-        {/* Full Correlation Table */}
-        <div className="bg-white rounded-lg border">
-          <div className="p-4 border-b bg-khaki/10">
-            <h4 className="font-semibold text-charcoal">Correlation Matrix</h4>
+        {/* Multicollinearity Warning */}
+        {multicollinearity && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <h5 className="font-medium text-yellow-900 mb-2">⚠️ Multicollinearity Detected</h5>
+            <p className="text-sm text-yellow-800">
+              Some features are highly correlated with each other. Consider removing or combining correlated features before modeling to avoid multicollinearity issues.
+            </p>
           </div>
-          <CorrelationMatrix data={correlationData} />
+        )}
+        
+        {/* Summary Statistics */}
+        <div className="bg-white rounded-lg border p-4">
+          <h5 className="font-medium text-charcoal mb-3">Correlation Summary</h5>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div className="p-3 bg-bone rounded">
+              <div className="text-lg font-bold text-chestnut">{strongCorrelations.length}</div>
+              <div className="text-xs text-charcoal/70">Strong Correlations</div>
+            </div>
+            <div className="p-3 bg-bone rounded">
+              <div className="text-lg font-bold text-chestnut">
+                {strongCorrelations.length > 0 ? 
+                  Math.max(...strongCorrelations.map(c => Math.abs(c.correlation))).toFixed(3) : 
+                  '0.000'
+                }
+              </div>
+              <div className="text-xs text-charcoal/70">Highest Correlation</div>
+            </div>
+            <div className="p-3 bg-bone rounded">
+              <div className="text-lg font-bold text-chestnut">{numericFeatures.length}</div>
+              <div className="text-xs text-charcoal/70">Numeric Features</div>
+            </div>
+            <div className="p-3 bg-bone rounded">
+              <div className="text-lg font-bold text-chestnut">{multicollinearity ? 'Yes' : 'No'}</div>
+              <div className="text-xs text-charcoal/70">Multicollinearity</div>
+            </div>
+          </div>
         </div>
       </div>
     );
