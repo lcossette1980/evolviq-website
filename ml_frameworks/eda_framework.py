@@ -162,7 +162,7 @@ class UnivariateAnalysis:
                 'type': distribution_type,
                 'skewness': float(skewness),
                 'kurtosis': float(kurtosis_val),
-                'transformation_needed': skewness > 1.0
+                'transformation_needed': bool(skewness > 1.0)
             }
             
             # Outlier detection using IQR method
@@ -207,7 +207,7 @@ class UnivariateAnalysis:
                 'unique_count': int(unique_count),
                 'total_count': int(total_count),
                 'cardinality_ratio': float(unique_count / total_count),
-                'high_cardinality': unique_count > 50
+                'high_cardinality': bool(unique_count > 50)
             }
             
             # Frequency analysis
