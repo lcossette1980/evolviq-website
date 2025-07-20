@@ -582,10 +582,6 @@ async def perform_quality_assessment(session_id: str = Query(...)):
         logger.error(f"Quality assessment failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.options("/api/eda/univariate-analysis")
-async def options_univariate_analysis():
-    """Handle OPTIONS request for univariate analysis endpoint."""
-    return {"message": "OK"}
 
 @app.post("/api/eda/univariate-analysis")
 async def perform_univariate_analysis(session_id: str = Query(...)):
@@ -605,10 +601,6 @@ async def perform_univariate_analysis(session_id: str = Query(...)):
         logger.error(f"Univariate analysis failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.options("/api/eda/bivariate-analysis")
-async def options_bivariate_analysis():
-    """Handle OPTIONS request for bivariate analysis endpoint."""
-    return {"message": "OK"}
 
 @app.post("/api/eda/bivariate-analysis")
 async def perform_bivariate_analysis(session_id: str = Query(...)):
@@ -628,10 +620,6 @@ async def perform_bivariate_analysis(session_id: str = Query(...)):
         logger.error(f"Bivariate analysis failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.options("/api/eda/clean-data")
-async def options_clean_data():
-    """Handle OPTIONS request for clean data endpoint."""
-    return {"message": "OK"}
 
 @app.post("/api/eda/clean-data")
 async def clean_eda_data(session_id: str = Query(...)):

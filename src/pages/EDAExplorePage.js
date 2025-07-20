@@ -304,8 +304,10 @@ const EDAExplorePage = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
-        body: requestBody
+        body: requestBody,
+        mode: 'cors'
       });
       
       if (response.ok) {
