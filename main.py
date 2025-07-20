@@ -544,7 +544,17 @@ async def validate_eda_data(
         session_data[session_id]['status'] = 'data_uploaded'
         session_data[session_id]['columns'] = data.columns.tolist()
         
-        return validation_result
+        # Return structure similar to regression endpoint
+        return {
+            "validation": validation_result,
+            "summary": {
+                "shape": data.shape,
+                "columns": data.columns.tolist(),
+                "dtypes": data.dtypes.astype(str).to_dict(),
+                "missing_values": data.isnull().sum().to_dict(),
+                "memory_usage": f"{data.memory_usage(deep=True).sum() / 1024 / 1024:.1f} MB"
+            }
+        }
         
     except Exception as e:
         logger.error(f"EDA data validation failed: {e}")
@@ -787,7 +797,17 @@ async def validate_clustering_data(
         session_data[session_id]['status'] = 'data_uploaded'
         session_data[session_id]['columns'] = data.columns.tolist()
         
-        return validation_result
+        # Return structure similar to regression endpoint
+        return {
+            "validation": validation_result,
+            "summary": {
+                "shape": data.shape,
+                "columns": data.columns.tolist(),
+                "dtypes": data.dtypes.astype(str).to_dict(),
+                "missing_values": data.isnull().sum().to_dict(),
+                "memory_usage": f"{data.memory_usage(deep=True).sum() / 1024 / 1024:.1f} MB"
+            }
+        }
         
     except Exception as e:
         logger.error(f"Clustering data validation failed: {e}")
@@ -903,7 +923,18 @@ async def validate_nlp_data(
         session_data[session_id]['text_column'] = text_column
         session_data[session_id]['columns'] = data.columns.tolist()
         
-        return validation_result
+        # Return structure similar to regression endpoint
+        return {
+            "validation": validation_result,
+            "summary": {
+                "shape": data.shape,
+                "columns": data.columns.tolist(),
+                "dtypes": data.dtypes.astype(str).to_dict(),
+                "missing_values": data.isnull().sum().to_dict(),
+                "memory_usage": f"{data.memory_usage(deep=True).sum() / 1024 / 1024:.1f} MB",
+                "text_column": text_column
+            }
+        }
         
     except Exception as e:
         logger.error(f"NLP data validation failed: {e}")
