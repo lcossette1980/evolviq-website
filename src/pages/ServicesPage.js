@@ -139,7 +139,7 @@ const ServicesPage = () => {
       commitment: "1-2 years"
     },
     {
-      title: "Complete Transformation Package",
+      title: "Complete Transformation",
       description: "Full support through all phases with flexible scheduling",
       investment: "$3K - $8K/month",
       commitment: "6-18 months"
@@ -239,7 +239,10 @@ const ServicesPage = () => {
                         <div className="text-sm text-charcoal/70 mb-1">Timeline</div>
                         <div className="font-medium text-charcoal">{service.timeline}</div>
                       </div>
-                      <button className="w-full bg-chestnut text-white py-3 rounded-lg hover:bg-chestnut/90 transition-colors">
+                      <button 
+                        onClick={() => window.location.href = '/service-intake'}
+                        className="w-full bg-chestnut text-white py-3 rounded-lg hover:bg-chestnut/90 transition-colors"
+                      >
                         Get Started
                       </button>
                     </div>
@@ -311,7 +314,10 @@ const ServicesPage = () => {
                     <div className="text-sm text-charcoal/70">{service.commitment}</div>
                   </div>
                   <p className="text-charcoal/80 mb-6 text-sm">{service.description}</p>
-                  <button className="w-full bg-chestnut text-white py-3 rounded-lg hover:bg-chestnut/90 transition-colors">
+                  <button 
+                    onClick={() => window.location.href = '/service-intake'}
+                    className="w-full bg-chestnut text-white py-3 rounded-lg hover:bg-chestnut/90 transition-colors"
+                  >
                     Discuss Options
                   </button>
                 </div>
@@ -349,7 +355,10 @@ const ServicesPage = () => {
             </div>
           </div>
           <div className="text-center mt-8">
-            <button className="bg-chestnut text-white px-8 py-4 rounded-lg font-medium hover:bg-chestnut/90 transition-colors">
+            <button 
+              onClick={() => window.location.href = '/service-intake'}
+              className="bg-chestnut text-white px-8 py-4 rounded-lg font-medium hover:bg-chestnut/90 transition-colors"
+            >
               Schedule Discovery Call
             </button>
           </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Upload, Play, BookOpen, BarChart3, Settings, Download, ChevronRight, ChevronDown, AlertCircle, CheckCircle, Info, TrendingUp, Database, Zap, Target, Brain, Grid, Shuffle } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, ScatterChart, Scatter, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { useAuth } from '../contexts/AuthContext';
+import API_CONFIG, { buildUrl, createRequestConfig } from '../config/apiConfig';
 
 const ClassificationExplorePage = () => {
   const { user } = useAuth();
@@ -168,17 +169,12 @@ const ClassificationExplorePage = () => {
   useEffect(() => {
     const createSession = async () => {
       try {
-        const apiUrl = 'https://evolviq-website-production.up.railway.app';
-        const response = await fetch(`${apiUrl}/api/regression/session`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+        const response = await fetch(buildUrl('/api/regression/session'), 
+          createRequestConfig('POST', {
             name: 'Classification Analysis Session',
             description: 'Classification analysis session'
           })
-        });
+        );
         
         if (response.ok) {
           const data = await response.json();
@@ -205,11 +201,9 @@ const ClassificationExplorePage = () => {
       const formData = new FormData();
       formData.append('file', file);
 
-      const apiUrl = 'https://evolviq-website-production.up.railway.app';
-      const response = await fetch(`${apiUrl}/api/classification/validate-data?session_id=${sessionId}&target_column=${encodeURIComponent(targetColumn)}`, {
-        method: 'POST',
-        body: formData
-      });
+      const response = await fetch(`${buildUrl(API_CONFIG.ENDPOINTS.CLASSIFICATION.VALIDATE)}?session_id=${sessionId}&target_column=${encodeURIComponent(targetColumn)}`, 
+        createRequestConfig('POST', formData)
+      );
 
       if (response.ok) {
         const result = await response.json();
@@ -256,16 +250,11 @@ const ClassificationExplorePage = () => {
       }
       
       if (stepId === 'preprocessing') {
-        const apiUrl = 'https://evolviq-website-production.up.railway.app';
-        const response = await fetch(`${apiUrl}/api/classification/preprocess?session_id=${sessionId}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+        const response = await fetch(`${buildUrl('/api/classification/preprocess')}?session_id=${sessionId}`, 
+          createRequestConfig('POST', {
             target_column: targetColumn
           })
-        });
+        );
         
         if (response.ok) {
           const result = await response.json();
@@ -278,17 +267,12 @@ const ClassificationExplorePage = () => {
         // Train models with selected algorithms
         const modelsToTrain = selectedModels.length > 0 ? selectedModels : ['logistic', 'random_forest', 'gradient_boosting', 'svm_rbf'];
         
-        const apiUrl = 'https://evolviq-website-production.up.railway.app';
-        const response = await fetch(`${apiUrl}/api/classification/train?session_id=${sessionId}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+        const response = await fetch(`${buildUrl('/api/classification/train')}?session_id=${sessionId}`, 
+          createRequestConfig('POST', {
             target_column: targetColumn,
             models_to_include: modelsToTrain
           })
-        });
+        );
         
         if (response.ok) {
           const result = await response.json();

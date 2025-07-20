@@ -23,8 +23,8 @@ import { db, storage } from './firebase';
 
 class RegressionAPI {
   constructor() {
-    // Railway production API URL
-    this.baseURL = process.env.REACT_APP_API_URL || 'https://evolviq-website-production.up.railway.app';
+    // Use production API for regression tool - it's running and active
+    this.baseURL = 'https://evolviq-website-production.up.railway.app';
   }
 
   // Session Management
@@ -157,29 +157,71 @@ class RegressionAPI {
     }
   }
 
+
   // Data Processing API Calls
   async validateData(sessionId, file) {
     try {
+      console.log('=== VALIDATION DEBUG ===');
+      console.log('API URL:', this.baseURL);
+      console.log('Session ID:', sessionId);
+      console.log('File name:', file.name);
+      console.log('File size:', file.size);
+      console.log('File type:', file.type);
+      
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await fetch(`${this.baseURL}/api/regression/validate-data?session_id=${sessionId}`, {
+      const url = `${this.baseURL}/api/regression/validate-data?session_id=${sessionId}`;
+      console.log('Full URL:', url);
+      
+      console.log('Making fetch request...');
+      
+      // Test basic connectivity first
+      try {
+        console.log('Testing basic connectivity...');
+        const testResponse = await fetch(`${this.baseURL}/health`, {
+          method: 'GET'
+        });
+        console.log('Health check response:', testResponse.status);
+      } catch (healthError) {
+        console.error('Health check failed:', healthError);
+        throw new Error('Cannot connect to regression API service');
+      }
+      
+      // Add reasonable timeout for small files
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.log('Request timing out after 30 seconds');
+        controller.abort();
+      }, 30000);
+      
+      const response = await fetch(url, {
         method: 'POST',
-        body: formData
+        body: formData,
+        signal: controller.signal
       });
       
+      clearTimeout(timeoutId);
+      
+      console.log('Response received:', response.status, response.statusText);
+      
       if (!response.ok) {
-        throw new Error(`Validation failed: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('Validation failed response:', errorText);
+        throw new Error(`Validation failed: ${response.status} - ${response.statusText}`);
       }
       
       const result = await response.json();
-      
-      // Skip Firebase update
       console.log('Validation complete:', result.is_valid);
+      console.log('=== VALIDATION DEBUG END ===');
       
       return result;
     } catch (error) {
-      console.error('Error validating data:', error);
+      console.error('=== VALIDATION ERROR ===');
+      console.error('Error type:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Full error:', error);
+      console.error('=== VALIDATION ERROR END ===');
       throw error;
     }
   }
@@ -224,6 +266,12 @@ class RegressionAPI {
 
   async trainModels(sessionId, trainingConfig) {
     try {
+      // Create an AbortController for timeout handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minute timeout
+      
+      console.log('Starting model training with config:', trainingConfig);
+      
       const response = await fetch(`${this.baseURL}/api/regression/train?session_id=${sessionId}`, {
         method: 'POST',
         headers: {
@@ -232,11 +280,16 @@ class RegressionAPI {
         body: JSON.stringify({
           config: trainingConfig.config,
           target_column: trainingConfig.target_column
-        })
+        }),
+        signal: controller.signal
       });
       
+      clearTimeout(timeoutId);
+      
       if (!response.ok) {
-        throw new Error(`Training failed: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('Training failed response:', errorText);
+        throw new Error(`Training failed: ${response.status} - ${response.statusText}`);
       }
       
       const result = await response.json();
@@ -246,6 +299,13 @@ class RegressionAPI {
       
       return result;
     } catch (error) {
+      if (error.name === 'AbortError') {
+        console.error('Training request timed out after 5 minutes');
+        throw new Error('Training is taking too long. This might be due to a large dataset or complex models. Please try with fewer models or a smaller dataset.');
+      } else if (error.message.includes('Failed to fetch')) {
+        console.error('Network error during training:', error);
+        throw new Error('Connection lost during training. This often happens with large datasets. Please try again with a smaller dataset or fewer models.');
+      }
       console.error('Error training models:', error);
       throw error;
     }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Filter, Star, ArrowRight, BookOpen } from 'lucide-react';
 import { blogPosts, categories } from '../data/blogData';
 import BlogCard from '../components/blog/BlogCard';
@@ -19,8 +19,13 @@ const BlogPage = () => {
 
   const featuredPost = blogPosts.find(post => post.featured);
 
+  // Auto-scroll to top when selectedPost changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [selectedPost]);
+
   if (selectedPost) {
-    return <BlogPost post={selectedPost} onBack={() => setSelectedPost(null)} />;
+    return <BlogPost post={selectedPost} onBack={() => setSelectedPost(null)} onPostSelect={setSelectedPost} />;
   }
 
   return (

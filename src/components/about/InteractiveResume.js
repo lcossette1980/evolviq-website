@@ -422,7 +422,17 @@ const InteractiveResume = () => {
             <h3 className="text-2xl font-bold">Interactive Digital Resume</h3>
             <p className="text-chestnut-100 opacity-90">Explore Loren's background and expertise</p>
           </div>
-          <button className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg flex items-center transition-colors">
+          <button 
+            onClick={() => {
+              const link = document.createElement('a');
+              link.href = '/Complete.pdf';
+              link.download = 'Loren-Cossette-Resume.pdf';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }}
+            className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg flex items-center transition-colors"
+          >
             <Download className="w-4 h-4 mr-2" />
             Download PDF
           </button>

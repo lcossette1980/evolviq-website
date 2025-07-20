@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const ModelTraining = ({ preprocessingResults, onTrain, isLoading }) => {
   const [config, setConfig] = useState({
@@ -7,6 +7,8 @@ const ModelTraining = ({ preprocessingResults, onTrain, isLoading }) => {
     hyperparameter_tuning: true,
     cv_folds: 5
   });
+  const [trainingProgress, setTrainingProgress] = useState(0);
+  const [trainingMessage, setTrainingMessage] = useState('');
 
   const availableModels = [
     { 
@@ -69,8 +71,49 @@ const ModelTraining = ({ preprocessingResults, onTrain, isLoading }) => {
     }));
   };
 
+  useEffect(() => {
+    if (isLoading) {
+      // Simulate progress updates for better user feedback
+      const messages = [
+        'Initializing models...',
+        'Splitting data into train/test sets...',
+        'Training models...',
+        'Performing cross-validation...',
+        'Evaluating model performance...',
+        'Comparing results...'
+      ];
+      
+      let currentMessage = 0;
+      const interval = setInterval(() => {
+        setTrainingProgress(prev => Math.min(prev + 10, 90));
+        setTrainingMessage(messages[Math.min(currentMessage++, messages.length - 1)]);
+      }, 3000);
+      
+      return () => clearInterval(interval);
+    } else {
+      setTrainingProgress(0);
+      setTrainingMessage('');
+    }
+  }, [isLoading]);
+
   const handleSubmit = () => {
     if (onTrain && config.models_to_include.length > 0) {
+      // Check for large datasets and warn about potential timeouts
+      const totalRows = preprocessingResults.final_shape[0];
+      const totalFeatures = preprocessingResults.feature_columns?.length || 0;
+      const dataSize = totalRows * totalFeatures;
+      
+      if (dataSize > 50000 || config.models_to_include.includes('gradient_boosting')) {
+        const confirmMessage = `Your dataset has ${totalRows} rows and ${totalFeatures} features. ` +
+          `Training ${config.models_to_include.length} models might take several minutes. ` +
+          `Consider reducing the number of models or using a smaller dataset if you experience timeouts.\n\n` +
+          `Continue with training?`;
+        
+        if (!window.confirm(confirmMessage)) {
+          return;
+        }
+      }
+      
       onTrain(config);
     }
   };
@@ -231,31 +274,67 @@ const ModelTraining = ({ preprocessingResults, onTrain, isLoading }) => {
           <li>• Hyperparameter tuning: {config.hyperparameter_tuning ? 'Enabled' : 'Disabled'}</li>
           <li>• Estimated training time: {config.models_to_include.length * (config.hyperparameter_tuning ? 2 : 1)} - {config.models_to_include.length * (config.hyperparameter_tuning ? 5 : 2)} minutes</li>
         </ul>
+        
+        {preprocessingResults && (preprocessingResults.final_shape[0] * (preprocessingResults.feature_columns?.length || 0)) > 50000 && (
+          <div className="mt-3 p-3 bg-yellow-100 border border-yellow-300 rounded">
+            <p className="text-xs text-yellow-800">
+              <strong>Large Dataset Detected:</strong> Your dataset has {preprocessingResults.final_shape[0]} rows and {preprocessingResults.feature_columns?.length || 0} features. 
+              For better performance, consider:
+            </p>
+            <ul className="text-xs text-yellow-700 mt-1 ml-4 list-disc">
+              <li>Reducing the number of models to train</li>
+              <li>Disabling hyperparameter tuning for faster training</li>
+              <li>Using fewer cross-validation folds</li>
+            </ul>
+          </div>
+        )}
       </div>
 
-      {/* Train Button */}
-      <div className="flex justify-center">
-        <button
-          onClick={handleSubmit}
-          disabled={isLoading || config.models_to_include.length === 0}
-          className={`px-8 py-3 rounded-lg font-medium transition-colors ${
-            isLoading || config.models_to_include.length === 0
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-chestnut text-white hover:bg-chestnut/90'
-          }`}
-        >
-          {isLoading ? (
-            <div className="flex items-center">
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Training Models...
+      {/* Train Button and Progress */}
+      <div className="space-y-4">
+        {isLoading && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="mb-2">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-sm font-medium text-blue-700">{trainingMessage}</span>
+                <span className="text-sm text-blue-600">{trainingProgress}%</span>
+              </div>
+              <div className="w-full bg-blue-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${trainingProgress}%` }}
+                />
+              </div>
             </div>
-          ) : (
-            `Train ${config.models_to_include.length} Model${config.models_to_include.length !== 1 ? 's' : ''}`
-          )}
-        </button>
+            <p className="text-xs text-blue-600 mt-2">
+              This may take several minutes for large datasets. Please don't close this window.
+            </p>
+          </div>
+        )}
+        
+        <div className="flex justify-center">
+          <button
+            onClick={handleSubmit}
+            disabled={isLoading || config.models_to_include.length === 0}
+            className={`px-8 py-3 rounded-lg font-medium transition-colors ${
+              isLoading || config.models_to_include.length === 0
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-chestnut text-white hover:bg-chestnut/90'
+            }`}
+          >
+            {isLoading ? (
+              <div className="flex items-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Training Models...
+              </div>
+            ) : (
+              `Train ${config.models_to_include.length} Model${config.models_to_include.length !== 1 ? 's' : ''}`
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

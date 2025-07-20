@@ -3,7 +3,7 @@ import { ArrowLeft, User, Heart, Share2, BookOpen, Tag } from 'lucide-react';
 import { blogPosts } from '../../data/blogData';
 import BlogCard from './BlogCard';
 
-const BlogPost = ({ post, onBack }) => {
+const BlogPost = ({ post, onBack, onPostSelect }) => {
   const [liked, setLiked] = useState(false);
 
   return (
@@ -129,7 +129,7 @@ const BlogPost = ({ post, onBack }) => {
               .filter(p => p.id !== post.id && (p.category === post.category || p.tags.some(tag => post.tags.includes(tag))))
               .slice(0, 2)
               .map(relatedPost => (
-                <BlogCard key={relatedPost.id} post={relatedPost} onClick={() => window.scrollTo(0, 0)} />
+                <BlogCard key={relatedPost.id} post={relatedPost} onClick={() => onPostSelect(relatedPost)} />
               ))}
           </div>
         </div>
@@ -142,7 +142,10 @@ const BlogPost = ({ post, onBack }) => {
           <p className="text-charcoal/80 mb-6">
             Let's discuss how AI could enhance your operations and help you better serve your community.
           </p>
-          <button className="bg-chestnut text-white px-8 py-4 sm:py-3 rounded-lg hover:bg-chestnut/90 transition-colors touch-manipulation">
+          <button 
+            onClick={() => window.location.href = '/service-intake'}
+            className="bg-chestnut text-white px-8 py-4 sm:py-3 rounded-lg hover:bg-chestnut/90 transition-colors touch-manipulation"
+          >
             Schedule a Free Consultation
           </button>
         </div>

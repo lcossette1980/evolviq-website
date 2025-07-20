@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Upload, Play, BookOpen, BarChart3, Settings, Download, ChevronRight, ChevronDown, AlertCircle, CheckCircle, Info, TrendingUp, Database, Zap, Target, Brain, Grid, Shuffle, Network, Layers, Eye, MessageCircle, Hash, Smile, Type, Globe } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, ScatterChart, Scatter, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Area, AreaChart } from 'recharts';
 import { useAuth } from '../contexts/AuthContext';
+import API_CONFIG, { buildUrl, createRequestConfig } from '../config/apiConfig';
 
 const NLPExplorePage = () => {
   const { user } = useAuth();
@@ -232,17 +233,12 @@ const NLPExplorePage = () => {
     
     const createSession = async () => {
       try {
-        const apiUrl = 'https://evolviq-website-production.up.railway.app';
-        const response = await fetch(`${apiUrl}/api/regression/session`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+        const response = await fetch(buildUrl('/api/regression/session'), 
+          createRequestConfig('POST', {
             name: 'NLP Analysis Session',
             description: 'Natural Language Processing analysis session'
           })
-        });
+        );
         
         if (response.ok && mounted) {
           const data = await response.json();
@@ -298,15 +294,13 @@ const NLPExplorePage = () => {
       const formData = new FormData();
       formData.append('file', file);
 
-      const railwayUrl = 'https://evolviq-website-production.up.railway.app';
-      const uploadUrl = `${railwayUrl}/api/nlp/validate-data?session_id=${sessionId}&text_column=${textColumn}`;
+      const uploadUrl = `${buildUrl(API_CONFIG.ENDPOINTS.NLP.VALIDATE)}?session_id=${sessionId}&text_column=${textColumn}`;
       
       console.log('Uploading to:', uploadUrl);
 
-      const response = await fetch(uploadUrl, {
-        method: 'POST',
-        body: formData
-      });
+      const response = await fetch(uploadUrl, 
+        createRequestConfig('POST', formData)
+      );
 
       console.log('Response status:', response.status);
 
@@ -399,14 +393,9 @@ const NLPExplorePage = () => {
             n_topics: 5
           };
           
-          const apiUrl = 'https://evolviq-website-production.up.railway.app';
-          const response = await fetch(`${apiUrl}/api/nlp/analyze?session_id=${sessionId}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestBody)
-          });
+          const response = await fetch(`${buildUrl(API_CONFIG.ENDPOINTS.NLP.ANALYZE)}?session_id=${sessionId}`, 
+            createRequestConfig('POST', requestBody)
+          );
           
           if (response.ok) {
             const result = await response.json();

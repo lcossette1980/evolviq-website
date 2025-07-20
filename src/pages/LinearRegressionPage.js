@@ -221,7 +221,7 @@ const LinearRegressionPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-bone py-8">
+    <div className="min-h-screen bg-bone pt-20 pb-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-8">

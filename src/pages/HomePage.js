@@ -33,8 +33,8 @@ const HomePage = () => {
   const frameworks = [
     {
       phase: "1",
-      title: "Discovery & Assessment",
-      description: "Quick AI readiness evaluation, practical opportunity identification, budget-conscious planning",
+      title: "Discovery",
+      description: "Readiness evaluation, opportunity identification, budget-conscious planning",
       duration: "1-2 weeks",
       investment: "$2.5K - $7.5K"
     },
@@ -71,7 +71,7 @@ const HomePage = () => {
   const differentiators = [
     {
       icon: <Target className="w-8 h-8 text-chestnut" />,
-      title: "Right-Sized for Your Organization",
+      title: "Right-Sized for You",
       description: "AI solutions scaled to your team size, budget, and goals—no enterprise overhead"
     },
     {
@@ -128,20 +128,6 @@ const HomePage = () => {
                     <p className="text-xl text-charcoal/80 mb-8 leading-relaxed">
                       {slide.description}
                     </p>
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <button 
-                        onClick={() => navigate('/services')}
-                        className="bg-chestnut text-white px-8 py-4 sm:py-3 rounded-lg font-medium hover:bg-chestnut/90 transition-colors flex items-center justify-center touch-manipulation"
-                      >
-                        {slide.cta} <ChevronRight className="ml-2 w-5 h-5" />
-                      </button>
-                      <button 
-                        onClick={() => navigate('/about')}
-                        className="border-2 border-chestnut text-chestnut px-8 py-4 sm:py-3 rounded-lg font-medium hover:bg-chestnut hover:text-white transition-colors touch-manipulation"
-                      >
-                        Learn Our Approach
-                      </button>
-                    </div>
                   </div>
                   <div className="relative">
                     <div className="rounded-2xl h-64 sm:h-80 lg:h-96 overflow-hidden">
@@ -171,7 +157,7 @@ const HomePage = () => {
             ))}
             
             {/* Carousel Controls - moved further down */}
-            <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-3 bg-white/80 px-4 py-2 rounded-full shadow-lg backdrop-blur-sm">
+            <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3 bg-white/80 px-4 py-2 rounded-full shadow-lg backdrop-blur-sm">
               {heroSlides.map((_, index) => (
                 <button
                   key={index}
@@ -184,21 +170,6 @@ const HomePage = () => {
               ))}
             </div>
             
-            {/* Navigation Arrows - moved further from edges */}
-            <button
-              onClick={prevSlide}
-              className="absolute left-4 sm:left-8 top-1/2 transform -translate-y-1/2 bg-white/90 p-3 rounded-full shadow-lg hover:bg-white transition-colors touch-manipulation backdrop-blur-sm"
-              aria-label="Previous slide"
-            >
-              <ChevronRight className="w-6 h-6 text-chestnut transform rotate-180" />
-            </button>
-            <button
-              onClick={nextSlide}
-              className="absolute right-4 sm:right-8 top-1/2 transform -translate-y-1/2 bg-white/90 p-3 rounded-full shadow-lg hover:bg-white transition-colors touch-manipulation backdrop-blur-sm"
-              aria-label="Next slide"
-            >
-              <ChevronRight className="w-6 h-6 text-chestnut" />
-            </button>
           </div>
         </div>
       </section>
@@ -281,19 +252,138 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Framework Overview */}
+      {/* Dual Approach: Consulting + Interactive Tools */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="font-serif font-bold text-3xl md:text-4xl text-charcoal mb-4">
-              Our Right-Sized Transformation Process
+              Two Ways to Transform with AI
             </h2>
             <p className="text-xl text-charcoal/80 max-w-3xl mx-auto">
+              Whether you prefer guided consulting or hands-on exploration, we meet you where you are.
+            </p>
+          </div>
+          
+          <div className="grid lg:grid-cols-2 gap-12">
+            {/* Consulting Path */}
+            <div className="bg-pearl/20 rounded-xl p-8">
+              <div className="flex items-center mb-6">
+                <div className="w-12 h-12 bg-chestnut text-white rounded-lg flex items-center justify-center mr-4">
+                  <Users className="w-6 h-6" />
+                </div>
+                <h3 className="font-serif font-bold text-2xl text-charcoal">Guided Consulting</h3>
+              </div>
+              <p className="text-charcoal/80 mb-6">
+                Work directly with our AI strategists to create a customized transformation roadmap, 
+                train your team, and implement solutions that deliver measurable results.
+              </p>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-center text-charcoal/80">
+                  <CheckCircle className="w-5 h-5 text-chestnut mr-3 flex-shrink-0" />
+                  <span>1-on-1 strategy sessions</span>
+                </li>
+                <li className="flex items-center text-charcoal/80">
+                  <CheckCircle className="w-5 h-5 text-chestnut mr-3 flex-shrink-0" />
+                  <span>Custom implementation plans</span>
+                </li>
+                <li className="flex items-center text-charcoal/80">
+                  <CheckCircle className="w-5 h-5 text-chestnut mr-3 flex-shrink-0" />
+                  <span>Team training & change management</span>
+                </li>
+                <li className="flex items-center text-charcoal/80">
+                  <CheckCircle className="w-5 h-5 text-chestnut mr-3 flex-shrink-0" />
+                  <span>Ongoing support & guidance</span>
+                </li>
+              </ul>
+              <button 
+                onClick={() => navigate('/services')}
+                className="w-full bg-chestnut text-white py-3 rounded-lg hover:bg-chestnut/90 transition-colors"
+              >
+                Explore Consulting Services
+              </button>
+            </div>
+
+            {/* Webapp/Membership Path */}
+            <div className="bg-khaki/20 rounded-xl p-8 border-2 border-khaki/30">
+              <div className="flex items-center mb-6">
+                <div className="w-12 h-12 bg-khaki text-white rounded-lg flex items-center justify-center mr-4">
+                  <Zap className="w-6 h-6" />
+                </div>
+                <h3 className="font-serif font-bold text-2xl text-charcoal">Interactive Learning</h3>
+              </div>
+              <p className="text-charcoal/80 mb-6">
+                Learn through doing with our interactive AI tools, assessments, and premium resources. 
+                Perfect for self-directed learners and teams ready to experiment.
+              </p>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-center text-charcoal/80">
+                  <CheckCircle className="w-5 h-5 text-khaki mr-3 flex-shrink-0" />
+                  <span>5 interactive ML tools & playgrounds</span>
+                </li>
+                <li className="flex items-center text-charcoal/80">
+                  <CheckCircle className="w-5 h-5 text-khaki mr-3 flex-shrink-0" />
+                  <span>AI readiness assessments</span>
+                </li>
+                <li className="flex items-center text-charcoal/80">
+                  <CheckCircle className="w-5 h-5 text-khaki mr-3 flex-shrink-0" />
+                  <span>Strategy templates & guides</span>
+                </li>
+                <li className="flex items-center text-charcoal/80">
+                  <CheckCircle className="w-5 h-5 text-khaki mr-3 flex-shrink-0" />
+                  <span>Premium learning resources</span>
+                </li>
+              </ul>
+              <div className="space-y-3">
+                <button 
+                  onClick={() => navigate('/membership')}
+                  className="w-full bg-khaki text-white py-3 rounded-lg hover:bg-khaki/90 transition-colors"
+                >
+                  Join Premium Membership
+                </button>
+                <button 
+                  onClick={() => navigate('/tools/ai-knowledge-navigator')}
+                  className="w-full border-2 border-khaki text-khaki py-3 rounded-lg hover:bg-khaki/10 transition-colors"
+                >
+                  Try Free Assessment
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Combined Value Proposition */}
+          <div className="mt-12 text-center bg-gradient-to-r from-chestnut/10 to-khaki/10 rounded-xl p-8">
+            <h3 className="font-serif font-bold text-2xl text-charcoal mb-4">
+              Best of Both Worlds
+            </h3>
+            <p className="text-lg text-charcoal/80 mb-6 max-w-3xl mx-auto">
+              Many of our clients start with our interactive tools to build AI literacy, 
+              then engage our consulting services for strategic implementation. 
+              Both paths include lifetime access to our growing library of resources.
+            </p>
+            <div className="flex justify-center">
+              <div className="bg-white px-6 py-3 rounded-lg shadow-sm">
+                <span className="text-sm text-charcoal/60">Premium Members Save</span>
+                <div className="text-2xl font-bold text-chestnut">25%</div>
+                <span className="text-sm text-charcoal/60">on all consulting services</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Framework Overview */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="font-serif font-bold text-2xl sm:text-3xl md:text-4xl text-charcoal mb-4">
+              Our Right-Sized Transformation Process
+            </h2>
+            <p className="text-lg sm:text-xl text-charcoal/80 max-w-3xl mx-auto">
               A practical, affordable approach designed specifically for small businesses, nonprofits, and service organizations.
             </p>
           </div>
           <div className="grid gap-6 mb-12">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 lg:gap-6">
               {frameworks.map((phase, index) => (
                 <div key={index} className="bg-pearl/30 rounded-xl p-4 sm:p-6 hover:bg-pearl/50 transition-colors text-center">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-chestnut text-white rounded-full flex items-center justify-center font-bold text-base sm:text-lg mx-auto mb-3 sm:mb-4">
@@ -309,13 +399,13 @@ const HomePage = () => {
               ))}
             </div>
           </div>
-          <div className="text-center bg-khaki/10 rounded-xl p-8">
-            <h3 className="font-medium text-xl text-charcoal mb-2">Complete Transformation Package</h3>
-            <div className="text-3xl font-bold text-chestnut mb-2">$15K - $65K</div>
-            <div className="text-charcoal/70 mb-4">Flexible payment plans available</div>
+          <div className="text-center bg-khaki/10 rounded-xl p-6 sm:p-8">
+            <h3 className="font-medium text-lg sm:text-xl text-charcoal mb-2">Complete Transformation Package</h3>
+            <div className="text-2xl sm:text-3xl font-bold text-chestnut mb-2">$15K - $65K</div>
+            <div className="text-sm sm:text-base text-charcoal/70 mb-4">Flexible payment plans available</div>
             <button 
               onClick={() => navigate('/services')}
-              className="bg-chestnut text-white px-8 py-4 sm:py-3 rounded-lg font-medium hover:bg-chestnut/90 transition-colors touch-manipulation"
+              className="bg-chestnut text-white px-8 py-4 sm:py-3 rounded-lg font-medium hover:bg-chestnut/90 transition-colors touch-manipulation min-h-[44px]"
             >
               Explore Our Services
             </button>
@@ -361,7 +451,10 @@ const HomePage = () => {
               <p className="text-charcoal/70 mb-6">
                 30-minute conversation to explore how AI can help your specific organization and goals.
               </p>
-              <button className="w-full bg-chestnut text-white py-4 sm:py-3 rounded-lg hover:bg-chestnut/90 transition-colors touch-manipulation">
+              <button 
+                onClick={() => window.location.href = '/service-intake'}
+                className="w-full bg-chestnut text-white py-4 sm:py-3 rounded-lg hover:bg-chestnut/90 transition-colors touch-manipulation min-h-[44px]"
+              >
                 Schedule Free Call
               </button>
             </div>
@@ -394,9 +487,12 @@ const HomePage = () => {
               </div>
               <h3 className="font-medium text-xl text-charcoal mb-4">Quick Assessment</h3>
               <p className="text-charcoal/70 mb-6">
-                Rapid evaluation of your AI readiness with practical recommendations and next steps.
+                Rapid evaluation of your AI knowledge with practical recommendations and next steps.
               </p>
-              <button className="w-full bg-chestnut text-white py-4 sm:py-3 rounded-lg hover:bg-chestnut/90 transition-colors touch-manipulation">
+              <button 
+                onClick={() => navigate('/tools/ai-knowledge-navigator')}
+                className="w-full bg-chestnut text-white py-4 sm:py-3 rounded-lg hover:bg-chestnut/90 transition-colors touch-manipulation min-h-[44px]"
+              >
                 Get Assessment
               </button>
             </div>
@@ -426,7 +522,10 @@ const HomePage = () => {
               <p className="text-charcoal/70 mb-6">
                 Half-day session to identify opportunities and get your team aligned on AI possibilities.
               </p>
-              <button className="w-full bg-chestnut text-white py-4 sm:py-3 rounded-lg hover:bg-chestnut/90 transition-colors touch-manipulation">
+              <button 
+                onClick={() => window.location.href = '/service-intake'}
+                className="w-full bg-chestnut text-white py-4 sm:py-3 rounded-lg hover:bg-chestnut/90 transition-colors touch-manipulation min-h-[44px]"
+              >
                 Book Workshop
               </button>
             </div>

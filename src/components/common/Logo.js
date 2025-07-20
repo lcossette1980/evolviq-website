@@ -13,10 +13,10 @@ const Logo = ({ variant = 'full', className = '' }) => {
   }
 
   return (
-    <div className={`font-serif font-bold text-2xl text-charcoal ${className}`}>
-      <div>E</div>
-      <div className="border-t border-charcoal w-6 my-1"></div>
-      <div className="text-chestnut">IQ</div>
+    <div className={`font-serif font-bold text-xl text-charcoal flex flex-col items-center ${className}`}>
+      <div className="leading-none">E</div>
+      <div className="border-t border-charcoal w-5 my-0.5"></div>
+      <div className="text-chestnut leading-none">IQ</div>
     </div>
   );
 };
