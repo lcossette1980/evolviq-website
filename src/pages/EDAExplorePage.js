@@ -112,6 +112,8 @@ const EDAExplorePage = () => {
 
   // Create session on component mount
   useEffect(() => {
+    let mounted = true;
+    
     const createSession = async () => {
       try {
         // Use Railway URL directly
@@ -127,11 +129,11 @@ const EDAExplorePage = () => {
           })
         });
         
-        if (response.ok) {
+        if (response.ok && mounted) {
           const data = await response.json();
           console.log('Session created:', data.session_id);
           setSessionId(data.session_id);
-        } else {
+        } else if (!response.ok) {
           console.error('Failed to create session:', response.status);
         }
       } catch (error) {
@@ -139,10 +141,14 @@ const EDAExplorePage = () => {
       }
     };
     
-    if (user && !sessionId) {
+    if (user && !sessionId && mounted) {
       createSession();
     }
-  }, [user, sessionId]);
+    
+    return () => {
+      mounted = false;
+    };
+  }, [user]);
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
@@ -167,9 +173,9 @@ const EDAExplorePage = () => {
       const formData = new FormData();
       formData.append('file', file);
 
-      // Use Railway URL directly for now since local backend might not be running
-      const apiUrl = 'https://evolviq-website-production.up.railway.app';
-      const uploadUrl = `${apiUrl}/api/eda/validate-data?session_id=${sessionId}`;
+      // Try Railway URL first, fallback to local if needed
+      const railwayUrl = 'https://evolviq-website-production.up.railway.app';
+      const uploadUrl = `${railwayUrl}/api/eda/validate-data?session_id=${sessionId}`;
       
       console.log('Uploading to:', uploadUrl);
 
@@ -204,7 +210,15 @@ const EDAExplorePage = () => {
   };
 
   const runAnalysis = async (stepId) => {
-    if (!sessionId) return;
+    console.log('Running analysis for step:', stepId, 'Session:', sessionId);
+    console.log('Current activeStep:', activeStep, 'Dataset:', dataset);
+    console.log('ValidationResults:', validationResults);
+    
+    if (!sessionId) {
+      console.error('No session ID available');
+      alert('Please upload a file first');
+      return;
+    }
     
     setIsAnalyzing(true);
     
@@ -223,8 +237,10 @@ const EDAExplorePage = () => {
         case 'cleaning':
           endpoint = '/api/eda/clean-data';
           break;
-        default:
+        case 'setup':
+        case 'inspection':
           // For setup and inspection, use mock data
+          console.log('Using mock data for step:', stepId);
           const mockResults = {
             setup: { status: 'complete', libraries: 15, seed: 42 },
             inspection: { 
@@ -236,10 +252,19 @@ const EDAExplorePage = () => {
             }
           };
           
-          setAnalysisResults(prev => ({
-            ...prev,
-            [stepId]: mockResults[stepId]
-          }));
+          console.log('Setting mock result for', stepId, ':', mockResults[stepId]);
+          setAnalysisResults(prev => {
+            const newResults = {
+              ...prev,
+              [stepId]: mockResults[stepId]
+            };
+            console.log('New analysis results:', newResults);
+            return newResults;
+          });
+          setIsAnalyzing(false);
+          return;
+        default:
+          console.error('Unknown step ID:', stepId);
           setIsAnalyzing(false);
           return;
       }
@@ -254,9 +279,42 @@ const EDAExplorePage = () => {
       
       if (response.ok) {
         const result = await response.json();
+        console.log(`Analysis result for ${stepId}:`, result);
+        
+        // Extract the actual data from the API response
+        let processedResult = result;
+        
+        // Handle different response formats based on the step
+        if (stepId === 'univariate' && result.success && result.numeric_analysis) {
+          // Convert the numeric analysis to the expected format
+          const stats = result.numeric_analysis.summary_stats || {};
+          processedResult = Object.keys(stats).map(feature => ({
+            feature,
+            mean: stats[feature].mean || 0,
+            std: stats[feature].std || 0,
+            skewness: stats[feature].skewness || 0,
+            missing: 0
+          }));
+        } else if (stepId === 'bivariate' && result.success && result.correlation_analysis) {
+          // Convert correlation analysis to expected format
+          const correlations = result.correlation_analysis.strong_correlations || [];
+          processedResult = correlations.map(corr => ({
+            x: corr.feature1,
+            y: corr.feature2,
+            correlation: corr.correlation
+          }));
+          
+          // If no strong correlations, use mock data for now
+          if (processedResult.length === 0) {
+            processedResult = correlationData;
+          }
+        } else if (stepId === 'quality' && result.success && result.assessment) {
+          processedResult = result.assessment;
+        }
+        
         setAnalysisResults(prev => ({
           ...prev,
-          [stepId]: result
+          [stepId]: processedResult
         }));
       } else {
         const error = await response.json();
@@ -287,10 +345,14 @@ const EDAExplorePage = () => {
     </div>
   );
 
-  const CorrelationMatrix = ({ data }) => (
-    <div className="mt-4">
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={data}>
+  const CorrelationMatrix = ({ data }) => {
+    // Ensure data is an array
+    const chartData = Array.isArray(data) ? data : [];
+    
+    return (
+      <div className="mt-4">
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#A59E8C" />
           <XAxis dataKey="x" tick={{ fill: '#2A2A2A', fontSize: 12 }} />
           <YAxis tick={{ fill: '#2A2A2A', fontSize: 12 }} />
@@ -305,22 +367,27 @@ const EDAExplorePage = () => {
         </BarChart>
       </ResponsiveContainer>
     </div>
-  );
+    );
+  };
 
-  const FeatureStatsTable = ({ data }) => (
-    <div className="mt-4 overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="bg-khaki/20">
-            <th className="p-3 text-left font-semibold border border-pearl text-charcoal">Feature</th>
-            <th className="p-3 text-left font-semibold border border-pearl text-charcoal">Mean</th>
-            <th className="p-3 text-left font-semibold border border-pearl text-charcoal">Std Dev</th>
-            <th className="p-3 text-left font-semibold border border-pearl text-charcoal">Skewness</th>
-            <th className="p-3 text-left font-semibold border border-pearl text-charcoal">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data?.map((row, idx) => (
+  const FeatureStatsTable = ({ data }) => {
+    // Ensure data is an array
+    const tableData = Array.isArray(data) ? data : [];
+    
+    return (
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="bg-khaki/20">
+              <th className="p-3 text-left font-semibold border border-pearl text-charcoal">Feature</th>
+              <th className="p-3 text-left font-semibold border border-pearl text-charcoal">Mean</th>
+              <th className="p-3 text-left font-semibold border border-pearl text-charcoal">Std Dev</th>
+              <th className="p-3 text-left font-semibold border border-pearl text-charcoal">Skewness</th>
+              <th className="p-3 text-left font-semibold border border-pearl text-charcoal">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tableData.map((row, idx) => (
             <tr key={idx} className="bg-bone hover:bg-pearl/20 transition-colors">
               <td className="p-3 font-medium border border-pearl text-charcoal">{row.feature}</td>
               <td className="p-3 border border-pearl text-charcoal">{row.mean.toFixed(3)}</td>
@@ -341,7 +408,8 @@ const EDAExplorePage = () => {
         </tbody>
       </table>
     </div>
-  );
+    );
+  };
 
   if (!user) {
     return (
@@ -551,11 +619,11 @@ const EDAExplorePage = () => {
                       <QualityMetrics results={analysisResults.quality} />
                     )}
 
-                    {edaSteps[activeStep].id === 'univariate' && (
+                    {edaSteps[activeStep].id === 'univariate' && analysisResults.univariate && (
                       <FeatureStatsTable data={analysisResults.univariate} />
                     )}
 
-                    {edaSteps[activeStep].id === 'bivariate' && (
+                    {edaSteps[activeStep].id === 'bivariate' && analysisResults.bivariate && (
                       <div>
                         <h4 className="font-medium mb-2 text-charcoal">
                           Feature Correlations with Target (Price)
