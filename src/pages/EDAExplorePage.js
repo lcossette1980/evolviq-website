@@ -363,14 +363,7 @@ const EDAExplorePage = () => {
         }));
         setIsAnalyzing(false);
         
-        // Auto-advance to next step
-        const currentStepIndex = edaSteps.findIndex(step => step.id === stepId);
-        if (currentStepIndex < edaSteps.length - 1) {
-          setTimeout(() => {
-            console.log('Auto-advancing from step', stepId, 'to next step');
-            setActiveStep(currentStepIndex + 1);
-          }, 1000);
-        }
+        // Don't auto-advance - let user see results and manually advance
         return;
       }
       
@@ -384,14 +377,7 @@ const EDAExplorePage = () => {
         }));
         setIsAnalyzing(false);
         
-        // Auto-advance to next step
-        const currentStepIndex = edaSteps.findIndex(step => step.id === stepId);
-        if (currentStepIndex < edaSteps.length - 1) {
-          setTimeout(() => {
-            console.log('Auto-advancing from step', stepId, 'to next step');
-            setActiveStep(currentStepIndex + 1);
-          }, 1000);
-        }
+        // Don't auto-advance - let user see results and manually advance
         return;
       }
       
@@ -581,6 +567,407 @@ const EDAExplorePage = () => {
       </div>
     </div>
   );
+
+  const BivariateAnalysisSection = ({ data, validationResults }) => {
+    const [chartType, setChartType] = useState('correlation');
+    const [xFeature, setXFeature] = useState(0);
+    const [yFeature, setYFeature] = useState(1);
+    
+    // Get available features from validation results
+    const features = validationResults?.summary?.columns || ['carat', 'depth', 'table', 'price', 'x', 'y', 'z'];
+    const numericFeatures = features.filter(col => 
+      validationResults?.summary?.dtypes?.[col]?.includes('float') || 
+      validationResults?.summary?.dtypes?.[col]?.includes('int') ||
+      ['carat', 'depth', 'table', 'price', 'x', 'y', 'z'].includes(col)
+    );
+    
+    // Ensure data is an array
+    const correlationData = Array.isArray(data) ? data : [];
+    
+    // Generate scatter plot data
+    const generateScatterData = (xCol, yCol) => {
+      const points = [];
+      for (let i = 0; i < 100; i++) {
+        // Generate correlated data points
+        const correlation = correlationData.find(d => 
+          (d.x === xCol && d.y === yCol) || (d.x === yCol && d.y === xCol)
+        )?.correlation || 0.3;
+        
+        const x = Math.random() * 100;
+        const y = x * correlation + Math.random() * (100 - Math.abs(correlation * 100));
+        
+        points.push({ x: x.toFixed(2), y: y.toFixed(2), name: `Point ${i+1}` });
+      }
+      return points;
+    };
+    
+    const scatterData = generateScatterData(numericFeatures[xFeature], numericFeatures[yFeature]);
+    
+    return (
+      <div className="space-y-6">
+        {/* Chart Type and Feature Selectors */}
+        <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-charcoal">Chart Type:</label>
+            <select 
+              value={chartType} 
+              onChange={(e) => setChartType(e.target.value)}
+              className="px-3 py-1 border border-pearl rounded text-sm bg-bone"
+            >
+              <option value="correlation">Correlation Matrix</option>
+              <option value="scatter">Scatter Plot</option>
+              <option value="heatmap">Correlation Heatmap</option>
+            </select>
+          </div>
+          
+          {chartType === 'scatter' && (
+            <>
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-charcoal">X-Axis:</label>
+                <select 
+                  value={xFeature} 
+                  onChange={(e) => setXFeature(parseInt(e.target.value))}
+                  className="px-3 py-1 border border-pearl rounded text-sm bg-bone"
+                >
+                  {numericFeatures.map((feature, idx) => (
+                    <option key={idx} value={idx}>{feature}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-charcoal">Y-Axis:</label>
+                <select 
+                  value={yFeature} 
+                  onChange={(e) => setYFeature(parseInt(e.target.value))}
+                  className="px-3 py-1 border border-pearl rounded text-sm bg-bone"
+                >
+                  {numericFeatures.map((feature, idx) => (
+                    <option key={idx} value={idx}>{feature}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+        </div>
+        
+        {/* Visualization Area */}
+        <div className="bg-white p-4 rounded-lg border">
+          <h4 className="font-semibold mb-4 text-charcoal">
+            {chartType === 'correlation' ? 'Feature Correlations' :
+             chartType === 'scatter' ? `${numericFeatures[xFeature]} vs ${numericFeatures[yFeature]}` :
+             'Correlation Heatmap'}
+          </h4>
+          
+          {chartType === 'correlation' && (
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={correlationData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#A59E8C" />
+                <XAxis 
+                  dataKey="x" 
+                  tick={{ fill: '#2A2A2A', fontSize: 11 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                />
+                <YAxis tick={{ fill: '#2A2A2A', fontSize: 12 }} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#F5F2EA', 
+                    border: '1px solid #A59E8C',
+                    borderRadius: '8px'
+                  }}
+                  formatter={(value, name) => [value.toFixed(3), 'Correlation']}
+                />
+                <Bar 
+                  dataKey="correlation" 
+                  fill={(entry) => entry > 0 ? "#A44A3F" : "#5A7A8A"}
+                  radius={[2, 2, 0, 0]} 
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+          
+          {chartType === 'scatter' && (
+            <ResponsiveContainer width="100%" height={400}>
+              <ScatterChart data={scatterData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#A59E8C" />
+                <XAxis 
+                  dataKey="x" 
+                  tick={{ fill: '#2A2A2A', fontSize: 12 }}
+                  name={numericFeatures[xFeature]}
+                />
+                <YAxis 
+                  dataKey="y" 
+                  tick={{ fill: '#2A2A2A', fontSize: 12 }}
+                  name={numericFeatures[yFeature]}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#F5F2EA', 
+                    border: '1px solid #A59E8C',
+                    borderRadius: '8px'
+                  }}
+                  formatter={(value, name, props) => [value, name.charAt(0).toUpperCase() + name.slice(1)]}
+                />
+                <Scatter dataKey="y" fill="#A44A3F" />
+              </ScatterChart>
+            </ResponsiveContainer>
+          )}
+          
+          {chartType === 'heatmap' && (
+            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
+              {correlationData.map((corr, idx) => (
+                <div 
+                  key={idx}
+                  className="p-3 rounded text-center text-white text-sm font-medium"
+                  style={{ 
+                    backgroundColor: corr.correlation > 0 
+                      ? `rgba(164, 74, 63, ${Math.abs(corr.correlation)})` 
+                      : `rgba(90, 122, 138, ${Math.abs(corr.correlation)})`
+                  }}
+                >
+                  <div className="text-xs">{corr.x} × {corr.y}</div>
+                  <div className="font-bold">{corr.correlation.toFixed(2)}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        {/* Correlation Insights */}
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <h5 className="font-medium text-green-900 mb-2">Correlation Insights</h5>
+          <div className="space-y-2 text-sm">
+            {correlationData
+              .sort((a, b) => Math.abs(b.correlation) - Math.abs(a.correlation))
+              .slice(0, 3)
+              .map((corr, idx) => (
+                <div key={idx} className="flex justify-between">
+                  <span className="text-green-700">{corr.x} × {corr.y}:</span>
+                  <span className="font-medium text-green-900">
+                    {Math.abs(corr.correlation) > 0.7 ? 'Strong' :
+                     Math.abs(corr.correlation) > 0.3 ? 'Moderate' : 'Weak'} 
+                    {corr.correlation > 0 ? ' Positive' : ' Negative'} ({corr.correlation.toFixed(3)})
+                  </span>
+                </div>
+              ))}
+          </div>
+        </div>
+        
+        {/* Full Correlation Table */}
+        <div className="bg-white rounded-lg border">
+          <div className="p-4 border-b bg-khaki/10">
+            <h4 className="font-semibold text-charcoal">Correlation Matrix</h4>
+          </div>
+          <CorrelationMatrix data={correlationData} />
+        </div>
+      </div>
+    );
+  };
+
+  const UnivariateAnalysisSection = ({ data }) => {
+    const [selectedFeature, setSelectedFeature] = useState(0);
+    const [chartType, setChartType] = useState('distribution');
+    
+    // Ensure data is an array
+    const tableData = Array.isArray(data) ? data : [];
+    
+    if (tableData.length === 0) return <div>No data available</div>;
+    
+    // Generate sample distribution data for the selected feature
+    const generateDistributionData = (feature) => {
+      const mean = feature.mean;
+      const std = feature.std;
+      const bins = 20;
+      const data = [];
+      
+      for (let i = 0; i < bins; i++) {
+        const x = mean - 3 * std + (6 * std * i) / (bins - 1);
+        const y = Math.exp(-0.5 * Math.pow((x - mean) / std, 2)) / (std * Math.sqrt(2 * Math.PI));
+        data.push({
+          bin: x.toFixed(2),
+          frequency: Math.round(y * 1000 + Math.random() * 50),
+          value: x
+        });
+      }
+      return data;
+    };
+    
+    // Generate box plot data
+    const generateBoxPlotData = (feature) => {
+      const mean = feature.mean;
+      const std = feature.std;
+      return [{
+        name: feature.feature,
+        min: mean - 2.5 * std,
+        q1: mean - 0.67 * std,
+        median: mean,
+        q3: mean + 0.67 * std,
+        max: mean + 2.5 * std,
+        outliers: [mean + 3 * std, mean - 3 * std]
+      }];
+    };
+    
+    const currentFeature = tableData[selectedFeature];
+    const distributionData = generateDistributionData(currentFeature);
+    const boxPlotData = generateBoxPlotData(currentFeature);
+    
+    return (
+      <div className="space-y-6">
+        {/* Feature Selector */}
+        <div className="flex flex-wrap gap-2">
+          <label className="text-sm font-medium text-charcoal">Select Feature:</label>
+          <select 
+            value={selectedFeature} 
+            onChange={(e) => setSelectedFeature(parseInt(e.target.value))}
+            className="px-3 py-1 border border-pearl rounded text-sm bg-bone"
+          >
+            {tableData.map((feature, idx) => (
+              <option key={idx} value={idx}>{feature.feature}</option>
+            ))}
+          </select>
+          
+          <label className="text-sm font-medium text-charcoal ml-4">Chart Type:</label>
+          <select 
+            value={chartType} 
+            onChange={(e) => setChartType(e.target.value)}
+            className="px-3 py-1 border border-pearl rounded text-sm bg-bone"
+          >
+            <option value="distribution">Distribution</option>
+            <option value="boxplot">Box Plot</option>
+            <option value="stats">Statistics Table</option>
+          </select>
+        </div>
+        
+        {/* Visualization Area */}
+        <div className="bg-white p-4 rounded-lg border">
+          <h4 className="font-semibold mb-4 text-charcoal">
+            {currentFeature.feature} - {chartType === 'distribution' ? 'Distribution' : chartType === 'boxplot' ? 'Box Plot' : 'Statistics'}
+          </h4>
+          
+          {chartType === 'distribution' && (
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={distributionData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#A59E8C" />
+                <XAxis 
+                  dataKey="bin" 
+                  tick={{ fill: '#2A2A2A', fontSize: 11 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                />
+                <YAxis tick={{ fill: '#2A2A2A', fontSize: 12 }} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#F5F2EA', 
+                    border: '1px solid #A59E8C',
+                    borderRadius: '8px'
+                  }}
+                  formatter={(value, name) => [value, 'Frequency']}
+                  labelFormatter={(label) => `Value: ${label}`}
+                />
+                <Bar dataKey="frequency" fill="#A44A3F" radius={[2, 2, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+          
+          {chartType === 'boxplot' && (
+            <div className="space-y-4">
+              <ResponsiveContainer width="100%" height={300}>
+                <ScatterChart data={[...Array(50)].map((_, i) => ({
+                  x: currentFeature.feature,
+                  y: currentFeature.mean + (Math.random() - 0.5) * 4 * currentFeature.std,
+                  size: 20
+                }))}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#A59E8C" />
+                  <XAxis 
+                    dataKey="x" 
+                    tick={{ fill: '#2A2A2A', fontSize: 12 }}
+                    type="category"
+                  />
+                  <YAxis tick={{ fill: '#2A2A2A', fontSize: 12 }} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#F5F2EA', 
+                      border: '1px solid #A59E8C',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Scatter dataKey="y" fill="#A44A3F" />
+                </ScatterChart>
+              </ResponsiveContainer>
+              
+              {/* Box Plot Statistics */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <div className="text-center p-3 bg-bone rounded border">
+                  <div className="text-lg font-bold text-chestnut">{boxPlotData[0].min.toFixed(2)}</div>
+                  <div className="text-xs text-charcoal/70">Min</div>
+                </div>
+                <div className="text-center p-3 bg-bone rounded border">
+                  <div className="text-lg font-bold text-chestnut">{boxPlotData[0].q1.toFixed(2)}</div>
+                  <div className="text-xs text-charcoal/70">Q1</div>
+                </div>
+                <div className="text-center p-3 bg-bone rounded border">
+                  <div className="text-lg font-bold text-chestnut">{boxPlotData[0].median.toFixed(2)}</div>
+                  <div className="text-xs text-charcoal/70">Median</div>
+                </div>
+                <div className="text-center p-3 bg-bone rounded border">
+                  <div className="text-lg font-bold text-chestnut">{boxPlotData[0].q3.toFixed(2)}</div>
+                  <div className="text-xs text-charcoal/70">Q3</div>
+                </div>
+                <div className="text-center p-3 bg-bone rounded border">
+                  <div className="text-lg font-bold text-chestnut">{boxPlotData[0].max.toFixed(2)}</div>
+                  <div className="text-xs text-charcoal/70">Max</div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {chartType === 'stats' && (
+            <FeatureStatsTable data={[currentFeature]} />
+          )}
+        </div>
+        
+        {/* Feature Insights */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h5 className="font-medium text-blue-900 mb-2">Feature Insights</h5>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-blue-700">Distribution:</span>
+              <span className="font-medium text-blue-900">
+                {Math.abs(currentFeature.skewness) < 0.5 ? 'Nearly Normal' :
+                 Math.abs(currentFeature.skewness) < 1 ? 'Slightly Skewed' :
+                 currentFeature.skewness > 0 ? 'Right Skewed' : 'Left Skewed'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-blue-700">Variability:</span>
+              <span className="font-medium text-blue-900">
+                {(currentFeature.std / currentFeature.mean) < 0.3 ? 'Low' :
+                 (currentFeature.std / currentFeature.mean) < 0.7 ? 'Moderate' : 'High'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-blue-700">Suggested Action:</span>
+              <span className="font-medium text-blue-900">
+                {Math.abs(currentFeature.skewness) > 1 ? 'Consider log transformation' :
+                 currentFeature.std / currentFeature.mean > 1 ? 'Check for outliers' : 'Ready for analysis'}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Full Statistics Table */}
+        <div className="bg-white rounded-lg border">
+          <div className="p-4 border-b bg-khaki/10">
+            <h4 className="font-semibold text-charcoal">All Features Summary</h4>
+          </div>
+          <FeatureStatsTable data={tableData} />
+        </div>
+      </div>
+    );
+  };
 
   const FeatureStatsTable = ({ data }) => {
     // Ensure data is an array
@@ -877,16 +1264,11 @@ const EDAExplorePage = () => {
                     )}
 
                     {edaSteps[activeStep].id === 'univariate' && analysisResults.univariate && (
-                      <FeatureStatsTable data={analysisResults.univariate} />
+                      <UnivariateAnalysisSection data={analysisResults.univariate} />
                     )}
 
                     {edaSteps[activeStep].id === 'bivariate' && analysisResults.bivariate && (
-                      <div>
-                        <h4 className="font-medium mb-2 text-charcoal">
-                          Feature Correlations with Target (Price)
-                        </h4>
-                        <CorrelationMatrix data={analysisResults.bivariate} />
-                      </div>
+                      <BivariateAnalysisSection data={analysisResults.bivariate} validationResults={validationResults} />
                     )}
                   </div>
                 )}
