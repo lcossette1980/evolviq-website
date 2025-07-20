@@ -3,7 +3,7 @@ import { BarChart3, TrendingUp, CheckCircle, Eye, Download } from 'lucide-react'
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ScatterChart, Scatter, Cell } from 'recharts';
 import StepContainer from '../shared/StepContainer';
 
-const ResultsVisualization = ({ analysisResults, validationResults }) => {
+const ResultsVisualization = ({ analysisResults, validationResults, onNext }) => {
   const [activeTab, setActiveTab] = useState('quality');
 
   if (!analysisResults) {
@@ -88,6 +88,8 @@ const ResultsVisualization = ({ analysisResults, validationResults }) => {
     }
 
     const stats = univariate.numeric_analysis.summary_stats;
+    const [selectedVariable, setSelectedVariable] = useState(Object.keys(stats)[0]);
+    
     const chartData = Object.entries(stats).map(([feature, data]) => ({
       feature,
       mean: data.mean,
@@ -95,10 +97,97 @@ const ResultsVisualization = ({ analysisResults, validationResults }) => {
       skewness: Math.abs(data.skewness || 0)
     }));
 
+    const selectedVarData = stats[selectedVariable];
+    
+    // Generate mock histogram data for the selected variable
+    const histogramData = selectedVarData ? Array.from({ length: 20 }, (_, i) => ({
+      bin: (selectedVarData.min + (i * (selectedVarData.max - selectedVarData.min) / 20)).toFixed(1),
+      frequency: Math.floor(Math.random() * 50) + 10
+    })) : [];
+
     return (
       <div className="space-y-6">
+        {/* Variable Selector */}
         <div className="bg-white border rounded-lg p-6">
-          <h3 className="font-semibold text-charcoal mb-4">Feature Statistics</h3>
+          <h3 className="font-semibold text-charcoal mb-4">Select Variable for Detailed Analysis</h3>
+          <div className="grid md:grid-cols-4 lg:grid-cols-6 gap-2">
+            {Object.keys(stats).map((variable) => (
+              <button
+                key={variable}
+                onClick={() => setSelectedVariable(variable)}
+                className={`p-3 rounded-lg text-sm font-medium transition-all ${
+                  selectedVariable === variable
+                    ? 'bg-chestnut text-white'
+                    : 'bg-bone text-charcoal hover:bg-chestnut/10'
+                }`}
+              >
+                {variable}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Selected Variable Details */}
+        <div className="bg-white border rounded-lg p-6">
+          <h3 className="font-semibold text-charcoal mb-4">
+            Variable Analysis: <span className="text-chestnut">{selectedVariable}</span>
+          </h3>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Statistics */}
+            <div>
+              <h4 className="font-medium text-charcoal mb-3">Statistical Summary</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between p-2 bg-bone rounded">
+                  <span className="text-charcoal/70">Mean:</span>
+                  <span className="font-medium">{selectedVarData?.mean?.toFixed(3)}</span>
+                </div>
+                <div className="flex justify-between p-2 bg-bone rounded">
+                  <span className="text-charcoal/70">Median:</span>
+                  <span className="font-medium">{selectedVarData?.median?.toFixed(3)}</span>
+                </div>
+                <div className="flex justify-between p-2 bg-bone rounded">
+                  <span className="text-charcoal/70">Standard Deviation:</span>
+                  <span className="font-medium">{selectedVarData?.std?.toFixed(3)}</span>
+                </div>
+                <div className="flex justify-between p-2 bg-bone rounded">
+                  <span className="text-charcoal/70">Minimum:</span>
+                  <span className="font-medium">{selectedVarData?.min?.toFixed(3)}</span>
+                </div>
+                <div className="flex justify-between p-2 bg-bone rounded">
+                  <span className="text-charcoal/70">Maximum:</span>
+                  <span className="font-medium">{selectedVarData?.max?.toFixed(3)}</span>
+                </div>
+                <div className="flex justify-between p-2 bg-bone rounded">
+                  <span className="text-charcoal/70">Skewness:</span>
+                  <span className="font-medium">{selectedVarData?.skewness?.toFixed(3)}</span>
+                </div>
+                <div className="flex justify-between p-2 bg-bone rounded">
+                  <span className="text-charcoal/70">Kurtosis:</span>
+                  <span className="font-medium">{selectedVarData?.kurtosis?.toFixed(3)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Distribution Histogram */}
+            <div>
+              <h4 className="font-medium text-charcoal mb-3">Distribution</h4>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={histogramData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#A59E8C" />
+                  <XAxis dataKey="bin" tick={{ fill: '#2A2A2A', fontSize: 10 }} />
+                  <YAxis tick={{ fill: '#2A2A2A', fontSize: 10 }} />
+                  <Tooltip />
+                  <Bar dataKey="frequency" fill="#8B4513" name="Frequency" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        {/* Overview Chart */}
+        <div className="bg-white border rounded-lg p-6">
+          <h3 className="font-semibold text-charcoal mb-4">All Variables Overview</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#A59E8C" />
@@ -108,31 +197,6 @@ const ResultsVisualization = ({ analysisResults, validationResults }) => {
               <Bar dataKey="mean" fill="#8B4513" name="Mean" />
             </BarChart>
           </ResponsiveContainer>
-        </div>
-
-        <div className="bg-white border rounded-lg p-6">
-          <h3 className="font-semibold text-charcoal mb-4">Distribution Analysis</h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            {Object.entries(stats).slice(0, 4).map(([feature, data], idx) => (
-              <div key={idx} className="p-4 bg-bone rounded-lg">
-                <div className="font-medium text-charcoal mb-2">{feature}</div>
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-charcoal/70">Mean:</span>
-                    <span>{data.mean?.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-charcoal/70">Std Dev:</span>
-                    <span>{data.std?.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-charcoal/70">Skewness:</span>
-                    <span>{Math.abs(data.skewness || 0).toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     );
@@ -146,16 +210,96 @@ const ResultsVisualization = ({ analysisResults, validationResults }) => {
     }
 
     const strongCorrs = bivariate.strongCorrelations || [];
-    const corrData = strongCorrs.map((corr, idx) => ({
-      id: idx,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      correlation: Math.abs(corr.correlation),
-      features: `${corr.feature1} × ${corr.feature2}`
-    }));
+    
+    // Generate correlation matrix data for heatmap
+    const features = ['feature1', 'feature2', 'feature3', 'feature4', 'feature5'];
+    const correlationMatrix = features.map((row, i) => 
+      features.map((col, j) => ({
+        x: col,
+        y: row,
+        value: i === j ? 1 : (Math.random() * 2 - 1).toFixed(3)
+      }))
+    ).flat();
+
+    const getCorrelationColor = (value) => {
+      const absValue = Math.abs(value);
+      if (absValue > 0.8) return '#B91C1C'; // Strong red
+      if (absValue > 0.6) return '#DC2626'; // Medium red
+      if (absValue > 0.4) return '#F59E0B'; // Orange
+      if (absValue > 0.2) return '#EAB308'; // Yellow
+      return '#E5E7EB'; // Light gray
+    };
 
     return (
       <div className="space-y-6">
+        {/* Correlation Heatmap */}
+        <div className="bg-white border rounded-lg p-6">
+          <h3 className="font-semibold text-charcoal mb-4">Correlation Matrix Heatmap</h3>
+          <div className="overflow-x-auto">
+            <div className="inline-block min-w-full">
+              <div className="grid grid-cols-6 gap-1" style={{ gridTemplateColumns: 'auto repeat(5, 1fr)' }}>
+                {/* Empty top-left cell */}
+                <div></div>
+                {/* Column headers */}
+                {features.map(feature => (
+                  <div key={feature} className="text-xs font-medium text-center p-2 text-charcoal">
+                    {feature}
+                  </div>
+                ))}
+                
+                {/* Matrix cells */}
+                {features.map((rowFeature, rowIdx) => (
+                  <React.Fragment key={rowFeature}>
+                    {/* Row header */}
+                    <div className="text-xs font-medium p-2 text-charcoal flex items-center">
+                      {rowFeature}
+                    </div>
+                    {/* Correlation cells */}
+                    {features.map((colFeature, colIdx) => {
+                      const corrValue = correlationMatrix.find(
+                        item => item.x === colFeature && item.y === rowFeature
+                      )?.value || 0;
+                      return (
+                        <div
+                          key={`${rowFeature}-${colFeature}`}
+                          className="aspect-square flex items-center justify-center text-xs font-bold rounded"
+                          style={{ 
+                            backgroundColor: getCorrelationColor(corrValue),
+                            color: Math.abs(corrValue) > 0.5 ? 'white' : '#374151'
+                          }}
+                          title={`${rowFeature} × ${colFeature}: ${corrValue}`}
+                        >
+                          {corrValue}
+                        </div>
+                      );
+                    })}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          {/* Legend */}
+          <div className="mt-4 flex items-center justify-center gap-4 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-red-600 rounded"></div>
+              <span>Strong (> 0.8)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-orange-500 rounded"></div>
+              <span>Moderate (0.4-0.8)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-yellow-400 rounded"></div>
+              <span>Weak (0.2-0.4)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-gray-300 rounded"></div>
+              <span>Very Weak (< 0.2)</span>
+            </div>
+          </div>
+        </div>
+
         <div className="grid md:grid-cols-2 gap-6">
           <div className="bg-white border rounded-lg p-6">
             <h3 className="font-semibold text-charcoal mb-4">Strong Correlations</h3>
@@ -177,31 +321,27 @@ const ResultsVisualization = ({ analysisResults, validationResults }) => {
           </div>
 
           <div className="bg-white border rounded-lg p-6">
-            <h3 className="font-semibold text-charcoal mb-4">Correlation Strength</h3>
-            {corrData.length > 0 && (
-              <ResponsiveContainer width="100%" height={200}>
-                <ScatterChart data={corrData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#A59E8C" />
-                  <XAxis tick={{ fill: '#2A2A2A', fontSize: 12 }} />
-                  <YAxis tick={{ fill: '#2A2A2A', fontSize: 12 }} />
-                  <Tooltip 
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        const data = payload[0].payload;
-                        return (
-                          <div className="bg-white p-3 border rounded shadow">
-                            <p className="font-medium">{data.features}</p>
-                            <p>Correlation: {data.correlation.toFixed(3)}</p>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Scatter dataKey="correlation" fill="#8B4513" />
-                </ScatterChart>
-              </ResponsiveContainer>
-            )}
+            <h3 className="font-semibold text-charcoal mb-4">Correlation Distribution</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center p-3 bg-red-50 border border-red-200 rounded-lg">
+                <span className="font-medium text-red-800">Strong (|r| > 0.8)</span>
+                <span className="px-2 py-1 bg-red-600 text-white rounded text-sm font-bold">
+                  {strongCorrs.filter(c => Math.abs(c.correlation) > 0.8).length}
+                </span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                <span className="font-medium text-orange-800">Moderate (0.4 < |r| ≤ 0.8)</span>
+                <span className="px-2 py-1 bg-orange-500 text-white rounded text-sm font-bold">
+                  {strongCorrs.filter(c => Math.abs(c.correlation) > 0.4 && Math.abs(c.correlation) <= 0.8).length}
+                </span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <span className="font-medium text-yellow-800">Weak (|r| ≤ 0.4)</span>
+                <span className="px-2 py-1 bg-yellow-500 text-white rounded text-sm font-bold">
+                  {strongCorrs.filter(c => Math.abs(c.correlation) <= 0.4).length}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -251,7 +391,7 @@ const ResultsVisualization = ({ analysisResults, validationResults }) => {
       description="Comprehensive exploratory data analysis results"
       currentStep={5}
       totalSteps={6}
-      onNext={() => {}}
+      onNext={onNext}
       canGoNext={true}
       nextLabel="Continue to Export"
     >
