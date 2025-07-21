@@ -1078,10 +1078,6 @@ def generate_ai_question(assessment_type: str, question_history: List[Dict], use
         logger.warning(f"OpenAI client not available - using fallback question for {assessment_type}")
         return get_fallback_question(assessment_type, len(question_history))
     
-    # TEMPORARY: Force fallback for testing the new agentic format
-    if assessment_type in ["ai_knowledge", "change_readiness"]:
-        logger.info(f"Using fallback agentic question for {assessment_type} - question #{len(question_history) + 1}")
-        return get_fallback_question(assessment_type, len(question_history))
     
     try:
         logger.info(f"Generating AI question #{len(question_history) + 1} for {assessment_type}")
@@ -1102,8 +1098,10 @@ def generate_ai_question(assessment_type: str, question_history: List[Dict], use
                     "content": conversation_context
                 }
             ],
-            temperature=0.7,
-            max_tokens=500
+            temperature=0.3,  # Lower temperature for more consistent JSON
+            max_tokens=800,   # More tokens for detailed agentic responses
+            presence_penalty=0.1,
+            frequency_penalty=0.1
         )
         
         # Parse the AI response
@@ -1142,11 +1140,13 @@ MATURITY LEVELS:
 4. Advanced - Deep knowledge, can teach others
 5. Expert - Leading-edge knowledge, innovation capability
 
+CRITICAL: You MUST respond with ONLY valid JSON. No other text before or after.
+
 Response format (JSON):
 {
-    "question": "Intelligent question tailored to their responses",
+    "question": "Open-ended question for text response (NOT multiple choice)",
     "section": "Current section (F1.1, F1.2, P2.1, P2.2, E3.1)",
-    "follow_up": true/false,
+    "follow_up": false,
     "concepts_to_detect": ["concept1", "concept2", "concept3"],
     "maturity_indicators": {
         "level_1": ["indicators for nascent"],
@@ -1155,7 +1155,7 @@ Response format (JSON):
         "level_4": ["indicators for advanced"],
         "level_5": ["indicators for expert"]
     },
-    "rationale": "Why this question and what you're looking for"
+    "rationale": "Why this question reveals AI readiness"
 }
 
 Focus on practical business application for small organizations with limited resources."""
@@ -1183,9 +1183,11 @@ MULTI-AGENT ANALYSIS AREAS:
 - Resources: Time, budget, dedicated personnel, implementation capacity
 - Communication: Transparency, feedback loops, stakeholder alignment
 
+CRITICAL: You MUST respond with ONLY valid JSON. No other text before or after.
+
 Response format (JSON):
 {
-    "question": "Specific question targeting one of the 5 dimensions",
+    "question": "Open-ended question for text response (NOT multiple choice)",
     "section": "Current section (leadership_support, team_capability, change_history, resource_allocation, communication_culture)",
     "probe_for": ["What evidence to look for in responses"],
     "red_flags": ["Warning signs that indicate low readiness"],
@@ -2269,11 +2271,15 @@ def parse_ai_question_response(ai_response: str, assessment_type: str, question_
                 }
             }
             
-    except json.JSONDecodeError:
-        # If JSON parsing fails, try to extract question from text
+    except json.JSONDecodeError as e:
+        # If JSON parsing fails, log the response and try to extract question from text
+        logger.error(f"JSON parsing failed for {assessment_type} response: {e}")
+        logger.error(f"OpenAI response was: {ai_response}")
+        
         lines = ai_response.strip().split('\n')
         question = next((line for line in lines if '?' in line), "Could you provide more information about your experience?")
         
+        logger.info(f"Falling back to structured question for {assessment_type}")
         return get_fallback_question(assessment_type, question_number, custom_question=question)
 
 def get_fallback_question(assessment_type: str, question_number: int, custom_question: str = None) -> Dict:
