@@ -1267,6 +1267,329 @@ def extract_crewai_results_for_api(crewai_output: Dict) -> Dict:
         }
 
 # =============================================================================
+# CHANGE READINESS CREWAI AGENTS
+# =============================================================================
+
+def create_change_assessment_agent(llm):
+    """Agent 1: Analyzes organizational change readiness"""
+    return Agent(
+        role='Organizational Change Readiness Analyst',
+        goal='Assess organizational capacity for AI-driven change by analyzing culture, leadership, processes, and employee readiness',
+        backstory="""You are Dr. Maria Santos, an organizational psychology expert with 20 years of experience in 
+        change management and digital transformation. You specialize in assessing organizational readiness for 
+        technology adoption, particularly AI implementations. You excel at reading between the lines of survey 
+        responses to understand true organizational culture, leadership effectiveness, and employee sentiment.""",
+        verbose=True,
+        allow_delegation=True,
+        llm=llm,
+        tools=[AssessmentDataTool(), ConceptExtractionTool()]
+    )
+
+def create_change_scoring_agent(llm):
+    """Agent 2: Calculates sophisticated change readiness scores"""
+    return Agent(
+        role='Change Readiness Scoring Specialist',
+        goal='Provide precise scoring of organizational change readiness across multiple dimensions with confidence intervals',
+        backstory="""You are Dr. James Liu, a quantitative organizational analyst with expertise in change 
+        management metrics and scoring methodologies. You have developed proprietary frameworks for measuring 
+        organizational readiness across culture, leadership, processes, and technology adoption. You provide 
+        detailed, evidence-based scoring with clear justification for each assessment dimension.""",
+        verbose=True,
+        allow_delegation=False,
+        llm=llm,
+        tools=[AssessmentDataTool(), ConceptExtractionTool()]
+    )
+
+def create_change_strategy_agent(llm):
+    """Agent 3: Designs change management strategies"""
+    return Agent(
+        role='Change Strategy Architect',
+        goal='Develop comprehensive change management strategies tailored to organizational context and readiness levels',
+        backstory="""You are Sarah Thompson, a change management strategist who has led over 100 digital 
+        transformations across industries. You understand the critical success factors for AI adoption and 
+        can design phase-appropriate change strategies. You excel at creating actionable roadmaps that account 
+        for organizational constraints while maximizing change success probability.""",
+        verbose=True,
+        allow_delegation=True,
+        llm=llm,
+        tools=[AssessmentDataTool(), RAGRetrievalTool(), LearningPathTool()]
+    )
+
+def create_change_risk_agent(llm):
+    """Agent 4: Identifies and mitigates change risks"""
+    return Agent(
+        role='Change Risk Assessment Specialist',
+        goal='Identify potential obstacles, resistance patterns, and failure modes in AI transformation initiatives',
+        backstory="""You are Michael Rodriguez, a risk management expert specializing in organizational change 
+        initiatives. You have seen transformations fail and succeed, and can predict potential pitfalls before 
+        they become problems. You excel at designing early warning systems and mitigation strategies for 
+        change-related risks, from technical challenges to cultural resistance.""",
+        verbose=True,
+        allow_delegation=False,
+        llm=llm,
+        tools=[AssessmentDataTool(), ConceptExtractionTool()]
+    )
+
+def create_portfolio_management_agent(llm):
+    """Agent 5: Manages AI initiative portfolios"""
+    return Agent(
+        role='AI Portfolio Management Strategist',
+        goal='Optimize AI initiative portfolios for maximum business impact while managing organizational capacity',
+        backstory="""You are Dr. Amanda Chen, a strategic portfolio manager who specializes in AI and digital 
+        transformation initiatives. You understand how to sequence AI projects for maximum learning and impact, 
+        balance quick wins with long-term capabilities, and manage organizational change capacity. You excel at 
+        creating realistic implementation timelines that respect organizational constraints.""",
+        verbose=True,
+        allow_delegation=False,
+        llm=llm,
+        tools=[RAGRetrievalTool(), AssessmentDataTool()]
+    )
+
+# =============================================================================
+# CHANGE READINESS CREWAI TASKS
+# =============================================================================
+
+def create_change_assessment_task(org_data: Dict, question_history: List[Dict]):
+    """Task for analyzing organizational change readiness"""
+    return Task(
+        description=f"""
+        Conduct comprehensive organizational change readiness assessment.
+        
+        Organization Data: {json.dumps(org_data, indent=2)}
+        Assessment Responses: {json.dumps(question_history, indent=2)}
+        
+        Your responsibilities:
+        1. Analyze organizational culture and change capacity
+        2. Evaluate leadership readiness and commitment
+        3. Assess process maturity and adaptability
+        4. Review employee sentiment and change history
+        5. Identify cultural strengths and barriers
+        
+        Deliver comprehensive analysis including:
+        - Cultural change readiness indicators
+        - Leadership effectiveness assessment
+        - Process and structural readiness
+        - Employee engagement and change appetite
+        - Historical change performance patterns
+        """,
+        expected_output="Detailed organizational readiness analysis with evidence-based insights and change capacity assessment",
+        agent=None
+    )
+
+def create_change_scoring_task():
+    """Task for calculating change readiness scores"""
+    return Task(
+        description="""
+        Calculate comprehensive change readiness scores based on organizational assessment.
+        
+        Your responsibilities:
+        1. Score culture readiness (adaptability, innovation, collaboration)
+        2. Evaluate leadership readiness (vision, commitment, capability)
+        3. Assess process readiness (agility, documentation, governance)
+        4. Calculate technology readiness (infrastructure, skills, adoption)
+        5. Determine overall change readiness level
+        
+        Provide detailed scoring including:
+        - Individual dimension scores (1-5 scale) with justification
+        - Confidence intervals for each score
+        - Overall readiness level and recommendations
+        - Critical success factors and risk indicators
+        """,
+        expected_output="Comprehensive scoring report with dimensional analysis and overall readiness assessment",
+        agent=None
+    )
+
+def create_change_strategy_task():
+    """Task for designing change management strategy"""
+    return Task(
+        description="""
+        Design comprehensive change management strategy based on readiness assessment.
+        
+        Your responsibilities:
+        1. Create phased implementation approach
+        2. Design stakeholder engagement strategy
+        3. Develop communication and training plans
+        4. Establish governance and decision-making structures
+        5. Create success metrics and monitoring systems
+        
+        Strategy should include:
+        - Multi-phase implementation timeline
+        - Stakeholder mapping and engagement approach
+        - Communication strategy and messaging framework
+        - Training and capability building plans
+        - Governance structures and decision processes
+        """,
+        expected_output="Complete change management strategy with actionable implementation roadmap",
+        agent=None
+    )
+
+def create_change_risk_task():
+    """Task for change risk assessment and mitigation"""
+    return Task(
+        description="""
+        Conduct comprehensive change risk assessment and develop mitigation strategies.
+        
+        Your responsibilities:
+        1. Identify potential resistance sources and patterns
+        2. Assess technical and operational risks
+        3. Evaluate resource and timeline risks
+        4. Analyze cultural and political risks
+        5. Design mitigation strategies for each risk category
+        
+        Risk assessment should cover:
+        - Individual and group resistance patterns
+        - Technical implementation challenges
+        - Resource availability and capability gaps
+        - Cultural misalignment and political obstacles
+        - External market and competitive pressures
+        """,
+        expected_output="Detailed risk assessment with specific mitigation strategies and contingency plans",
+        agent=None
+    )
+
+def create_portfolio_strategy_task():
+    """Task for AI portfolio strategy and sequencing"""
+    return Task(
+        description="""
+        Develop AI initiative portfolio strategy optimized for organizational capacity and impact.
+        
+        Your responsibilities:
+        1. Sequence AI initiatives based on readiness and impact
+        2. Balance quick wins with capability building
+        3. Manage organizational change capacity
+        4. Create realistic implementation timelines
+        5. Design portfolio governance and prioritization
+        
+        Portfolio strategy should include:
+        - Initiative prioritization matrix (impact vs. readiness)
+        - Sequenced implementation roadmap
+        - Resource allocation and capacity planning
+        - Success metrics and value tracking
+        - Portfolio governance and decision frameworks
+        """,
+        expected_output="Complete AI portfolio strategy with sequenced roadmap and governance framework",
+        agent=None
+    )
+
+# =============================================================================
+# CHANGE READINESS CREWAI SYSTEM
+# =============================================================================
+
+class ChangeReadinessCrewAI:
+    """CrewAI implementation for Change Readiness Assessment"""
+    
+    def __init__(self, openai_api_key: str):
+        self.openai_api_key = openai_api_key
+        
+        # Initialize LLM
+        self.llm = ChatOpenAI(
+            openai_api_key=openai_api_key,
+            model_name="gpt-4",
+            temperature=0.7
+        )
+        
+        # Initialize change readiness agents
+        self.assessment_agent = create_change_assessment_agent(self.llm)
+        self.scoring_agent = create_change_scoring_agent(self.llm)
+        self.strategy_agent = create_change_strategy_agent(self.llm)
+        self.risk_agent = create_change_risk_agent(self.llm)
+        self.portfolio_agent = create_portfolio_management_agent(self.llm)
+    
+    def run_change_readiness_assessment(self, org_data: Dict, question_history: List[Dict]) -> Dict:
+        """Run complete change readiness assessment with CrewAI agents"""
+        
+        print("🚀 Starting Change Readiness CrewAI Assessment...")
+        print(f"📊 Analyzing organization: {org_data.get('name', 'Unknown')}")
+        
+        try:
+            # Create tasks
+            assessment_task = create_change_assessment_task(org_data, question_history)
+            assessment_task.agent = self.assessment_agent
+            
+            scoring_task = create_change_scoring_task()
+            scoring_task.agent = self.scoring_agent
+            
+            strategy_task = create_change_strategy_task()
+            strategy_task.agent = self.strategy_agent
+            
+            risk_task = create_change_risk_task()
+            risk_task.agent = self.risk_agent
+            
+            portfolio_task = create_portfolio_strategy_task()
+            portfolio_task.agent = self.portfolio_agent
+            
+            # Create collaborative crew
+            change_crew = Crew(
+                agents=[
+                    self.assessment_agent,
+                    self.scoring_agent,
+                    self.strategy_agent,
+                    self.risk_agent,
+                    self.portfolio_agent
+                ],
+                tasks=[
+                    assessment_task,
+                    scoring_task,
+                    strategy_task,
+                    risk_task,
+                    portfolio_task
+                ],
+                process=Process.sequential,
+                verbose=True
+            )
+            
+            # Execute assessment
+            print("🤖 Change readiness agents collaborating...")
+            results = change_crew.kickoff()
+            
+            print("✅ Change Readiness CrewAI Assessment completed!")
+            
+            return {
+                "crewai_results": results,
+                "agents_used": [
+                    "organizational_change_analyst",
+                    "change_readiness_scorer",
+                    "change_strategy_architect", 
+                    "change_risk_specialist",
+                    "ai_portfolio_strategist"
+                ],
+                "assessment_timestamp": datetime.now().isoformat(),
+                "collaboration_type": "sequential_change_analysis",
+                "organization": org_data.get('name', 'Unknown')
+            }
+            
+        except Exception as e:
+            print(f"❌ Change Readiness CrewAI Assessment failed: {e}")
+            return {
+                "error": f"CrewAI change assessment failed: {str(e)}",
+                "fallback_analysis": "Using function-based change assessment",
+                "assessment_timestamp": datetime.now().isoformat()
+            }
+
+# =============================================================================
+# CHANGE READINESS INTEGRATION
+# =============================================================================
+
+def run_crewai_change_assessment(openai_api_key: str, org_data: Dict, question_history: List[Dict]) -> Dict:
+    """Run change readiness assessment using CrewAI agents"""
+    
+    try:
+        # Initialize CrewAI system
+        crew_system = ChangeReadinessCrewAI(openai_api_key)
+        
+        # Run assessment
+        results = crew_system.run_change_readiness_assessment(org_data, question_history)
+        
+        return results
+        
+    except Exception as e:
+        print(f"Change readiness CrewAI failed: {e}")
+        return {
+            "error": f"CrewAI change assessment failed: {str(e)}",
+            "fallback_needed": True
+        }
+
+# =============================================================================
 # TESTING AND DEMONSTRATION
 # =============================================================================
 
