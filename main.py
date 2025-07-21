@@ -1029,22 +1029,56 @@ try:
     openai_api_key = os.getenv("OPENAI_API_KEY")
     if openai_api_key:
         logger.info(f"🔑 Found OpenAI API key: {openai_api_key[:10]}...{openai_api_key[-4:]}")
+        
+        # Check for proxy-related environment variables
+        proxy_vars = {
+            'HTTP_PROXY': os.getenv('HTTP_PROXY'),
+            'HTTPS_PROXY': os.getenv('HTTPS_PROXY'), 
+            'http_proxy': os.getenv('http_proxy'),
+            'https_proxy': os.getenv('https_proxy'),
+            'ALL_PROXY': os.getenv('ALL_PROXY'),
+            'OPENAI_PROXY': os.getenv('OPENAI_PROXY')
+        }
+        logger.info(f"🔍 Proxy environment variables: {proxy_vars}")
+        
+        # Clear any proxy environment variables that might interfere
+        for var in proxy_vars:
+            if os.getenv(var):
+                logger.warning(f"⚠️ Clearing proxy variable: {var}")
+                os.environ.pop(var, None)
+        
         from openai import OpenAI
         
-        # Initialize with minimal configuration to avoid compatibility issues
-        openai_client = OpenAI(
-            api_key=openai_api_key,
-            timeout=30.0,  # 30 second timeout
-        )
+        # Initialize with absolutely minimal configuration
+        logger.info("🔧 Initializing OpenAI client with minimal config...")
         
-        # Test the client with a simple call
+        # Try different initialization approaches for compatibility
         try:
-            # Make a test call to verify the client works
-            test_response = openai_client.models.list()
-            logger.info("✅ OpenAI client initialized and tested successfully")
-        except Exception as test_error:
-            logger.error(f"❌ OpenAI client test failed: {test_error}")
-            openai_client = None
+            # Method 1: Standard initialization
+            openai_client = OpenAI(api_key=openai_api_key)
+            logger.info("✅ OpenAI client initialized with standard method")
+        except Exception as init_error:
+            logger.warning(f"⚠️ Standard init failed: {init_error}, trying alternative...")
+            try:
+                # Method 2: Alternative initialization without any extra parameters
+                import openai
+                openai.api_key = openai_api_key
+                openai_client = OpenAI()
+                logger.info("✅ OpenAI client initialized with alternative method")
+            except Exception as alt_error:
+                logger.error(f"❌ Alternative init also failed: {alt_error}")
+                openai_client = None
+        
+        # Test the client if initialization succeeded
+        if openai_client:
+            try:
+                # Make a test call to verify the client works
+                test_response = openai_client.models.list()
+                logger.info("✅ OpenAI client tested successfully")
+            except Exception as test_error:
+                logger.error(f"❌ OpenAI client test failed: {test_error}")
+                # Don't set to None - the client might still work for chat completions
+                logger.warning("⚠️ Client test failed but keeping client for chat completions")
     else:
         logger.warning("⚠️ OPENAI_API_KEY not found - assessment features will be limited")
         openai_client = None

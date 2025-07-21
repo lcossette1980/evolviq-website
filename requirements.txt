@@ -21,8 +21,8 @@ kneed==0.8.5
 plotly==5.17.0
 kaleido==0.2.1
 
-# AI/OpenAI
-openai==1.54.4
+# AI/OpenAI (using older version for Railway compatibility)
+openai==1.12.0
 
 # Utilities
 python-dotenv==1.0.0
