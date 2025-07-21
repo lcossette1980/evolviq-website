@@ -15,6 +15,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy API files
 COPY main.py .
+COPY crewai_assessment.py .
+COPY test_crewai.py .
 COPY regression/ ./regression/
 COPY ml_frameworks/ ./ml_frameworks/
 COPY start.sh .
