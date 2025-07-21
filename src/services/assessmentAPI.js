@@ -484,12 +484,14 @@ class AssessmentAPI {
 
   async generateActionItemsFromAssessment(userId, projectId, assessmentType, assessmentData) {
     try {
+      console.log('generateActionItemsFromAssessment - assessmentData:', assessmentData);
       const actionItems = [];
 
       if (assessmentType === 'ai_knowledge_navigator') {
         // Generate learning-focused action items
-        const maturityScores = assessmentData.maturityScores || {};
-        const learningPlan = assessmentData.learningPlan || {};
+        const analysisData = assessmentData.analysis || assessmentData;
+        const maturityScores = analysisData.maturity_scores || assessmentData.maturityScores || {};
+        const learningPlan = analysisData.learning_path || assessmentData.learningPlan || {};
 
         // Create action items for low maturity areas
         Object.entries(maturityScores).forEach(([area, score]) => {
@@ -515,8 +517,9 @@ class AssessmentAPI {
         });
 
         // Create action items from learning plan recommendations
-        if (learningPlan.basicRecommendations) {
-          learningPlan.basicRecommendations.slice(0, 3).forEach((recommendation, index) => {
+        const recommendations = learningPlan.basic_recommendations || learningPlan.basicRecommendations || [];
+        if (recommendations.length > 0) {
+          recommendations.slice(0, 3).forEach((recommendation, index) => {
             const actionItem = {
               title: recommendation.title || `Learning Recommendation ${index + 1}`,
               description: recommendation.description || recommendation,
