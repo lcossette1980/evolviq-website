@@ -5,6 +5,7 @@
 import json
 import os
 import uuid
+import signal
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from datetime import datetime
@@ -386,8 +387,8 @@ def create_concept_detection_agent(llm):
         machine learning, and large language models. You excel at reading between the lines to understand 
         not just what users say, but what they truly comprehend about AI concepts. You can detect subtle 
         indicators of understanding and identify knowledge gaps that need attention.""",
-        verbose=True,
-        allow_delegation=True,
+        verbose=False,  # Reduce verbosity to prevent noise
+        allow_delegation=False,  # Disable delegation to prevent loops
         llm=llm,
         tools=[AssessmentDataTool(), ConceptExtractionTool()]
     )
@@ -402,7 +403,7 @@ def create_maturity_scoring_agent(llm):
         You're known for fair, consistent scoring that helps learners understand their current level 
         while providing clear pathways for improvement. You consider multiple factors: concept understanding, 
         practical application, confidence levels, and learning potential.""",
-        verbose=True,
+        verbose=False,  # Reduce verbosity
         allow_delegation=False,
         llm=llm,
         tools=[AssessmentDataTool(), ConceptExtractionTool()]
@@ -418,8 +419,8 @@ def create_learning_path_agent(llm):
         learning experiences. You excel at balancing theory with practical application, ensuring learners 
         build solid foundations while gaining hands-on experience. You consider individual learning styles, 
         time constraints, and career goals when designing learning journeys.""",
-        verbose=True,
-        allow_delegation=True,
+        verbose=False,  # Reduce verbosity to prevent noise
+        allow_delegation=False,  # Disable delegation to prevent loops
         llm=llm,
         tools=[AssessmentDataTool(), RAGRetrievalTool(), LearningPathTool()]
     )
@@ -434,7 +435,7 @@ def create_business_application_agent(llm):
         team readiness, technical limitations, and change management. You excel at recommending specific tools, 
         processes, and strategies that deliver measurable business value. You focus on realistic implementations 
         that can be achieved with existing resources and skills.""",
-        verbose=True,
+        verbose=False,  # Reduce verbosity
         allow_delegation=False,
         llm=llm,
         tools=[RAGRetrievalTool(), AssessmentDataTool()]
@@ -450,7 +451,7 @@ def create_confidence_risk_agent(llm):
         underconfident, or missing critical foundations. You excel at spotting potential obstacles before they 
         become problems and designing mitigation strategies. You understand the emotional and psychological 
         aspects of learning new technologies and can provide supportive, realistic guidance.""",
-        verbose=True,
+        verbose=False,  # Reduce verbosity
         allow_delegation=False,
         llm=llm,
         tools=[AssessmentDataTool(), ConceptExtractionTool()]
@@ -461,155 +462,131 @@ def create_confidence_risk_agent(llm):
 # =============================================================================
 
 def create_concept_analysis_task(question_history: List[Dict]):
-    """Task for deep concept analysis of user responses"""
+    """Task for focused concept analysis of user responses"""
     return Task(
         description=f"""
-        Conduct comprehensive concept analysis of user responses to AI knowledge assessment.
+        Analyze user responses to identify AI concepts and knowledge levels.
         
         Question History: {json.dumps(question_history, indent=2)}
         
-        Your responsibilities:
-        1. Analyze each response for AI literacy concepts and understanding depth
-        2. Extract evidence of knowledge and identify subtle understanding indicators
-        3. Detect knowledge gaps and areas of confusion
-        4. Assess conceptual strengths and areas for improvement
-        5. Provide detailed evidence for your analysis
+        Your task:
+        1. Identify AI concepts mentioned in each response
+        2. Score understanding level (1-5) for each section
+        3. List 3 main strengths and 3 key gaps
         
-        Use your tools to:
-        - Access assessment criteria and concept mappings
-        - Extract and score concepts from responses
-        - Cross-reference against maturity level indicators
+        Output format (JSON only):
+        {{
+            "concepts_detected": ["list of concepts"],
+            "section_scores": {{"F1.1": 3.0, "F1.2": 2.5, ...}},
+            "strengths": ["strength 1", "strength 2", "strength 3"],
+            "gaps": ["gap 1", "gap 2", "gap 3"]
+        }}
         
-        Deliver comprehensive analysis including:
-        - Detected concepts by section with confidence scores
-        - Evidence of understanding for each concept
-        - Identified knowledge gaps and misconceptions
-        - Conceptual strengths to build upon
-        - Recommendations for concept clarification
+        Keep analysis concise and focused. Do not use tools repeatedly.
         """,
-        expected_output="Detailed concept analysis with evidence, gaps, strengths, and specific recommendations in structured JSON format",
+        expected_output="JSON with concepts, scores, strengths, and gaps",
         agent=None
     )
 
 def create_maturity_scoring_task():
-    """Task for calculating sophisticated maturity scores"""
+    """Task for calculating focused maturity scores"""
     return Task(
         description="""
-        Calculate comprehensive maturity scores based on concept analysis results.
+        Calculate final maturity scores based on previous analysis.
         
-        Your responsibilities:
-        1. Analyze concept detection results from the previous task
-        2. Calculate maturity scores for each AI literacy section (F1.1, F1.2, P2.1, P2.2, E3.1)
-        3. Determine confidence levels for each score
-        4. Calculate overall AI readiness level
-        5. Provide detailed scoring rationale
+        Your task:
+        1. Use the concept analysis results from the previous task
+        2. Calculate final scores for each section (F1.1, F1.2, P2.1, P2.2, E3.1)
+        3. Determine overall readiness level
         
-        Consider multiple factors:
-        - Concept understanding depth
-        - Practical application indicators
-        - Response quality and detail
-        - Evidence of real-world application
-        - Learning potential and growth indicators
+        Output format (JSON only):
+        {{
+            "section_scores": {{"F1.1": 3.2, "F1.2": 2.8, "P2.1": 3.0, "P2.2": 2.5, "E3.1": 3.1}},
+            "overall_score": 2.9,
+            "readiness_level": "ready_to_learn"
+        }}
         
-        Deliver scoring analysis including:
-        - Individual section scores (1-5 scale) with justification
-        - Confidence levels for each score
-        - Overall maturity level and readiness assessment
-        - Scoring methodology and evidence
-        - Areas of particular strength or concern
+        Keep this focused and brief. Do not use tools.
         """,
-        expected_output="Comprehensive scoring report with individual and overall scores, confidence levels, and detailed justification",
+        expected_output="JSON with final scores and readiness level",
         agent=None
     )
 
 def create_learning_design_task():
-    """Task for creating personalized learning paths"""
+    """Task for creating focused learning recommendations"""
     return Task(
         description="""
-        Design comprehensive personalized learning path based on maturity scores and concept analysis.
+        Create learning recommendations based on previous analysis.
         
-        Your responsibilities:
-        1. Analyze scoring results and concept gaps from previous tasks
-        2. Design progressive learning phases with clear objectives
-        3. Create realistic timelines and milestones
-        4. Recommend specific resources and learning activities
-        5. Establish success criteria and progress tracking methods
+        Your task:
+        1. Use scores and gaps from previous tasks
+        2. Recommend 3 priority learning areas
+        3. Suggest 3 specific resources
         
-        Consider user context:
-        - Current skill level and knowledge gaps
-        - Time availability and learning preferences
-        - Career goals and application areas
-        - Budget constraints and resource access
+        Output format (JSON only):
+        {{
+            "priority_areas": ["area 1", "area 2", "area 3"],
+            "learning_resources": ["resource 1", "resource 2", "resource 3"],
+            "timeline": "6-8 weeks"
+        }}
         
-        Create comprehensive learning plan including:
-        - Multi-phase learning progression (Foundation → Application → Mastery)
-        - Weekly schedules with specific activities
-        - Resource recommendations (courses, tools, practice exercises)
-        - Milestone checkpoints and success criteria
-        - Flexible pathways for different learning styles
+        Keep recommendations practical and brief.
         """,
-        expected_output="Complete personalized learning path with phases, schedules, resources, and success metrics",
+        expected_output="JSON with learning priorities and resources",
         agent=None
     )
 
 def create_business_recommendations_task():
-    """Task for generating practical business implementation guidance"""
+    """Task for generating focused business recommendations"""
     return Task(
         description="""
-        Generate practical AI implementation recommendations based on assessment results.
+        Provide practical business recommendations based on assessment.
         
-        Your responsibilities:
-        1. Analyze maturity levels and readiness indicators
-        2. Recommend specific AI tools and platforms
-        3. Provide implementation strategies and timelines
-        4. Consider budget constraints and resource limitations
-        5. Focus on achievable, measurable business outcomes
+        Your task:
+        1. Recommend 2 immediate AI tools to start with
+        2. Suggest implementation timeline
+        3. Estimate costs and ROI
         
-        Recommendations should include:
-        - Specific AI tools and vendors with cost analysis
-        - Implementation timelines and resource requirements
-        - ROI projections and success metrics
-        - Risk mitigation strategies
-        - Scaling pathways for future growth
+        Output format (JSON only):
+        {{
+            "recommended_tools": [
+                {{"name": "ChatGPT Plus", "cost": "$20/month", "use_case": "content creation"}},
+                {{"name": "Zapier AI", "cost": "$50/month", "use_case": "workflow automation"}}
+            ],
+            "timeline": "Start immediately, scale over 3 months",
+            "expected_roi": "20-30% efficiency gain"
+        }}
         
-        Focus on practical guidance for:
-        - Tool selection based on skill level and needs
-        - Implementation sequencing and priorities
-        - Budget optimization and cost-effective solutions
-        - Change management and team adoption
-        - Measuring and demonstrating value
+        Keep recommendations practical and specific.
         """,
-        expected_output="Actionable business implementation plan with specific tools, timelines, costs, and success strategies",
+        expected_output="JSON with tool recommendations and implementation guidance",
         agent=None
     )
 
 def create_risk_assessment_task():
-    """Task for identifying learning and implementation risks"""
+    """Task for identifying key risks and mitigation"""
     return Task(
         description="""
-        Conduct comprehensive risk assessment for AI learning and implementation journey.
+        Identify main risks for AI implementation based on assessment.
         
-        Your responsibilities:
-        1. Analyze confidence levels and potential overconfidence/underconfidence
-        2. Identify learning obstacles and implementation challenges
-        3. Assess readiness for different types of AI adoption
-        4. Recommend risk mitigation strategies
-        5. Provide realistic timeline and expectation setting
+        Your task:
+        1. List 3 main implementation risks
+        2. Suggest mitigation for each risk
+        3. Assess overall success probability
         
-        Risk assessment should cover:
-        - Learning risks: knowledge gaps, misconceptions, confidence issues
-        - Implementation risks: technical challenges, resource constraints, adoption barriers
-        - Business risks: ROI expectations, change management, scaling challenges
-        - Mitigation strategies: training needs, support requirements, fallback plans
+        Output format (JSON only):
+        {{
+            "risks": [
+                {{"risk": "knowledge gaps", "mitigation": "structured training"}},
+                {{"risk": "tool complexity", "mitigation": "start simple"}},
+                {{"risk": "change resistance", "mitigation": "gradual adoption"}}
+            ],
+            "success_probability": "70%"
+        }}
         
-        Deliver comprehensive risk analysis including:
-        - Identified risks with likelihood and impact assessment
-        - Confidence gaps that could lead to poor decisions
-        - Implementation challenges and potential obstacles
-        - Recommended mitigation strategies for each risk
-        - Success probability assessment and improvement recommendations
+        Keep assessment focused and actionable.
         """,
-        expected_output="Detailed risk assessment with identified risks, impact analysis, and specific mitigation strategies",
+        expected_output="JSON with risks, mitigation strategies, and success probability",
         agent=None
     )
 
@@ -623,7 +600,7 @@ def create_question_generation_agent(llm, section: str, agent_persona: dict):
         role=agent_persona['role'],
         goal=agent_persona['goal'],
         backstory=agent_persona['backstory'],
-        verbose=True,
+        verbose=False,  # Reduce verbosity
         allow_delegation=False,
         llm=llm,
         tools=[AssessmentDataTool(), ConceptExtractionTool()]
@@ -745,11 +722,13 @@ class AIReadinessCrewAI:
     def __init__(self, openai_api_key: str):
         self.openai_api_key = openai_api_key
         
-        # Initialize LLM
+        # Initialize LLM with timeout
         self.llm = ChatOpenAI(
             openai_api_key=openai_api_key,
             model_name="gpt-4o-mini",
-            temperature=0.7
+            temperature=0.7,
+            request_timeout=30,  # 30 second timeout for LLM calls
+            max_retries=1  # Limit retries to prevent loops
         )
         
         # Initialize analysis agents
@@ -787,19 +766,33 @@ class AIReadinessCrewAI:
             question_task = create_question_generation_task(current_section, question_history, current_persona)
             question_task.agent = current_agent
             
-            # Create single-agent crew for question generation
+            # Create single-agent crew for question generation with limits
             question_crew = Crew(
                 agents=[current_agent],
                 tasks=[question_task],
                 process=Process.sequential,
-                verbose=False  # Reduce noise
+                verbose=False,  # Reduce noise
+                max_iter=3  # Limit iterations to prevent loops
             )
             
-            # Generate question
+            # Generate question with timeout
             print(f"🤖 Agent generating question...")
-            result = question_crew.kickoff()
-            print(f"🔍 Raw agent result type: {type(result)}")
-            print(f"🔍 Raw agent result: {str(result)[:200]}...")
+            
+            # Set timeout handler
+            def timeout_handler(signum, frame):
+                raise TimeoutError("Question generation timed out")
+            
+            try:
+                signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(30)  # 30 second timeout
+                result = question_crew.kickoff()
+                signal.alarm(0)  # Cancel timeout
+                print(f"🔍 Raw agent result type: {type(result)}")
+                print(f"🔍 Raw agent result: {str(result)[:200]}...")
+            except TimeoutError:
+                signal.alarm(0)  # Cancel timeout
+                print(f"⏰ Question generation timed out, using fallback")
+                return self._create_fallback_question(current_section, current_persona, question_number)
             
             # Parse the result with better error handling
             try:
@@ -915,7 +908,7 @@ class AIReadinessCrewAI:
             risk_task = create_risk_assessment_task()
             risk_task.agent = self.risk_agent
             
-            # Create collaborative crew
+            # Create collaborative crew with iteration limits
             assessment_crew = Crew(
                 agents=[
                     self.concept_agent,
@@ -931,13 +924,32 @@ class AIReadinessCrewAI:
                     business_task,
                     risk_task
                 ],
-                process=Process.sequential,  # Can be changed to hierarchical for more collaboration
-                verbose=True
+                process=Process.sequential,
+                verbose=False,  # Reduce verbosity to prevent noise
+                max_iter=2  # Limit iterations to prevent infinite loops
             )
             
-            # Execute assessment
+            # Execute assessment with timeout
             print("🤖 Agents collaborating on assessment...")
-            results = assessment_crew.kickoff()
+            print(f"⏰ Starting {len(question_history)}-question analysis with 2-minute timeout...")
+            
+            def timeout_handler(signum, frame):
+                raise TimeoutError("Assessment timed out")
+            
+            try:
+                signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(120)  # 2 minute timeout
+                results = assessment_crew.kickoff()
+                signal.alarm(0)  # Cancel timeout
+                print(f"✅ Assessment completed successfully in under 2 minutes")
+            except TimeoutError:
+                signal.alarm(0)  # Cancel timeout
+                print(f"⏰ Assessment timed out after 2 minutes, using fallback")
+                return {
+                    "error": "Assessment timed out after 2 minutes",
+                    "fallback_analysis": "Timeout protection activated",
+                    "assessment_timestamp": datetime.now().isoformat()
+                }
             
             print("✅ CrewAI Assessment completed successfully!")
             
@@ -992,7 +1004,7 @@ class AIReadinessCrewAI:
                 agent=self.concept_agent  # Lead agent for coordination
             )
             
-            # Create hierarchical crew
+            # Create hierarchical crew with limits
             hierarchical_crew = Crew(
                 agents=[
                     self.concept_agent,
@@ -1004,12 +1016,25 @@ class AIReadinessCrewAI:
                 tasks=[coordination_task],
                 process=Process.hierarchical,
                 manager_llm=self.llm,
-                verbose=True
+                verbose=False,  # Reduce verbosity
+                max_iter=2  # Limit iterations
             )
             
-            # Execute with hierarchical collaboration
+            # Execute with hierarchical collaboration and timeout
             print("🤝 Agents collaborating hierarchically...")
-            results = hierarchical_crew.kickoff()
+            
+            def timeout_handler(signum, frame):
+                raise TimeoutError("Hierarchical assessment timed out")
+            
+            try:
+                signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(120)  # 2 minute timeout
+                results = hierarchical_crew.kickoff()
+                signal.alarm(0)  # Cancel timeout
+            except TimeoutError:
+                signal.alarm(0)  # Cancel timeout
+                print(f"⏰ Hierarchical assessment timed out, falling back to sequential")
+                return self.run_comprehensive_assessment(question_history, user_context)
             
             print("✅ Hierarchical Assessment completed!")
             
@@ -1313,8 +1338,8 @@ def create_change_assessment_agent(llm):
         change management and digital transformation. You specialize in assessing organizational readiness for 
         technology adoption, particularly AI implementations. You excel at reading between the lines of survey 
         responses to understand true organizational culture, leadership effectiveness, and employee sentiment.""",
-        verbose=True,
-        allow_delegation=True,
+        verbose=False,  # Reduce verbosity to prevent noise
+        allow_delegation=False,  # Disable delegation to prevent loops
         llm=llm,
         tools=[AssessmentDataTool(), ConceptExtractionTool()]
     )
@@ -1328,7 +1353,7 @@ def create_change_scoring_agent(llm):
         management metrics and scoring methodologies. You have developed proprietary frameworks for measuring 
         organizational readiness across culture, leadership, processes, and technology adoption. You provide 
         detailed, evidence-based scoring with clear justification for each assessment dimension.""",
-        verbose=True,
+        verbose=False,  # Reduce verbosity
         allow_delegation=False,
         llm=llm,
         tools=[AssessmentDataTool(), ConceptExtractionTool()]
@@ -1343,8 +1368,8 @@ def create_change_strategy_agent(llm):
         transformations across industries. You understand the critical success factors for AI adoption and 
         can design phase-appropriate change strategies. You excel at creating actionable roadmaps that account 
         for organizational constraints while maximizing change success probability.""",
-        verbose=True,
-        allow_delegation=True,
+        verbose=False,  # Reduce verbosity to prevent noise
+        allow_delegation=False,  # Disable delegation to prevent loops
         llm=llm,
         tools=[AssessmentDataTool(), RAGRetrievalTool(), LearningPathTool()]
     )
@@ -1358,7 +1383,7 @@ def create_change_risk_agent(llm):
         initiatives. You have seen transformations fail and succeed, and can predict potential pitfalls before 
         they become problems. You excel at designing early warning systems and mitigation strategies for 
         change-related risks, from technical challenges to cultural resistance.""",
-        verbose=True,
+        verbose=False,  # Reduce verbosity
         allow_delegation=False,
         llm=llm,
         tools=[AssessmentDataTool(), ConceptExtractionTool()]
@@ -1373,7 +1398,7 @@ def create_portfolio_management_agent(llm):
         transformation initiatives. You understand how to sequence AI projects for maximum learning and impact, 
         balance quick wins with long-term capabilities, and manage organizational change capacity. You excel at 
         creating realistic implementation timelines that respect organizational constraints.""",
-        verbose=True,
+        verbose=False,  # Reduce verbosity
         allow_delegation=False,
         llm=llm,
         tools=[RAGRetrievalTool(), AssessmentDataTool()]
@@ -1515,11 +1540,13 @@ class ChangeReadinessCrewAI:
     def __init__(self, openai_api_key: str):
         self.openai_api_key = openai_api_key
         
-        # Initialize LLM
+        # Initialize LLM with timeout
         self.llm = ChatOpenAI(
             openai_api_key=openai_api_key,
             model_name="gpt-4o-mini",
-            temperature=0.7
+            temperature=0.7,
+            request_timeout=30,  # 30 second timeout for LLM calls
+            max_retries=1  # Limit retries to prevent loops
         )
         
         # Initialize change readiness agents
@@ -1552,7 +1579,7 @@ class ChangeReadinessCrewAI:
             portfolio_task = create_portfolio_strategy_task()
             portfolio_task.agent = self.portfolio_agent
             
-            # Create collaborative crew
+            # Create collaborative crew with limits
             change_crew = Crew(
                 agents=[
                     self.assessment_agent,
@@ -1569,12 +1596,29 @@ class ChangeReadinessCrewAI:
                     portfolio_task
                 ],
                 process=Process.sequential,
-                verbose=True
+                verbose=False,  # Reduce verbosity
+                max_iter=2  # Limit iterations to prevent loops
             )
             
-            # Execute assessment
+            # Execute assessment with timeout
             print("🤖 Change readiness agents collaborating...")
-            results = change_crew.kickoff()
+            
+            def timeout_handler(signum, frame):
+                raise TimeoutError("Change assessment timed out")
+            
+            try:
+                signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(120)  # 2 minute timeout
+                results = change_crew.kickoff()
+                signal.alarm(0)  # Cancel timeout
+            except TimeoutError:
+                signal.alarm(0)  # Cancel timeout
+                print(f"⏰ Change assessment timed out, using fallback")
+                return {
+                    "error": "Change assessment timed out after 2 minutes",
+                    "fallback_analysis": "Timeout protection activated",
+                    "assessment_timestamp": datetime.now().isoformat()
+                }
             
             print("✅ Change Readiness CrewAI Assessment completed!")
             
@@ -1695,12 +1739,17 @@ def test_crewai_system(openai_api_key: str):
         }
 
 if __name__ == "__main__":
-    print("🤖 TRUE CREWAI ASSESSMENT SYSTEM")
+    print("🤖 STREAMLINED CREWAI ASSESSMENT SYSTEM")
     print("="*60)
     print("🔧 Features:")
-    print("• 5 Specialized AI Agents with unique roles and tools")
-    print("• Real agent-to-agent collaboration and delegation")
-    print("• Custom tools for assessment data and content retrieval") 
-    print("• Sequential and hierarchical processing modes")
-    print("• Comprehensive analysis with multiple perspectives")
-    print("\n🚀 Ready for integration with main assessment system!")
+    print("• 5 Specialized AI Agents with focused tasks")
+    print("• Timeout protection (30s questions, 2min assessments)")
+    print("• Max iteration limits to prevent infinite loops") 
+    print("• Simplified tasks for faster execution")
+    print("• Reduced verbosity to minimize noise")
+    print("\n🚀 Optimized for reliable production use!")
+    print("\n⏰ Key improvements:")
+    print("• No agent delegation to prevent loops")
+    print("• JSON-only outputs for consistent parsing")
+    print("• Focused tasks with clear constraints")
+    print("• Timeout handlers for all crew operations")
