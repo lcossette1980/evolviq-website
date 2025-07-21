@@ -1062,11 +1062,15 @@ def generate_ai_question(assessment_type: str, question_history: List[Dict], use
     """Generate next question using OpenAI based on assessment history."""
     if not openai_client:
         # Fallback to sample questions if OpenAI not available
+        logger.warning(f"OpenAI client not available - using fallback question for {assessment_type}")
         return get_fallback_question(assessment_type, len(question_history))
     
     try:
+        logger.info(f"Generating AI question #{len(question_history) + 1} for {assessment_type}")
+        
         # Build conversation history
         conversation_context = build_assessment_context(assessment_type, question_history, user_profile)
+        logger.info(f"Context length: {len(conversation_context)} chars")
         
         response = openai_client.chat.completions.create(
             model="gpt-4",
@@ -1086,10 +1090,15 @@ def generate_ai_question(assessment_type: str, question_history: List[Dict], use
         
         # Parse the AI response
         ai_response = response.choices[0].message.content
-        return parse_ai_question_response(ai_response, assessment_type, len(question_history))
+        logger.info(f"OpenAI response received: {ai_response[:100]}...")
+        
+        parsed_question = parse_ai_question_response(ai_response, assessment_type, len(question_history))
+        logger.info(f"Generated question: {parsed_question.get('question', 'No question')[:50]}...")
+        return parsed_question
         
     except Exception as e:
         logger.error(f"OpenAI question generation failed: {e}")
+        logger.error(f"Falling back to sample question for {assessment_type}")
         return get_fallback_question(assessment_type, len(question_history))
 
 def get_assessment_system_prompt(assessment_type: str) -> str:
@@ -1311,12 +1320,16 @@ async def respond_ai_knowledge_assessment(request: AssessmentAnswerRequest):
         session = assessment_sessions[session_id]
         
         # Store the previous question and answer
-        session["question_history"].append({
+        question_data = {
             "question_id": request.question_id,
             "question": request.session_data.get("current_question", "") if request.session_data else "",
             "answer": request.answer,
             "answered_at": datetime.now().isoformat()
-        })
+        }
+        session["question_history"].append(question_data)
+        
+        logger.info(f"Stored question history for session {session_id}: {len(session['question_history'])} questions")
+        logger.info(f"Latest answer: {request.answer} for question: {question_data['question'][:50] if question_data['question'] else 'No question text'}...")
         
         # Check if assessment is complete (20 questions for AI Knowledge)
         if len(session["question_history"]) >= 20:
