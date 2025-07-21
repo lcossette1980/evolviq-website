@@ -490,12 +490,17 @@ class AssessmentAPI {
       if (assessmentType === 'ai_knowledge_navigator') {
         // Generate learning-focused action items
         const analysisData = assessmentData.analysis || assessmentData;
-        const maturityScores = analysisData.maturity_scores || assessmentData.maturityScores || {};
-        const learningPlan = analysisData.learning_path || assessmentData.learningPlan || {};
+        const maturityScores = assessmentData.maturityScores || analysisData.maturity_scores || {};
+        const learningPlan = assessmentData.learningPath || analysisData.learning_path || {};
+        
+        console.log('maturityScores:', maturityScores);
+        console.log('learningPlan:', learningPlan);
 
         // Create action items for low maturity areas
         Object.entries(maturityScores).forEach(([area, score]) => {
+          console.log(`Checking maturity area ${area}: ${score}`);
           if (score < 3) { // Below intermediate level
+            console.log(`Creating action item for low maturity area: ${area}`);
             const actionItem = {
               title: `Improve ${area.replace('_', ' ')} knowledge`,
               description: `Focus on building foundational knowledge in ${area.replace('_', ' ')} to reach intermediate level`,
@@ -517,8 +522,11 @@ class AssessmentAPI {
         });
 
         // Create action items from learning plan recommendations
-        const recommendations = learningPlan.basic_recommendations || learningPlan.basicRecommendations || [];
+        const learningResources = learningPlan.learning_resources || learningPlan.learningResources || [];
+        const recommendations = learningPlan.basic_recommendations || learningPlan.basicRecommendations || learningResources || [];
+        console.log('recommendations:', recommendations);
         if (recommendations.length > 0) {
+          console.log(`Creating action items from ${recommendations.length} recommendations`);
           recommendations.slice(0, 3).forEach((recommendation, index) => {
             const actionItem = {
               title: recommendation.title || `Learning Recommendation ${index + 1}`,
