@@ -25,6 +25,7 @@ const ClassificationExplorePageNew = () => {
   // Data state
   const [uploadedFile, setUploadedFile] = useState(null);
   const [validationResults, setValidationResults] = useState(null);
+  const [selectedTargetColumn, setSelectedTargetColumn] = useState(null);
   const [selectedModels, setSelectedModels] = useState([]);
   const [trainingResults, setTrainingResults] = useState(null);
   
@@ -33,12 +34,42 @@ const ClassificationExplorePageNew = () => {
   const [error, setError] = useState(null);
 
   const steps = [
-    { id: 1, title: 'Upload', description: 'Upload dataset' },
-    { id: 2, title: 'Validate', description: 'Validate data quality' },
-    { id: 3, title: 'Configure', description: 'Select models' },
-    { id: 4, title: 'Train', description: 'Train models' },
-    { id: 5, title: 'Results', description: 'View results' },
-    { id: 6, title: 'Export', description: 'Export & finish' }
+    { 
+      id: 1, 
+      name: 'Upload Data', 
+      description: 'Upload your dataset for classification',
+      component: 'upload' 
+    },
+    { 
+      id: 2, 
+      name: 'Validate Data', 
+      description: 'Review data structure and quality',
+      component: 'validate' 
+    },
+    { 
+      id: 3, 
+      name: 'Select Target', 
+      description: 'Choose the column you want to predict',
+      component: 'target' 
+    },
+    { 
+      id: 4, 
+      name: 'Select Models', 
+      description: 'Choose classification algorithms to compare',
+      component: 'configure' 
+    },
+    { 
+      id: 5, 
+      name: 'Train Models', 
+      description: 'Train and evaluate selected models',
+      component: 'train' 
+    },
+    { 
+      id: 6, 
+      name: 'View Results', 
+      description: 'Compare model performance and insights',
+      component: 'results' 
+    }
   ];
 
   // Create session on mount
@@ -84,10 +115,14 @@ const ClassificationExplorePageNew = () => {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch(
-        `${buildUrl(API_CONFIG.ENDPOINTS.CLASSIFICATION.VALIDATE)}?session_id=${sessionId}&target_column=${encodeURIComponent(targetColumn)}`,
-        createRequestConfig('POST', formData)
-      );
+      const url = targetColumn 
+        ? `${buildUrl(API_CONFIG.ENDPOINTS.CLASSIFICATION.VALIDATE)}?session_id=${sessionId}&target_column=${encodeURIComponent(targetColumn)}`
+        : `${buildUrl(API_CONFIG.ENDPOINTS.CLASSIFICATION.VALIDATE)}?session_id=${sessionId}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData
+      });
 
       if (response.ok) {
         const result = await response.json();
@@ -95,12 +130,43 @@ const ClassificationExplorePageNew = () => {
         setValidationResults(result);
         setCurrentStep(2);
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Upload failed');
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          // Try to get the response text first
+          const responseText = await response.text();
+          console.log('Raw error response:', responseText);
+          
+          // Try to parse as JSON
+          if (responseText) {
+            try {
+              const errorData = JSON.parse(responseText);
+              console.log('Parsed error data:', errorData);
+              if (typeof errorData === 'string') {
+                errorMessage = errorData;
+              } else if (errorData && typeof errorData === 'object') {
+                errorMessage = errorData.detail || errorData.message || errorData.error || responseText;
+              }
+            } catch (jsonError) {
+              // If not valid JSON, use the raw text
+              errorMessage = responseText;
+            }
+          }
+        } catch (parseError) {
+          console.log('Could not read error response:', parseError);
+        }
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('Upload error:', error);
-      setError(error.message);
+      let errorMsg = 'Upload failed';
+      if (error instanceof Error) {
+        errorMsg = error.message;
+      } else if (typeof error === 'string') {
+        errorMsg = error;
+      } else if (error && typeof error === 'object') {
+        errorMsg = JSON.stringify(error);
+      }
+      setError(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -111,9 +177,66 @@ const ClassificationExplorePageNew = () => {
     setCurrentStep(3);
   };
 
+  const handleTargetSelection = async (targetColumn) => {
+    if (!sessionId || !uploadedFile) {
+      setError('No session or file available.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', uploadedFile);
+
+      const url = `${buildUrl(API_CONFIG.ENDPOINTS.CLASSIFICATION.VALIDATE)}?session_id=${sessionId}&target_column=${encodeURIComponent(targetColumn)}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setValidationResults(result);
+        setSelectedTargetColumn(targetColumn);
+        setCurrentStep(4);
+      } else {
+        const responseText = await response.text();
+        console.log('Raw error response:', responseText);
+        
+        if (responseText) {
+          try {
+            const errorData = JSON.parse(responseText);
+            console.log('Parsed error data:', errorData);
+            const errorMessage = errorData.detail || errorData.message || errorData.error || responseText;
+            throw new Error(errorMessage);
+          } catch (jsonError) {
+            throw new Error(responseText);
+          }
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Target selection error:', error);
+      let errorMsg = 'Target selection failed';
+      if (error instanceof Error) {
+        errorMsg = error.message;
+      } else if (typeof error === 'string') {
+        errorMsg = error;
+      } else if (error && typeof error === 'object') {
+        errorMsg = JSON.stringify(error);
+      }
+      setError(errorMsg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleModelSelection = (models) => {
     setSelectedModels(models);
-    setCurrentStep(4);
+    setCurrentStep(5);
   };
 
   const handleTraining = async () => {
@@ -137,7 +260,7 @@ const ClassificationExplorePageNew = () => {
         const result = await response.json();
         if (result?.comparison_data?.length > 0) {
           setTrainingResults(result);
-          setCurrentStep(5);
+          setCurrentStep(6);
         } else {
           throw new Error('Invalid training response');
         }
@@ -175,15 +298,15 @@ const ClassificationExplorePageNew = () => {
       };
       
       setTrainingResults(fallbackResults);
-      setCurrentStep(5);
-      setError('Using demo data due to API error');
+      setCurrentStep(6);
+      setError(`API Error: ${error.message || 'Training failed'}. Using demo data.`);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleResultsNext = () => {
-    setCurrentStep(6);
+    navigate('/dashboard');
   };
 
   const handleReturnToDashboard = () => {
@@ -195,32 +318,45 @@ const ClassificationExplorePageNew = () => {
     setCurrentStep(1);
     setUploadedFile(null);
     setValidationResults(null);
+    setSelectedTargetColumn(null);
     setSelectedModels([]);
     setTrainingResults(null);
     setError(null);
   };
 
+  const handleStepClick = (stepId) => {
+    if (stepId <= currentStep) {
+      setCurrentStep(stepId);
+    }
+  };
+
   const renderStepContent = () => {
+    const step = steps.find(s => s.id === currentStep);
+
     if (isLoading) {
-      return <LoadingState message="Processing your request..." />;
+      return (
+        <LoadingState 
+          message="Processing your data..."
+          submessage="This may take a few moments"
+        />
+      );
     }
 
-    switch (currentStep) {
-      case 1:
+    switch (step.component) {
+      case 'upload':
         return (
           <DataUploadStep
-            onUpload={handleUpload}
+            onUpload={(file) => handleUpload(file, null)}
             acceptedFormats={['.csv', '.xlsx', '.xls', '.json']}
             title="Upload Classification Dataset"
-            description="Upload your dataset for classification analysis"
-            requiresTargetColumn={true}
-            targetColumnLabel="Target Column (what you want to predict)"
-            targetColumnPlaceholder="e.g., 'class', 'category', 'label'"
+            description="Upload your dataset for classification analysis. You'll select the target column in the next step."
+            requiresTargetColumn={false}
             isLoading={isLoading}
+            error={error}
           />
         );
 
-      case 2:
+      case 'validate':
         return (
           <DataUploadStep
             onUpload={() => {}}
@@ -229,12 +365,51 @@ const ClassificationExplorePageNew = () => {
             onNext={handleValidation}
             showValidationResults={true}
             title="Data Validation Complete"
-            description="Your dataset has been validated and is ready for model training"
+            description="Your dataset has been validated. Next, you'll select which column to predict."
             isLoading={false}
           />
         );
 
-      case 3:
+      case 'target':
+        return (
+          <div className="bg-white border rounded-lg p-6">
+            <h2 className="text-2xl font-semibold text-charcoal mb-4">Select Target Column</h2>
+            <p className="text-charcoal/70 mb-6">
+              Choose the column you want to predict (your target variable). This should contain the categories or values you want your model to learn to predict.
+            </p>
+            
+            {validationResults?.summary?.columns ? (
+              <div className="space-y-4">
+                <h3 className="font-medium text-charcoal">Available Columns:</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {validationResults.summary.columns.map((column) => (
+                    <button
+                      key={column}
+                      onClick={() => handleTargetSelection(column)}
+                      className="p-3 border border-chestnut/20 rounded-lg text-left hover:bg-chestnut/5 hover:border-chestnut/40 transition-colors"
+                      disabled={isLoading}
+                    >
+                      <div className="font-medium text-charcoal">{column}</div>
+                      <div className="text-sm text-charcoal/60 mt-1">Click to select</div>
+                    </button>
+                  ))}
+                </div>
+                
+                {isLoading && (
+                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-blue-700">Processing your selection...</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-yellow-800">No column information available. Please go back and re-upload your data.</p>
+              </div>
+            )}
+          </div>
+        );
+
+      case 'configure':
         return (
           <ModelSelectionStep
             validationResults={validationResults}
@@ -243,7 +418,7 @@ const ClassificationExplorePageNew = () => {
           />
         );
 
-      case 4:
+      case 'train':
         return (
           <ModelTrainingStep
             selectedModels={selectedModels}
@@ -253,7 +428,7 @@ const ClassificationExplorePageNew = () => {
           />
         );
 
-      case 5:
+      case 'results':
         return (
           <ResultsVisualization
             trainingResults={trainingResults}
@@ -262,18 +437,8 @@ const ClassificationExplorePageNew = () => {
           />
         );
 
-      case 6:
-        return (
-          <ExportStep
-            trainingResults={trainingResults}
-            validationResults={validationResults}
-            onReturnToDashboard={handleReturnToDashboard}
-            onStartNew={handleStartNew}
-          />
-        );
-
       default:
-        return null;
+        return <div>Unknown step</div>;
     }
   };
 
@@ -300,41 +465,32 @@ const ClassificationExplorePageNew = () => {
     );
   }
 
+  if (!sessionId && !error) {
+    return (
+      <LoadingState 
+        message="Initializing Classification session..."
+        submessage="Setting up your model training environment"
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-bone pt-20">
-      {/* Header */}
-      <div className="bg-charcoal text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-serif font-bold mb-4">
-            Classification Explorer
-          </h1>
-          <p className="text-lg text-pearl">
-            Train and compare multiple classification algorithms with comprehensive evaluation
-          </p>
-        </div>
-      </div>
-
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Progress Navigation */}
-        <div className="mb-8">
-          <StepNavigation 
-            steps={steps}
-            currentStep={currentStep}
-            onStepClick={setCurrentStep}
-            completedSteps={currentStep - 1}
-          />
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-700">{error}</p>
+    <div className="min-h-screen bg-bone">
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid lg:grid-cols-4 gap-8">
+          {/* Navigation Sidebar */}
+          <div className="lg:col-span-1">
+            <StepNavigation
+              steps={steps}
+              currentStep={currentStep}
+              onStepClick={handleStepClick}
+            />
           </div>
-        )}
 
-        {/* Step Content */}
-        <div className="mb-8">
-          {renderStepContent()}
+          {/* Main Content */}
+          <div className="lg:col-span-3">
+            {renderStepContent()}
+          </div>
         </div>
       </div>
     </div>

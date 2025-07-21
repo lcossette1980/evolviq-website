@@ -3,7 +3,7 @@ import { BarChart3, TrendingUp, Target, Eye } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ScatterChart, Scatter, Cell } from 'recharts';
 import StepContainer from '../shared/StepContainer';
 
-const ResultsVisualization = ({ trainingResults, validationResults }) => {
+const ResultsVisualization = ({ trainingResults, validationResults, onNext }) => {
   const [activeTab, setActiveTab] = useState('performance');
 
   if (!trainingResults?.comparison_data) {
@@ -12,7 +12,7 @@ const ResultsVisualization = ({ trainingResults, validationResults }) => {
         title="Model Results"
         description="Comprehensive analysis of model performance"
         currentStep={5}
-        totalSteps={6}
+        totalSteps={5}
         canGoNext={false}
       >
         <div className="text-center py-8">
@@ -294,10 +294,10 @@ const ResultsVisualization = ({ trainingResults, validationResults }) => {
       title="Model Results"
       description="Comprehensive analysis of classification model performance"
       currentStep={5}
-      totalSteps={6}
-      onNext={() => {}}
+      totalSteps={5}
+      onNext={onNext}
       canGoNext={true}
-      nextLabel="Continue to Export"
+      nextLabel="Return to Dashboard"
     >
       <div className="space-y-6">
         {/* Tab Navigation */}

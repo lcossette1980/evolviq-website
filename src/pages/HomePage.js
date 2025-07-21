@@ -363,7 +363,7 @@ const HomePage = () => {
             <div className="flex justify-center">
               <div className="bg-white px-6 py-3 rounded-lg shadow-sm">
                 <span className="text-sm text-charcoal/60">Premium Members Save</span>
-                <div className="text-2xl font-bold text-chestnut">25%</div>
+                <div className="text-2xl font-bold text-chestnut">10%</div>
                 <span className="text-sm text-charcoal/60">on all consulting services</span>
               </div>
             </div>

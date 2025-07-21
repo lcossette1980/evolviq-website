@@ -60,12 +60,6 @@ const EDAExplorePage = () => {
       name: 'View Results', 
       description: 'Explore insights and visualizations',
       component: 'results' 
-    },
-    { 
-      id: 6, 
-      name: 'Export & Actions', 
-      description: 'Export results and next steps',
-      component: 'export' 
     }
   ];
 
@@ -165,6 +159,8 @@ const EDAExplorePage = () => {
       setIsLoading(true);
       setError(null);
 
+      console.log('Starting EDA analysis with session:', sessionId);
+
       // Run all analyses in parallel
       const [qualityResponse, univariateResponse, bivariateResponse] = await Promise.all([
         fetch(`${buildUrl(API_CONFIG.ENDPOINTS.EDA.QUALITY_ASSESSMENT)}?session_id=${sessionId}`, 
@@ -175,11 +171,36 @@ const EDAExplorePage = () => {
           createRequestConfig('POST'))
       ]);
 
-      const [quality, univariate, bivariate] = await Promise.all([
-        qualityResponse.json(),
-        univariateResponse.json(),
-        bivariateResponse.json()
-      ]);
+      console.log('API Response statuses:', {
+        quality: qualityResponse.status,
+        univariate: univariateResponse.status, 
+        bivariate: bivariateResponse.status
+      });
+
+      // Check each response and handle errors individually
+      let quality = null;
+      let univariate = null;
+      let bivariate = null;
+
+      if (qualityResponse.ok) {
+        quality = await qualityResponse.json();
+      } else {
+        console.error('Quality assessment failed:', qualityResponse.status, qualityResponse.statusText);
+      }
+
+      if (univariateResponse.ok) {
+        univariate = await univariateResponse.json();
+      } else {
+        console.error('Univariate analysis failed:', univariateResponse.status, univariateResponse.statusText);
+      }
+
+      if (bivariateResponse.ok) {
+        bivariate = await bivariateResponse.json();
+      } else {
+        console.error('Bivariate analysis failed:', bivariateResponse.status, bivariateResponse.statusText);
+      }
+
+      console.log('Parsed API responses:', { quality, univariate, bivariate });
 
       setAnalysisResults({
         quality,
@@ -188,6 +209,7 @@ const EDAExplorePage = () => {
       });
       setCurrentStep(5);
     } catch (error) {
+      console.error('Analysis error details:', error);
       setError(`Analysis failed: ${error.message}`);
     } finally {
       setIsLoading(false);
@@ -270,24 +292,7 @@ const EDAExplorePage = () => {
           <ResultsVisualization
             analysisResults={analysisResults}
             validationResults={validationResults}
-          />
-        );
-
-      case 'export':
-        return (
-          <ExportStep
-            analysisResults={analysisResults}
-            validationResults={validationResults}
-            onReturnToDashboard={() => navigate('/dashboard')}
-            onStartNew={() => {
-              setCurrentStep(1);
-              setUploadedFile(null);
-              setValidationResults(null);
-              setPreprocessingResults(null);
-              setAnalysisResults(null);
-              setError(null);
-              createNewSession();
-            }}
+            onNext={() => navigate('/dashboard')}
           />
         );
 

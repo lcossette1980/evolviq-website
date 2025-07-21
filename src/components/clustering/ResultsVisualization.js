@@ -3,7 +3,7 @@ import { BarChart3, Target, TrendingUp, Eye } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, ScatterChart, Scatter, Cell } from 'recharts';
 import StepContainer from '../shared/StepContainer';
 
-const ResultsVisualization = ({ analysisResults, validationResults }) => {
+const ResultsVisualization = ({ analysisResults, validationResults, onNext }) => {
   const [activeTab, setActiveTab] = useState('optimization');
 
   if (!analysisResults?.optimization_data && !analysisResults?.clustering_results) {
@@ -12,7 +12,7 @@ const ResultsVisualization = ({ analysisResults, validationResults }) => {
         title="Clustering Results"
         description="Comprehensive analysis of clustering performance"
         currentStep={5}
-        totalSteps={6}
+        totalSteps={5}
         canGoNext={false}
       >
         <div className="text-center py-8">
@@ -387,10 +387,10 @@ const ResultsVisualization = ({ analysisResults, validationResults }) => {
       title="Clustering Results"
       description="Comprehensive analysis of clustering performance and insights"
       currentStep={5}
-      totalSteps={6}
-      onNext={() => {}}
+      totalSteps={5}
+      onNext={onNext}
       canGoNext={true}
-      nextLabel="Continue to Export"
+      nextLabel="Return to Dashboard"
     >
       <div className="space-y-6">
         {/* Tab Navigation */}

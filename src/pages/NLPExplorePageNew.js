@@ -33,12 +33,36 @@ const NLPExplorePageNew = () => {
   const [error, setError] = useState(null);
 
   const steps = [
-    { id: 1, title: 'Upload', description: 'Upload text dataset' },
-    { id: 2, title: 'Validate', description: 'Validate data quality' },
-    { id: 3, title: 'Configure', description: 'Configure NLP tasks' },
-    { id: 4, title: 'Analyze', description: 'Run NLP analysis' },
-    { id: 5, title: 'Results', description: 'View results' },
-    { id: 6, title: 'Export', description: 'Export & finish' }
+    { 
+      id: 1, 
+      name: 'Upload Data', 
+      description: 'Upload your text dataset for analysis',
+      component: 'upload' 
+    },
+    { 
+      id: 2, 
+      name: 'Validate Data', 
+      description: 'Review text data structure and quality',
+      component: 'validate' 
+    },
+    { 
+      id: 3, 
+      name: 'Configure Analysis', 
+      description: 'Select NLP tasks and preprocessing options',
+      component: 'configure' 
+    },
+    { 
+      id: 4, 
+      name: 'Run Analysis', 
+      description: 'Perform natural language processing',
+      component: 'analyze' 
+    },
+    { 
+      id: 5, 
+      name: 'View Results', 
+      description: 'Explore NLP insights and visualizations',
+      component: 'results' 
+    }
   ];
 
   // Create session on mount
@@ -84,10 +108,14 @@ const NLPExplorePageNew = () => {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch(
-        `${buildUrl(API_CONFIG.ENDPOINTS.NLP.VALIDATE)}?session_id=${sessionId}&text_column=${encodeURIComponent(textColumn)}`,
-        createRequestConfig('POST', formData)
-      );
+      const url = textColumn 
+        ? `${buildUrl(API_CONFIG.ENDPOINTS.NLP.VALIDATE)}?session_id=${sessionId}&text_column=${encodeURIComponent(textColumn)}`
+        : `${buildUrl(API_CONFIG.ENDPOINTS.NLP.VALIDATE)}?session_id=${sessionId}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData
+      });
 
       if (response.ok) {
         const result = await response.json();
@@ -95,8 +123,28 @@ const NLPExplorePageNew = () => {
         setValidationResults(result);
         setCurrentStep(2);
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Upload failed');
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const responseText = await response.text();
+          console.log('Raw error response:', responseText);
+          
+          if (responseText) {
+            try {
+              const errorData = JSON.parse(responseText);
+              console.log('Parsed error data:', errorData);
+              if (typeof errorData === 'string') {
+                errorMessage = errorData;
+              } else if (errorData && typeof errorData === 'object') {
+                errorMessage = errorData.detail || errorData.message || errorData.error || responseText;
+              }
+            } catch (jsonError) {
+              errorMessage = responseText;
+            }
+          }
+        } catch (parseError) {
+          console.log('Could not read error response:', parseError);
+        }
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -117,7 +165,7 @@ const NLPExplorePageNew = () => {
       setUploadedFile(file);
       setValidationResults(fallbackValidation);
       setCurrentStep(2);
-      setError('Using demo data due to API error');
+      setError(`API Error: ${error.message || 'Upload failed'}. Using demo data.`);
     } finally {
       setIsLoading(false);
     }
@@ -205,14 +253,14 @@ const NLPExplorePageNew = () => {
       
       setAnalysisResults(fallbackResults);
       setCurrentStep(5);
-      setError('Using demo data due to API error');
+      setError(`API Error: ${error.message || 'Analysis failed'}. Using demo data.`);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleResultsNext = () => {
-    setCurrentStep(6);
+    navigate('/dashboard');
   };
 
   const handleReturnToDashboard = () => {
@@ -229,27 +277,39 @@ const NLPExplorePageNew = () => {
     setError(null);
   };
 
+  const handleStepClick = (stepId) => {
+    if (stepId <= currentStep) {
+      setCurrentStep(stepId);
+    }
+  };
+
   const renderStepContent = () => {
+    const step = steps.find(s => s.id === currentStep);
+
     if (isLoading) {
-      return <LoadingState message="Processing your request..." />;
+      return (
+        <LoadingState 
+          message="Processing your data..."
+          submessage="This may take a few moments"
+        />
+      );
     }
 
-    switch (currentStep) {
-      case 1:
+    switch (step.component) {
+      case 'upload':
         return (
           <DataUploadStep
-            onUpload={handleUpload}
+            onUpload={(file) => handleUpload(file, null)}
             acceptedFormats={['.csv', '.xlsx', '.xls', '.json', '.txt']}
             title="Upload Text Dataset"
-            description="Upload your text dataset for NLP analysis"
-            requiresTargetColumn={true}
-            targetColumnLabel="Text Column (column containing text data)"
-            targetColumnPlaceholder="e.g., 'text', 'content', 'review'"
+            description="Upload your text dataset for NLP analysis. You'll select the text column in the next step."
+            requiresTargetColumn={false}
             isLoading={isLoading}
+            error={error}
           />
         );
 
-      case 2:
+      case 'validate':
         return (
           <DataUploadStep
             onUpload={() => {}}
@@ -263,7 +323,7 @@ const NLPExplorePageNew = () => {
           />
         );
 
-      case 3:
+      case 'configure':
         return (
           <NLPConfigurationStep
             validationResults={validationResults}
@@ -272,7 +332,7 @@ const NLPExplorePageNew = () => {
           />
         );
 
-      case 4:
+      case 'analyze':
         return (
           <NLPAnalysisStep
             config={nlpConfig}
@@ -282,7 +342,7 @@ const NLPExplorePageNew = () => {
           />
         );
 
-      case 5:
+      case 'results':
         return (
           <ResultsVisualization
             analysisResults={analysisResults}
@@ -291,18 +351,8 @@ const NLPExplorePageNew = () => {
           />
         );
 
-      case 6:
-        return (
-          <ExportStep
-            analysisResults={analysisResults}
-            validationResults={validationResults}
-            onReturnToDashboard={handleReturnToDashboard}
-            onStartNew={handleStartNew}
-          />
-        );
-
       default:
-        return null;
+        return <div>Unknown step</div>;
     }
   };
 
@@ -329,41 +379,32 @@ const NLPExplorePageNew = () => {
     );
   }
 
+  if (!sessionId && !error) {
+    return (
+      <LoadingState 
+        message="Initializing NLP session..."
+        submessage="Setting up your text analysis environment"
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-bone pt-20">
-      {/* Header */}
-      <div className="bg-charcoal text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-serif font-bold mb-4">
-            NLP Explorer
-          </h1>
-          <p className="text-lg text-pearl">
-            Extract insights from text data with comprehensive natural language processing analysis
-          </p>
-        </div>
-      </div>
-
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Progress Navigation */}
-        <div className="mb-8">
-          <StepNavigation 
-            steps={steps}
-            currentStep={currentStep}
-            onStepClick={setCurrentStep}
-            completedSteps={currentStep - 1}
-          />
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-700">{error}</p>
+    <div className="min-h-screen bg-bone">
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid lg:grid-cols-4 gap-8">
+          {/* Navigation Sidebar */}
+          <div className="lg:col-span-1">
+            <StepNavigation
+              steps={steps}
+              currentStep={currentStep}
+              onStepClick={handleStepClick}
+            />
           </div>
-        )}
 
-        {/* Step Content */}
-        <div className="mb-8">
-          {renderStepContent()}
+          {/* Main Content */}
+          <div className="lg:col-span-3">
+            {renderStepContent()}
+          </div>
         </div>
       </div>
     </div>

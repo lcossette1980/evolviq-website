@@ -33,12 +33,36 @@ const ClusteringExplorePageNew = () => {
   const [error, setError] = useState(null);
 
   const steps = [
-    { id: 1, title: 'Upload', description: 'Upload dataset' },
-    { id: 2, title: 'Validate', description: 'Validate data quality' },
-    { id: 3, title: 'Configure', description: 'Configure clustering' },
-    { id: 4, title: 'Analyze', description: 'Run analysis' },
-    { id: 5, title: 'Results', description: 'View results' },
-    { id: 6, title: 'Export', description: 'Export & finish' }
+    { 
+      id: 1, 
+      name: 'Upload Data', 
+      description: 'Upload your dataset for clustering',
+      component: 'upload' 
+    },
+    { 
+      id: 2, 
+      name: 'Validate Data', 
+      description: 'Review data structure and features',
+      component: 'validate' 
+    },
+    { 
+      id: 3, 
+      name: 'Configure Analysis', 
+      description: 'Set clustering algorithms and parameters',
+      component: 'configure' 
+    },
+    { 
+      id: 4, 
+      name: 'Run Analysis', 
+      description: 'Perform clustering and optimization',
+      component: 'analyze' 
+    },
+    { 
+      id: 5, 
+      name: 'View Results', 
+      description: 'Explore clusters and insights',
+      component: 'results' 
+    }
   ];
 
   // Create session on mount
@@ -86,7 +110,10 @@ const ClusteringExplorePageNew = () => {
 
       const response = await fetch(
         `${buildUrl(API_CONFIG.ENDPOINTS.CLUSTERING.VALIDATE)}?session_id=${sessionId}`,
-        createRequestConfig('POST', formData)
+        {
+          method: 'POST',
+          body: formData
+        }
       );
 
       if (response.ok) {
@@ -95,8 +122,28 @@ const ClusteringExplorePageNew = () => {
         setValidationResults(result);
         setCurrentStep(2);
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Upload failed');
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const responseText = await response.text();
+          console.log('Raw error response:', responseText);
+          
+          if (responseText) {
+            try {
+              const errorData = JSON.parse(responseText);
+              console.log('Parsed error data:', errorData);
+              if (typeof errorData === 'string') {
+                errorMessage = errorData;
+              } else if (errorData && typeof errorData === 'object') {
+                errorMessage = errorData.detail || errorData.message || errorData.error || responseText;
+              }
+            } catch (jsonError) {
+              errorMessage = responseText;
+            }
+          }
+        } catch (parseError) {
+          console.log('Could not read error response:', parseError);
+        }
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -115,7 +162,7 @@ const ClusteringExplorePageNew = () => {
       setUploadedFile(file);
       setValidationResults(fallbackValidation);
       setCurrentStep(2);
-      setError('Using demo data due to API error');
+      setError(`API Error: ${error.message || 'Upload failed'}. Using demo data.`);
     } finally {
       setIsLoading(false);
     }
@@ -142,7 +189,7 @@ const ClusteringExplorePageNew = () => {
 
     try {
       const response = await fetch(
-        `${buildUrl(API_CONFIG.ENDPOINTS.CLUSTERING.TRAIN)}?session_id=${sessionId}`,
+        `${buildUrl(API_CONFIG.ENDPOINTS.CLUSTERING.PERFORM_CLUSTERING)}?session_id=${sessionId}`,
         createRequestConfig('POST', {
           algorithms: clusterConfig?.algorithms || ['kmeans', 'hierarchical', 'dbscan'],
           max_clusters: clusterConfig?.maxClusters || 8,
@@ -197,14 +244,14 @@ const ClusteringExplorePageNew = () => {
       
       setAnalysisResults(fallbackResults);
       setCurrentStep(5);
-      setError('Using demo data due to API error');
+      setError(`API Error: ${error.message || 'Analysis failed'}. Using demo data.`);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleResultsNext = () => {
-    setCurrentStep(6);
+    navigate('/dashboard');
   };
 
   const handleReturnToDashboard = () => {
@@ -221,13 +268,26 @@ const ClusteringExplorePageNew = () => {
     setError(null);
   };
 
+  const handleStepClick = (stepId) => {
+    if (stepId <= currentStep) {
+      setCurrentStep(stepId);
+    }
+  };
+
   const renderStepContent = () => {
+    const step = steps.find(s => s.id === currentStep);
+
     if (isLoading) {
-      return <LoadingState message="Processing your request..." />;
+      return (
+        <LoadingState 
+          message="Processing your data..."
+          submessage="This may take a few moments"
+        />
+      );
     }
 
-    switch (currentStep) {
-      case 1:
+    switch (step.component) {
+      case 'upload':
         return (
           <DataUploadStep
             onUpload={handleUpload}
@@ -236,10 +296,11 @@ const ClusteringExplorePageNew = () => {
             description="Upload your dataset for unsupervised clustering analysis"
             requiresTargetColumn={false}
             isLoading={isLoading}
+            error={error}
           />
         );
 
-      case 2:
+      case 'validate':
         return (
           <DataUploadStep
             onUpload={() => {}}
@@ -253,7 +314,7 @@ const ClusteringExplorePageNew = () => {
           />
         );
 
-      case 3:
+      case 'configure':
         return (
           <ClusterConfigurationStep
             validationResults={validationResults}
@@ -262,7 +323,7 @@ const ClusteringExplorePageNew = () => {
           />
         );
 
-      case 4:
+      case 'analyze':
         return (
           <ClusterAnalysisStep
             config={clusterConfig}
@@ -272,7 +333,7 @@ const ClusteringExplorePageNew = () => {
           />
         );
 
-      case 5:
+      case 'results':
         return (
           <ResultsVisualization
             analysisResults={analysisResults}
@@ -281,18 +342,8 @@ const ClusteringExplorePageNew = () => {
           />
         );
 
-      case 6:
-        return (
-          <ExportStep
-            analysisResults={analysisResults}
-            validationResults={validationResults}
-            onReturnToDashboard={handleReturnToDashboard}
-            onStartNew={handleStartNew}
-          />
-        );
-
       default:
-        return null;
+        return <div>Unknown step</div>;
     }
   };
 
@@ -319,41 +370,32 @@ const ClusteringExplorePageNew = () => {
     );
   }
 
+  if (!sessionId && !error) {
+    return (
+      <LoadingState 
+        message="Initializing Clustering session..."
+        submessage="Setting up your clustering analysis environment"
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-bone pt-20">
-      {/* Header */}
-      <div className="bg-charcoal text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-serif font-bold mb-4">
-            Clustering Explorer
-          </h1>
-          <p className="text-lg text-pearl">
-            Discover hidden patterns in your data with comprehensive unsupervised clustering analysis
-          </p>
-        </div>
-      </div>
-
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Progress Navigation */}
-        <div className="mb-8">
-          <StepNavigation 
-            steps={steps}
-            currentStep={currentStep}
-            onStepClick={setCurrentStep}
-            completedSteps={currentStep - 1}
-          />
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-700">{error}</p>
+    <div className="min-h-screen bg-bone">
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid lg:grid-cols-4 gap-8">
+          {/* Navigation Sidebar */}
+          <div className="lg:col-span-1">
+            <StepNavigation
+              steps={steps}
+              currentStep={currentStep}
+              onStepClick={handleStepClick}
+            />
           </div>
-        )}
 
-        {/* Step Content */}
-        <div className="mb-8">
-          {renderStepContent()}
+          {/* Main Content */}
+          <div className="lg:col-span-3">
+            {renderStepContent()}
+          </div>
         </div>
       </div>
     </div>

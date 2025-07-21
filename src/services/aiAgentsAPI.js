@@ -1,8 +1,10 @@
 import assessmentAPI from './assessmentAPI';
+import { buildUrl } from '../config/apiConfig';
 
 class AIAgentsAPI {
   constructor() {
-    this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+    // Use the centralized API configuration
+    this.buildUrl = buildUrl;
   }
 
   // =============================================================================

@@ -3,7 +3,7 @@ import { MessageCircle, BarChart3, TrendingUp, Hash, Smile, Brain } from 'lucide
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, LineChart, Line, ScatterChart, Scatter } from 'recharts';
 import StepContainer from '../shared/StepContainer';
 
-const ResultsVisualization = ({ analysisResults, validationResults }) => {
+const ResultsVisualization = ({ analysisResults, validationResults, onNext }) => {
   const [activeTab, setActiveTab] = useState('overview');
 
   if (!analysisResults) {
@@ -12,7 +12,7 @@ const ResultsVisualization = ({ analysisResults, validationResults }) => {
         title="NLP Analysis Results"
         description="Comprehensive natural language processing results and insights"
         currentStep={5}
-        totalSteps={6}
+        totalSteps={5}
         canGoNext={false}
       >
         <div className="text-center py-8">
@@ -436,10 +436,10 @@ const ResultsVisualization = ({ analysisResults, validationResults }) => {
       title="NLP Analysis Results"
       description="Comprehensive natural language processing results and insights"
       currentStep={5}
-      totalSteps={6}
-      onNext={() => {}}
+      totalSteps={5}
+      onNext={onNext}
       canGoNext={true}
-      nextLabel="Continue to Export"
+      nextLabel="Return to Dashboard"
     >
       <div className="space-y-6">
         {/* Tab Navigation */}

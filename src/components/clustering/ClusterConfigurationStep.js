@@ -87,107 +87,41 @@ const ClusterConfigurationStep = ({ validationResults, onConfigure, isLoading })
 
   return (
     <StepContainer
-      title="Configure Clustering Analysis"
-      description="Select algorithms and optimization parameters"
+      title="Select Algorithms"
+      description="Choose clustering algorithms to compare"
       currentStep={3}
       totalSteps={6}
       onNext={handleSubmit}
       canGoNext={config.algorithms.length > 0}
-      nextLabel="Start Clustering Analysis"
+      nextLabel="Start Analysis"
       isLoading={isLoading}
     >
       <div className="space-y-6">
-        {/* Configuration Overview */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
-            <Info size={16} />
-            Clustering Configuration Guide
-          </h3>
-          <div className="text-blue-700 text-sm space-y-2">
-            <p>• <strong>Multiple algorithms</strong> will be compared to find the best clustering approach</p>
-            <p>• <strong>Optimal cluster number</strong> will be determined using Elbow method and Silhouette analysis</p>
-            <p>• <strong>Feature scaling</strong> is essential for distance-based algorithms like K-Means</p>
-            <p>• Results will include cluster quality metrics and visualizations</p>
-          </div>
-        </div>
-
-        {/* Dataset Summary */}
-        {validationResults && (
-          <div className="bg-white border rounded-lg p-4">
-            <h3 className="font-semibold text-charcoal mb-3">Dataset Summary</h3>
-            <div className="grid md:grid-cols-4 gap-4 text-sm">
-              <div className="text-center">
-                <div className="text-xl font-bold text-chestnut">
-                  {validationResults.summary?.shape?.[0]?.toLocaleString() || 'N/A'}
-                </div>
-                <div className="text-charcoal/60">Samples</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl font-bold text-chestnut">
-                  {validationResults.summary?.shape?.[1] || 'N/A'}
-                </div>
-                <div className="text-charcoal/60">Features</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl font-bold text-chestnut">
-                  {validationResults.summary?.memory_usage || 'N/A'}
-                </div>
-                <div className="text-charcoal/60">Memory Usage</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl font-bold text-chestnut">
-                  {Object.keys(validationResults.summary?.missing_values || {}).length || 0}
-                </div>
-                <div className="text-charcoal/60">Missing Columns</div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Algorithm Selection */}
         <div className="bg-white border rounded-lg p-6">
-          <h3 className="font-semibold text-charcoal mb-4 flex items-center gap-2">
-            <Settings size={20} />
-            Select Clustering Algorithms ({config.algorithms.length} selected)
+          <h3 className="text-lg font-semibold text-charcoal mb-4">
+            Select Algorithms ({config.algorithms.length} selected)
           </h3>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
             {availableAlgorithms.map(algorithm => {
               const isSelected = config.algorithms.includes(algorithm.id);
               
               return (
                 <div
                   key={algorithm.id}
-                  className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  className={`p-3 rounded-lg border cursor-pointer transition-all ${
                     isSelected 
-                      ? 'border-chestnut bg-chestnut/5 shadow-md' 
-                      : 'border-gray-200 bg-white hover:border-chestnut/50'
+                      ? 'border-chestnut bg-chestnut text-white' 
+                      : 'border-gray-200 bg-white hover:border-chestnut'
                   }`}
                   onClick={() => toggleAlgorithm(algorithm.id)}
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <h4 className="font-semibold text-charcoal pr-2">{algorithm.name}</h4>
-                    <div className={`w-4 h-4 rounded-full border-2 border-chestnut flex-shrink-0 ${
-                      isSelected ? 'bg-chestnut' : 'bg-transparent'
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-sm">{algorithm.name}</span>
+                    <div className={`w-3 h-3 rounded-full ${
+                      isSelected ? 'bg-white' : 'border border-gray-300'
                     }`} />
-                  </div>
-                  
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-charcoal/70">Category:</span>
-                      <span className="font-medium">{algorithm.category}</span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <span className="text-charcoal/70">Complexity:</span>
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getComplexityColor(algorithm.complexity)}`}>
-                        {algorithm.complexity}
-                      </span>
-                    </div>
-                    
-                    <p className="text-xs text-charcoal/60 mt-3 leading-relaxed">
-                      {algorithm.description}
-                    </p>
                   </div>
                 </div>
               );
@@ -195,12 +129,9 @@ const ClusterConfigurationStep = ({ validationResults, onConfigure, isLoading })
           </div>
         </div>
 
-        {/* Optimization Parameters */}
+        {/* Basic Settings */}
         <div className="bg-white border rounded-lg p-6">
-          <h3 className="font-semibold text-charcoal mb-4 flex items-center gap-2">
-            <Target size={20} />
-            Optimization Parameters
-          </h3>
+          <h3 className="text-lg font-semibold text-charcoal mb-4">Analysis Settings</h3>
           
           <div className="grid md:grid-cols-2 gap-6">
             <div>
@@ -208,87 +139,74 @@ const ClusterConfigurationStep = ({ validationResults, onConfigure, isLoading })
                 Cluster Range
               </label>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-charcoal/60 mb-1">Minimum</label>
-                  <input
-                    type="number"
-                    min="2"
-                    max="10"
-                    value={config.minClusters}
-                    onChange={(e) => handleConfigChange('minClusters', parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-chestnut"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-charcoal/60 mb-1">Maximum</label>
-                  <input
-                    type="number"
-                    min="3"
-                    max="15"
-                    value={config.maxClusters}
-                    onChange={(e) => handleConfigChange('maxClusters', parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-chestnut"
-                  />
-                </div>
+                <input
+                  type="number"
+                  min="2"
+                  max="10"
+                  value={config.minClusters}
+                  onChange={(e) => handleConfigChange('minClusters', parseInt(e.target.value))}
+                  className="px-3 py-2 border border-khaki/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-chestnut"
+                  placeholder="Min"
+                />
+                <input
+                  type="number"
+                  min="3"
+                  max="15"
+                  value={config.maxClusters}
+                  onChange={(e) => handleConfigChange('maxClusters', parseInt(e.target.value))}
+                  className="px-3 py-2 border border-khaki/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-chestnut"
+                  placeholder="Max"
+                />
               </div>
-              <p className="text-xs text-charcoal/50 mt-1">
-                Range of cluster numbers to test for optimization
-              </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-charcoal mb-2">
-                Feature Scaling Method
+                Scaling Method
               </label>
               <select
                 value={config.scalingMethod}
                 onChange={(e) => handleConfigChange('scalingMethod', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-chestnut"
+                className="w-full px-3 py-2 border border-khaki/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-chestnut"
               >
-                <option value="standard">Standard Scaler (Z-score)</option>
-                <option value="minmax">Min-Max Scaler (0-1)</option>
-                <option value="robust">Robust Scaler (Median/IQR)</option>
+                <option value="standard">Standard Scaler</option>
+                <option value="minmax">Min-Max Scaler</option>
+                <option value="robust">Robust Scaler</option>
                 <option value="none">No Scaling</option>
               </select>
-              <p className="text-xs text-charcoal/50 mt-1">
-                Scaling method for feature normalization
-              </p>
             </div>
           </div>
+        </div>
 
-          <div className="mt-4">
-            <label className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={config.enableDimensionalityReduction}
-                onChange={(e) => handleConfigChange('enableDimensionalityReduction', e.target.checked)}
-                className="text-chestnut"
-              />
+        {/* Dataset Summary */}
+        {validationResults && (
+          <div className="bg-bone border rounded-lg p-4">
+            <div className="grid grid-cols-4 gap-4 text-center text-sm">
               <div>
-                <div className="font-medium">Enable PCA for Visualization</div>
-                <div className="text-sm text-charcoal/60">
-                  Apply Principal Component Analysis for 2D/3D cluster visualization
+                <div className="font-bold text-chestnut">
+                  {validationResults.summary?.shape?.[0]?.toLocaleString() || 'N/A'}
                 </div>
+                <div className="text-charcoal/60">Samples</div>
               </div>
-            </label>
-          </div>
-        </div>
-
-        {/* Configuration Summary */}
-        <div className="bg-bone border rounded-lg p-4">
-          <h4 className="font-medium text-charcoal mb-2">Analysis Configuration</h4>
-          <div className="text-sm text-charcoal/70 space-y-1">
-            <div>• Selected algorithms: {config.algorithms.length}</div>
-            <div>• Cluster range: {config.minClusters} - {config.maxClusters}</div>
-            <div>• Scaling method: {config.scalingMethod}</div>
-            <div>• PCA visualization: {config.enableDimensionalityReduction ? 'Enabled' : 'Disabled'}</div>
-            <div>• Estimated analysis time: {Math.ceil(config.algorithms.length * 1.5)} - {config.algorithms.length * 3} minutes</div>
-          </div>
-        </div>
-
-        {config.algorithms.length === 0 && (
-          <div className="text-center text-charcoal/60 py-4">
-            Please select at least one clustering algorithm to continue
+              <div>
+                <div className="font-bold text-chestnut">
+                  {validationResults.summary?.shape?.[1] || 'N/A'}
+                </div>
+                <div className="text-charcoal/60">Features</div>
+              </div>
+              <div>
+                <div className="font-bold text-chestnut">
+                  {config.algorithms.length}
+                </div>
+                <div className="text-charcoal/60">Algorithms</div>
+              </div>
+              <div>
+                <div className="font-bold text-chestnut">
+                  {config.maxClusters - config.minClusters + 1}
+                </div>
+                <div className="text-charcoal/60">Cluster Tests</div>
+              </div>
+            </div>
           </div>
         )}
       </div>

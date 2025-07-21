@@ -5,6 +5,11 @@ import StepContainer from '../shared/StepContainer';
 
 const ResultsVisualization = ({ analysisResults, validationResults, onNext }) => {
   const [activeTab, setActiveTab] = useState('quality');
+  const [selectedVariable, setSelectedVariable] = useState(
+    analysisResults?.univariate?.numeric_analysis?.summary_stats ? 
+    Object.keys(analysisResults.univariate.numeric_analysis.summary_stats)[0] : 
+    null
+  );
 
   if (!analysisResults) {
     return (
@@ -29,32 +34,55 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
   ];
 
   const renderQualityResults = () => {
-    const quality = analysisResults.quality;
+    const qualityResponse = analysisResults.quality;
+    
+    // If quality assessment API failed, show appropriate message
+    if (!qualityResponse) {
+      return (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+          <p className="text-yellow-800 font-medium mb-2">Quality Assessment Unavailable</p>
+          <p className="text-yellow-700 text-sm">The quality assessment API returned an error. Please try again or contact support if the issue persists.</p>
+        </div>
+      );
+    }
+
+    console.log('Quality data structure:', qualityResponse);
+    
+    // Extract the actual assessment data from the API response
+    const quality = qualityResponse.assessment;
     
     return (
       <div className="space-y-6">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white border rounded-lg p-4 text-center">
             <div className="text-2xl font-bold text-chestnut">
-              {quality?.completeness?.score || 'N/A'}%
+              {typeof (quality?.completeness?.score ?? quality?.completeness) === 'number' 
+                ? `${(quality?.completeness?.score ?? quality?.completeness).toFixed(1)}%` 
+                : 'N/A'}
             </div>
             <div className="text-sm text-charcoal/70">Completeness</div>
           </div>
           <div className="bg-white border rounded-lg p-4 text-center">
             <div className="text-2xl font-bold text-chestnut">
-              {quality?.consistency?.score || 'N/A'}%
+              {typeof (quality?.consistency?.score ?? quality?.consistency) === 'number' 
+                ? `${(quality?.consistency?.score ?? quality?.consistency).toFixed(1)}%` 
+                : 'N/A'}
             </div>
             <div className="text-sm text-charcoal/70">Consistency</div>
           </div>
           <div className="bg-white border rounded-lg p-4 text-center">
             <div className="text-2xl font-bold text-chestnut">
-              {quality?.validity?.score || 'N/A'}%
+              {typeof (quality?.validity?.score ?? quality?.validity) === 'number' 
+                ? `${(quality?.validity?.score ?? quality?.validity).toFixed(1)}%` 
+                : 'N/A'}
             </div>
             <div className="text-sm text-charcoal/70">Validity</div>
           </div>
           <div className="bg-white border rounded-lg p-4 text-center">
             <div className="text-2xl font-bold text-chestnut">
-              {quality?.overall_score || 'N/A'}%
+              {typeof quality?.overall_score === 'number' 
+                ? `${quality.overall_score.toFixed(1)}%` 
+                : 'N/A'}
             </div>
             <div className="text-sm text-charcoal/70">Overall Score</div>
           </div>
@@ -63,7 +91,7 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
         <div className="bg-white border rounded-lg p-6">
           <h3 className="font-semibold text-charcoal mb-4">Quality Assessment Details</h3>
           <div className="space-y-4">
-            {quality?.issues?.map((issue, idx) => (
+            {quality?.issues?.length > 0 ? quality.issues.map((issue, idx) => (
               <div key={idx} className="flex items-start gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
                 <div>
@@ -71,7 +99,7 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
                   <div className="text-sm text-yellow-700">{issue.description}</div>
                 </div>
               </div>
-            )) || (
+            )) : (
               <p className="text-charcoal/60">No quality issues detected</p>
             )}
           </div>
@@ -83,12 +111,30 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
   const renderUnivariateResults = () => {
     const univariate = analysisResults.univariate;
     
+    if (!univariate) {
+      return (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+          <p className="text-yellow-800 font-medium mb-2">Univariate Analysis Unavailable</p>
+          <p className="text-yellow-700 text-sm">The univariate analysis API returned an error. Please try again or contact support if the issue persists.</p>
+        </div>
+      );
+    }
+
+    console.log('Univariate data structure:', univariate);
+    
     if (!univariate?.numeric_analysis?.summary_stats) {
-      return <p className="text-charcoal/60">No univariate analysis results available</p>;
+      return (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+          <p className="text-blue-800 font-medium mb-2">No Numeric Data Detected</p>
+          <p className="text-blue-700 text-sm">Your dataset may not contain numeric columns suitable for univariate analysis.</p>
+        </div>
+      );
     }
 
     const stats = univariate.numeric_analysis.summary_stats;
-    const [selectedVariable, setSelectedVariable] = useState(Object.keys(stats)[0]);
+    
+    // Ensure we have a valid selected variable
+    const currentSelectedVariable = selectedVariable || Object.keys(stats)[0];
     
     const chartData = Object.entries(stats).map(([feature, data]) => ({
       feature,
@@ -97,7 +143,7 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
       skewness: Math.abs(data.skewness || 0)
     }));
 
-    const selectedVarData = stats[selectedVariable];
+    const selectedVarData = stats[currentSelectedVariable];
     
     // Generate mock histogram data for the selected variable
     const histogramData = selectedVarData ? Array.from({ length: 20 }, (_, i) => ({
@@ -116,7 +162,7 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
                 key={variable}
                 onClick={() => setSelectedVariable(variable)}
                 className={`p-3 rounded-lg text-sm font-medium transition-all ${
-                  selectedVariable === variable
+                  currentSelectedVariable === variable
                     ? 'bg-chestnut text-white'
                     : 'bg-bone text-charcoal hover:bg-chestnut/10'
                 }`}
@@ -130,7 +176,7 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
         {/* Selected Variable Details */}
         <div className="bg-white border rounded-lg p-6">
           <h3 className="font-semibold text-charcoal mb-4">
-            Variable Analysis: <span className="text-chestnut">{selectedVariable}</span>
+            Variable Analysis: <span className="text-chestnut">{currentSelectedVariable}</span>
           </h3>
           
           <div className="grid md:grid-cols-2 gap-6">
@@ -140,31 +186,31 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between p-2 bg-bone rounded">
                   <span className="text-charcoal/70">Mean:</span>
-                  <span className="font-medium">{selectedVarData?.mean?.toFixed(3)}</span>
+                  <span className="font-medium">{typeof selectedVarData?.mean === 'number' ? selectedVarData.mean.toFixed(3) : 'N/A'}</span>
                 </div>
                 <div className="flex justify-between p-2 bg-bone rounded">
                   <span className="text-charcoal/70">Median:</span>
-                  <span className="font-medium">{selectedVarData?.median?.toFixed(3)}</span>
+                  <span className="font-medium">{typeof selectedVarData?.median === 'number' ? selectedVarData.median.toFixed(3) : 'N/A'}</span>
                 </div>
                 <div className="flex justify-between p-2 bg-bone rounded">
                   <span className="text-charcoal/70">Standard Deviation:</span>
-                  <span className="font-medium">{selectedVarData?.std?.toFixed(3)}</span>
+                  <span className="font-medium">{typeof selectedVarData?.std === 'number' ? selectedVarData.std.toFixed(3) : 'N/A'}</span>
                 </div>
                 <div className="flex justify-between p-2 bg-bone rounded">
                   <span className="text-charcoal/70">Minimum:</span>
-                  <span className="font-medium">{selectedVarData?.min?.toFixed(3)}</span>
+                  <span className="font-medium">{typeof selectedVarData?.min === 'number' ? selectedVarData.min.toFixed(3) : 'N/A'}</span>
                 </div>
                 <div className="flex justify-between p-2 bg-bone rounded">
                   <span className="text-charcoal/70">Maximum:</span>
-                  <span className="font-medium">{selectedVarData?.max?.toFixed(3)}</span>
+                  <span className="font-medium">{typeof selectedVarData?.max === 'number' ? selectedVarData.max.toFixed(3) : 'N/A'}</span>
                 </div>
                 <div className="flex justify-between p-2 bg-bone rounded">
                   <span className="text-charcoal/70">Skewness:</span>
-                  <span className="font-medium">{selectedVarData?.skewness?.toFixed(3)}</span>
+                  <span className="font-medium">{typeof selectedVarData?.skewness === 'number' ? selectedVarData.skewness.toFixed(3) : 'N/A'}</span>
                 </div>
                 <div className="flex justify-between p-2 bg-bone rounded">
                   <span className="text-charcoal/70">Kurtosis:</span>
-                  <span className="font-medium">{selectedVarData?.kurtosis?.toFixed(3)}</span>
+                  <span className="font-medium">{typeof selectedVarData?.kurtosis === 'number' ? selectedVarData.kurtosis.toFixed(3) : 'N/A'}</span>
                 </div>
               </div>
             </div>
@@ -203,23 +249,43 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
   };
 
   const renderBivariateResults = () => {
-    const bivariate = analysisResults.bivariate;
+    const bivariateResponse = analysisResults.bivariate;
     
-    if (!bivariate?.strongCorrelations) {
-      return <p className="text-charcoal/60">No correlation analysis results available</p>;
+    if (!bivariateResponse) {
+      return (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+          <p className="text-yellow-800 font-medium mb-2">Correlation Analysis Unavailable</p>
+          <p className="text-yellow-700 text-sm">The bivariate analysis API returned an error. Please try again or contact support if the issue persists.</p>
+        </div>
+      );
     }
 
-    const strongCorrs = bivariate.strongCorrelations || [];
+    console.log('Bivariate data structure:', bivariateResponse);
+
+    // Extract the actual correlation data from the API response
+    const bivariate = bivariateResponse.correlation_analysis;
+    const strongCorrs = bivariate?.strong_correlations || [];
     
-    // Generate correlation matrix data for heatmap
-    const features = ['feature1', 'feature2', 'feature3', 'feature4', 'feature5'];
-    const correlationMatrix = features.map((row, i) => 
+    // Generate correlation matrix data for heatmap using actual API data
+    const correlationData = bivariate?.pearson_correlation || {};
+    const features = Object.keys(correlationData);
+    
+    if (features.length === 0) {
+      return (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+          <p className="text-blue-800 font-medium mb-2">No Correlation Data Available</p>
+          <p className="text-blue-700 text-sm">Your dataset may not contain enough numeric columns for correlation analysis.</p>
+        </div>
+      );
+    }
+    
+    const correlationMatrix = features.flatMap((row, i) => 
       features.map((col, j) => ({
         x: col,
         y: row,
-        value: i === j ? 1 : (Math.random() * 2 - 1).toFixed(3)
+        value: correlationData[row]?.[col] || (i === j ? 1 : 0)
       }))
-    ).flat();
+    );
 
     const getCorrelationColor = (value) => {
       const absValue = Math.abs(value);
@@ -269,7 +335,7 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
                           }}
                           title={`${rowFeature} × ${colFeature}: ${corrValue}`}
                         >
-                          {corrValue}
+                          {typeof corrValue === 'number' ? corrValue.toFixed(2) : '0.00'}
                         </div>
                       );
                     })}
@@ -283,7 +349,7 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
           <div className="mt-4 flex items-center justify-center gap-4 text-xs">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-red-600 rounded"></div>
-              <span>Strong (> 0.8)</span>
+              <span>Strong (&gt; 0.8)</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-orange-500 rounded"></div>
@@ -295,7 +361,7 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-gray-300 rounded"></div>
-              <span>Very Weak (< 0.2)</span>
+              <span>Very Weak (&lt; 0.2)</span>
             </div>
           </div>
         </div>
@@ -311,7 +377,7 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
                     Math.abs(corr.correlation) > 0.8 ? 'bg-red-600' :
                     Math.abs(corr.correlation) > 0.6 ? 'bg-orange-500' : 'bg-yellow-500'
                   }`}>
-                    {corr.correlation.toFixed(3)}
+                    {typeof corr.correlation === 'number' ? corr.correlation.toFixed(3) : 'N/A'}
                   </span>
                 </div>
               )) : (
@@ -324,13 +390,13 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
             <h3 className="font-semibold text-charcoal mb-4">Correlation Distribution</h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center p-3 bg-red-50 border border-red-200 rounded-lg">
-                <span className="font-medium text-red-800">Strong (|r| > 0.8)</span>
+                <span className="font-medium text-red-800">Strong (|r| &gt; 0.8)</span>
                 <span className="px-2 py-1 bg-red-600 text-white rounded text-sm font-bold">
                   {strongCorrs.filter(c => Math.abs(c.correlation) > 0.8).length}
                 </span>
               </div>
               <div className="flex justify-between items-center p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                <span className="font-medium text-orange-800">Moderate (0.4 < |r| ≤ 0.8)</span>
+                <span className="font-medium text-orange-800">Moderate (0.4 &lt; |r| ≤ 0.8)</span>
                 <span className="px-2 py-1 bg-orange-500 text-white rounded text-sm font-bold">
                   {strongCorrs.filter(c => Math.abs(c.correlation) > 0.4 && Math.abs(c.correlation) <= 0.8).length}
                 </span>
@@ -390,10 +456,10 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
       title="Analysis Results"
       description="Comprehensive exploratory data analysis results"
       currentStep={5}
-      totalSteps={6}
+      totalSteps={5}
       onNext={onNext}
       canGoNext={true}
-      nextLabel="Continue to Export"
+      nextLabel="Return to Dashboard"
     >
       <div className="space-y-6">
         {/* Tab Navigation */}
