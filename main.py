@@ -1156,25 +1156,39 @@ Response format (JSON):
 Focus on practical business application for small organizations with limited resources."""
 
     elif assessment_type == "change_readiness":
-        return """You are an Organizational Change Readiness expert. Your role is to evaluate how prepared an organization is to successfully implement AI and other transformative changes.
+        return """You are an Organizational Change Readiness expert specializing in small business AI adoption. Your role is to evaluate how prepared an organization is to successfully implement AI changes through intelligent questioning across 5 critical dimensions.
 
-Generate the next assessment question based on the conversation history. Consider:
-1. Organizational culture and leadership style
-2. Change management processes and history
-3. Resource allocation and support systems
-4. Communication patterns and stakeholder engagement
-5. Previous change successes and failures
+ASSESSMENT STRUCTURE (5 questions total):
+1. Leadership Support & Executive Sponsorship
+2. Team Capability & Change Readiness
+3. Change History & Organizational Learning
+4. Resource Allocation & Budget Reality
+5. Communication Culture & Stakeholder Engagement
+
+ASSESSMENT APPROACH:
+- Ask penetrating questions that reveal actual readiness vs. aspirations
+- Focus on small business realities: limited resources, multiple responsibilities
+- Identify concrete evidence of change capability
+- Assess realistic capacity for managing AI implementation
+
+MULTI-AGENT ANALYSIS AREAS:
+- Leadership support: Executive buy-in, change champions, decision-making authority
+- Team capability: Skills, bandwidth, training, motivation for change
+- Change history: Past successes/failures, lessons learned, adaptation capability
+- Resources: Time, budget, dedicated personnel, implementation capacity
+- Communication: Transparency, feedback loops, stakeholder alignment
 
 Response format (JSON):
 {
-    "question": "Your specific question here",
-    "options": ["Option 1", "Option 2", "Option 3", "Option 4", "Option 5"],
-    "category": "Category name (e.g. Leadership, Culture, Resources, Communication, Process)",
-    "difficulty": "basic|intermediate|complex",
-    "rationale": "Why this question reveals change readiness"
+    "question": "Specific question targeting one of the 5 dimensions",
+    "section": "Current section (leadership_support, team_capability, change_history, resource_allocation, communication_culture)",
+    "probe_for": ["What evidence to look for in responses"],
+    "red_flags": ["Warning signs that indicate low readiness"],
+    "positive_indicators": ["Signs of high change readiness"],
+    "rationale": "Why this question reveals organizational change capacity"
 }
 
-Focus on practical organizational dynamics, leadership effectiveness, and change management capabilities."""
+Focus on practical small business dynamics and realistic change management capabilities."""
 
     return "You are an assessment expert. Generate appropriate questions for evaluation."
 
@@ -1549,6 +1563,552 @@ def determine_overall_readiness(maturity_scores: Dict) -> str:
     else:
         return "foundational_learning_needed"
 
+def perform_crewai_change_assessment(session_id: str, org_data: Dict, project_data: Dict, question_history: List[Dict]) -> Dict:
+    """Perform sophisticated change readiness assessment using CrewAI-inspired multi-agent approach."""
+    try:
+        logger.info(f"Starting CrewAI change assessment for session {session_id}")
+        
+        # Agent 1: Assessment Agent - Analyzes organizational readiness
+        assessment_analysis = assess_organizational_readiness(question_history, org_data)
+        
+        # Agent 2: Scoring Agent - Calculates readiness scores
+        scoring_analysis = calculate_change_readiness_scores(assessment_analysis, org_data)
+        
+        # Agent 3: Recommendations Agent - Generates actionable recommendations
+        recommendations = generate_change_recommendations(scoring_analysis, org_data, project_data)
+        
+        # Agent 4: Risk Assessment Agent - Identifies risks and mitigation strategies
+        risk_assessment = analyze_change_risks(scoring_analysis, org_data)
+        
+        # Agent 5: Portfolio Agent - Manages multiple AI initiatives
+        portfolio_guidance = generate_portfolio_guidance(scoring_analysis, project_data)
+        
+        # Combine all agent outputs
+        change_assessment_result = {
+            "readiness_level": determine_change_readiness_level(scoring_analysis),
+            "assessment_analysis": assessment_analysis,
+            "scoring_breakdown": scoring_analysis,
+            "recommendations": recommendations,
+            "risk_assessment": risk_assessment,
+            "portfolio_guidance": portfolio_guidance,
+            "next_steps": generate_change_next_steps(scoring_analysis, recommendations),
+            "visual_analytics": generate_change_visual_analytics(scoring_analysis),
+            "timeline_estimate": estimate_implementation_timeline(scoring_analysis),
+            "analysis_timestamp": datetime.now().isoformat()
+        }
+        
+        logger.info(f"CrewAI change assessment completed for session {session_id}")
+        return change_assessment_result
+        
+    except Exception as e:
+        logger.error(f"CrewAI change assessment failed for session {session_id}: {e}")
+        return {
+            "readiness_level": "prepare_first",
+            "assessment_analysis": {"error": "Analysis failed"},
+            "recommendations": ["Seek professional change management consultation"],
+            "error": "Advanced multi-agent analysis unavailable",
+            "analysis_timestamp": datetime.now().isoformat()
+        }
+
+def assess_organizational_readiness(question_history: List[Dict], org_data: Dict) -> Dict:
+    """Agent 1: Assessment Agent - Analyze organizational readiness factors."""
+    assessment = {
+        "leadership_support": {"score": 0, "evidence": [], "concerns": []},
+        "team_capability": {"score": 0, "evidence": [], "concerns": []},
+        "change_history": {"score": 0, "evidence": [], "concerns": []},
+        "resource_allocation": {"score": 0, "evidence": [], "concerns": []},
+        "communication_culture": {"score": 0, "evidence": [], "concerns": []}
+    }
+    
+    # Keywords and phrases that indicate readiness levels
+    positive_indicators = {
+        "leadership": ["executive support", "leadership buy-in", "sponsor", "champion", "committed", "invested"],
+        "team": ["training", "skilled", "experienced", "motivated", "capable", "dedicated"],
+        "change": ["successful", "implemented", "adopted", "learned", "adapted", "improved"],
+        "resources": ["budget", "time", "allocated", "dedicated", "available", "sufficient"],
+        "communication": ["transparent", "open", "feedback", "collaborative", "aligned", "engaged"]
+    }
+    
+    negative_indicators = {
+        "leadership": ["resistance", "skeptical", "unsure", "hesitant", "concerned", "worried"],
+        "team": ["overwhelmed", "untrained", "resistant", "inexperienced", "busy", "stretched"],
+        "change": ["failed", "struggled", "difficult", "problems", "issues", "challenges"],
+        "resources": ["limited", "tight", "insufficient", "constrained", "lacking", "minimal"],
+        "communication": ["silos", "isolated", "conflicts", "unclear", "disconnected", "fragmented"]
+    }
+    
+    # Analyze responses for each dimension
+    for qa in question_history:
+        answer = qa.get("answer", "").lower()
+        
+        # Leadership Support Analysis
+        leadership_score = 0
+        for indicator in positive_indicators["leadership"]:
+            if indicator in answer:
+                leadership_score += 2
+                assessment["leadership_support"]["evidence"].append(f"Mentioned: {indicator}")
+        for indicator in negative_indicators["leadership"]:
+            if indicator in answer:
+                leadership_score -= 1
+                assessment["leadership_support"]["concerns"].append(f"Concern: {indicator}")
+        
+        assessment["leadership_support"]["score"] += leadership_score
+        
+        # Team Capability Analysis
+        team_score = 0
+        for indicator in positive_indicators["team"]:
+            if indicator in answer:
+                team_score += 2
+                assessment["team_capability"]["evidence"].append(f"Strength: {indicator}")
+        for indicator in negative_indicators["team"]:
+            if indicator in answer:
+                team_score -= 1
+                assessment["team_capability"]["concerns"].append(f"Risk: {indicator}")
+        
+        assessment["team_capability"]["score"] += team_score
+        
+        # Change History Analysis
+        change_score = 0
+        for indicator in positive_indicators["change"]:
+            if indicator in answer:
+                change_score += 2
+                assessment["change_history"]["evidence"].append(f"Success: {indicator}")
+        for indicator in negative_indicators["change"]:
+            if indicator in answer:
+                change_score -= 1
+                assessment["change_history"]["concerns"].append(f"Previous challenge: {indicator}")
+        
+        assessment["change_history"]["score"] += change_score
+        
+        # Resource Allocation Analysis
+        resource_score = 0
+        for indicator in positive_indicators["resources"]:
+            if indicator in answer:
+                resource_score += 2
+                assessment["resource_allocation"]["evidence"].append(f"Positive: {indicator}")
+        for indicator in negative_indicators["resources"]:
+            if indicator in answer:
+                resource_score -= 1
+                assessment["resource_allocation"]["concerns"].append(f"Constraint: {indicator}")
+        
+        assessment["resource_allocation"]["score"] += resource_score
+        
+        # Communication Culture Analysis
+        comm_score = 0
+        for indicator in positive_indicators["communication"]:
+            if indicator in answer:
+                comm_score += 2
+                assessment["communication_culture"]["evidence"].append(f"Strength: {indicator}")
+        for indicator in negative_indicators["communication"]:
+            if indicator in answer:
+                comm_score -= 1
+                assessment["communication_culture"]["concerns"].append(f"Risk: {indicator}")
+        
+        assessment["communication_culture"]["score"] += comm_score
+    
+    # Normalize scores to 0-100 scale
+    max_possible = len(question_history) * 4  # 4 points per question max
+    for dimension in assessment:
+        raw_score = assessment[dimension]["score"]
+        normalized_score = max(0, min(100, (raw_score + max_possible/2) / max_possible * 100))
+        assessment[dimension]["normalized_score"] = round(normalized_score, 1)
+    
+    return assessment
+
+def calculate_change_readiness_scores(assessment_analysis: Dict, org_data: Dict) -> Dict:
+    """Agent 2: Scoring Agent - Calculate comprehensive readiness scores."""
+    scoring = {
+        "dimension_scores": {},
+        "overall_score": 0,
+        "confidence_level": 0,
+        "readiness_factors": [],
+        "risk_factors": []
+    }
+    
+    # Extract normalized scores from assessment
+    for dimension, analysis in assessment_analysis.items():
+        score = analysis.get("normalized_score", 50)
+        scoring["dimension_scores"][dimension] = score
+        
+        # Identify strengths and risks
+        if score >= 70:
+            scoring["readiness_factors"].append(f"Strong {dimension.replace('_', ' ')}")
+        elif score <= 40:
+            scoring["risk_factors"].append(f"Weak {dimension.replace('_', ' ')}")
+    
+    # Calculate weighted overall score
+    weights = {
+        "leadership_support": 0.30,  # Most critical
+        "team_capability": 0.25,
+        "change_history": 0.20,
+        "resource_allocation": 0.15,
+        "communication_culture": 0.10
+    }
+    
+    weighted_score = 0
+    for dimension, weight in weights.items():
+        dimension_score = scoring["dimension_scores"].get(dimension, 50)
+        weighted_score += dimension_score * weight
+    
+    scoring["overall_score"] = round(weighted_score, 1)
+    
+    # Calculate confidence level based on response quality
+    evidence_count = sum(len(analysis.get("evidence", [])) for analysis in assessment_analysis.values())
+    scoring["confidence_level"] = min(100, (evidence_count / 10) * 100)  # Max confidence at 10+ evidence points
+    
+    # Adjust for organization size (smaller orgs have different dynamics)
+    org_size = org_data.get("size", 25)
+    if org_size <= 10:
+        scoring["size_adjustment"] = "Small team - faster decisions but fewer resources"
+        scoring["overall_score"] += 5  # Small teams can move faster
+    elif org_size >= 50:
+        scoring["size_adjustment"] = "Larger organization - more resources but complex change"
+        scoring["overall_score"] -= 5  # Larger teams have more complexity
+    
+    scoring["overall_score"] = max(0, min(100, scoring["overall_score"]))
+    
+    return scoring
+
+def generate_change_recommendations(scoring_analysis: Dict, org_data: Dict, project_data: Dict) -> List[Dict]:
+    """Agent 3: Recommendations Agent - Generate actionable change management recommendations."""
+    recommendations = []
+    overall_score = scoring_analysis.get("overall_score", 50)
+    dimension_scores = scoring_analysis.get("dimension_scores", {})
+    
+    # Leadership Support Recommendations
+    leadership_score = dimension_scores.get("leadership_support", 50)
+    if leadership_score < 60:
+        recommendations.append({
+            "category": "leadership",
+            "priority": "high",
+            "title": "Secure Executive Sponsorship",
+            "description": "Identify and engage a senior leader as AI champion to drive organizational buy-in",
+            "timeline": "1-2 weeks",
+            "effort": "Medium",
+            "success_criteria": "Named executive sponsor with defined responsibilities"
+        })
+    
+    # Team Capability Recommendations
+    team_score = dimension_scores.get("team_capability", 50)
+    if team_score < 60:
+        recommendations.append({
+            "category": "team",
+            "priority": "high",
+            "title": "Build Change Team Capability",
+            "description": "Train 2-3 team members in change management fundamentals and AI adoption",
+            "timeline": "2-4 weeks",
+            "effort": "Medium",
+            "success_criteria": "Trained change champions in place"
+        })
+    
+    # Change History Recommendations
+    change_score = dimension_scores.get("change_history", 50)
+    if change_score < 60:
+        recommendations.append({
+            "category": "process",
+            "priority": "medium",
+            "title": "Document Change Lessons",
+            "description": "Review past change initiatives to identify success factors and pitfalls",
+            "timeline": "1 week",
+            "effort": "Low",
+            "success_criteria": "Change management playbook created"
+        })
+    
+    # Resource Allocation Recommendations
+    resource_score = dimension_scores.get("resource_allocation", 50)
+    if resource_score < 60:
+        recommendations.append({
+            "category": "resources",
+            "priority": "high",
+            "title": "Secure Dedicated Resources",
+            "description": "Allocate specific time and budget for AI implementation and change management",
+            "timeline": "1-2 weeks",
+            "effort": "High",
+            "success_criteria": "Approved budget and time allocation"
+        })
+    
+    # Communication Recommendations
+    comm_score = dimension_scores.get("communication_culture", 50)
+    if comm_score < 60:
+        recommendations.append({
+            "category": "communication",
+            "priority": "medium",
+            "title": "Establish Communication Plan",
+            "description": "Create regular communication channels for AI initiative updates and feedback",
+            "timeline": "1 week",
+            "effort": "Low",
+            "success_criteria": "Communication schedule established"
+        })
+    
+    # Overall score-based recommendations
+    if overall_score < 40:
+        recommendations.insert(0, {
+            "category": "strategy",
+            "priority": "critical",
+            "title": "Engage Change Management Consultant",
+            "description": "Partner with external change management expert before proceeding with AI implementation",
+            "timeline": "2-3 weeks",
+            "effort": "High",
+            "success_criteria": "Consultant engaged and change strategy developed"
+        })
+    elif overall_score < 60:
+        recommendations.append({
+            "category": "strategy",
+            "priority": "medium",
+            "title": "Develop Phased Implementation Plan",
+            "description": "Break AI implementation into smaller, manageable phases with clear success criteria",
+            "timeline": "2-3 weeks",
+            "effort": "Medium",
+            "success_criteria": "Detailed phase plan with milestones"
+        })
+    
+    return recommendations
+
+def analyze_change_risks(scoring_analysis: Dict, org_data: Dict) -> Dict:
+    """Agent 4: Risk Assessment Agent - Identify and analyze implementation risks."""
+    risk_assessment = {
+        "high_risks": [],
+        "medium_risks": [],
+        "low_risks": [],
+        "mitigation_strategies": {},
+        "success_probability": 0
+    }
+    
+    dimension_scores = scoring_analysis.get("dimension_scores", {})
+    overall_score = scoring_analysis.get("overall_score", 50)
+    
+    # Identify risks based on dimension scores
+    for dimension, score in dimension_scores.items():
+        dimension_name = dimension.replace("_", " ").title()
+        
+        if score < 40:
+            risk_assessment["high_risks"].append({
+                "area": dimension_name,
+                "description": f"Very low {dimension_name.lower()} may cause implementation failure",
+                "impact": "High",
+                "probability": "High"
+            })
+        elif score < 60:
+            risk_assessment["medium_risks"].append({
+                "area": dimension_name,
+                "description": f"Moderate {dimension_name.lower()} requires attention during implementation",
+                "impact": "Medium",
+                "probability": "Medium"
+            })
+        else:
+            risk_assessment["low_risks"].append({
+                "area": dimension_name,
+                "description": f"Strong {dimension_name.lower()} supports successful implementation",
+                "impact": "Low",
+                "probability": "Low"
+            })
+    
+    # Generate mitigation strategies
+    for risk in risk_assessment["high_risks"]:
+        area = risk["area"].lower()
+        if "leadership" in area:
+            risk_assessment["mitigation_strategies"]["leadership"] = [
+                "Schedule executive briefings on AI benefits",
+                "Provide ROI projections and success stories",
+                "Start with small pilot to demonstrate value"
+            ]
+        elif "team" in area:
+            risk_assessment["mitigation_strategies"]["team"] = [
+                "Provide comprehensive training program",
+                "Hire external consultant for guidance",
+                "Create internal AI champion network"
+            ]
+        elif "change" in area:
+            risk_assessment["mitigation_strategies"]["change"] = [
+                "Conduct lessons learned review",
+                "Implement formal change management process",
+                "Start with low-risk pilot project"
+            ]
+        elif "resource" in area:
+            risk_assessment["mitigation_strategies"]["resource"] = [
+                "Seek grant funding for AI initiatives",
+                "Partner with other organizations for cost sharing",
+                "Focus on free/low-cost AI tools initially"
+            ]
+        elif "communication" in area:
+            risk_assessment["mitigation_strategies"]["communication"] = [
+                "Establish weekly AI update meetings",
+                "Create feedback mechanisms and surveys",
+                "Implement transparent progress reporting"
+            ]
+    
+    # Calculate success probability
+    if overall_score >= 70:
+        risk_assessment["success_probability"] = 85
+    elif overall_score >= 60:
+        risk_assessment["success_probability"] = 70
+    elif overall_score >= 50:
+        risk_assessment["success_probability"] = 55
+    elif overall_score >= 40:
+        risk_assessment["success_probability"] = 35
+    else:
+        risk_assessment["success_probability"] = 20
+    
+    return risk_assessment
+
+def generate_portfolio_guidance(scoring_analysis: Dict, project_data: Dict) -> Dict:
+    """Agent 5: Portfolio Agent - Provide guidance on managing multiple AI initiatives."""
+    portfolio_guidance = {
+        "recommended_sequence": [],
+        "capacity_assessment": {},
+        "prioritization_framework": {},
+        "resource_optimization": []
+    }
+    
+    overall_score = scoring_analysis.get("overall_score", 50)
+    
+    # Recommend implementation sequence based on readiness
+    if overall_score >= 70:
+        portfolio_guidance["recommended_sequence"] = [
+            "Start with highest-impact, lowest-risk AI tool",
+            "Run 2-3 parallel pilots in different departments",
+            "Scale successful pilots organization-wide",
+            "Add more complex AI solutions incrementally"
+        ]
+    elif overall_score >= 60:
+        portfolio_guidance["recommended_sequence"] = [
+            "Begin with single, simple AI tool",
+            "Focus on user adoption and change management",
+            "Add second AI tool only after first succeeds",
+            "Build internal AI capabilities gradually"
+        ]
+    elif overall_score >= 40:
+        portfolio_guidance["recommended_sequence"] = [
+            "Complete organizational preparation first",
+            "Start with free AI tools for experimentation",
+            "Focus on training and capability building",
+            "Defer major AI investments until readiness improves"
+        ]
+    else:
+        portfolio_guidance["recommended_sequence"] = [
+            "Engage change management consultant",
+            "Address fundamental organizational issues",
+            "Build basic digital capabilities first",
+            "Reassess AI readiness in 6 months"
+        ]
+    
+    # Assess organizational capacity
+    team_score = scoring_analysis.get("dimension_scores", {}).get("team_capability", 50)
+    resource_score = scoring_analysis.get("dimension_scores", {}).get("resource_allocation", 50)
+    
+    portfolio_guidance["capacity_assessment"] = {
+        "max_concurrent_projects": 1 if overall_score < 60 else 2 if overall_score < 80 else 3,
+        "team_bandwidth": "Low" if team_score < 50 else "Medium" if team_score < 70 else "High",
+        "resource_availability": "Constrained" if resource_score < 50 else "Moderate" if resource_score < 70 else "Adequate"
+    }
+    
+    # Prioritization framework
+    portfolio_guidance["prioritization_framework"] = {
+        "criteria": ["Business impact", "Implementation complexity", "Change requirements", "Resource needs"],
+        "weights": {"impact": 0.4, "complexity": 0.3, "change": 0.2, "resources": 0.1},
+        "recommendation": "Focus on high-impact, low-complexity solutions first"
+    }
+    
+    return portfolio_guidance
+
+def determine_change_readiness_level(scoring_analysis: Dict) -> str:
+    """Determine overall change readiness level."""
+    overall_score = scoring_analysis.get("overall_score", 50)
+    high_risks = len(scoring_analysis.get("risk_factors", []))
+    
+    if overall_score >= 70 and high_risks <= 1:
+        return "start_now"
+    elif overall_score >= 50 and high_risks <= 2:
+        return "prepare_first"
+    else:
+        return "get_help"
+
+def generate_change_next_steps(scoring_analysis: Dict, recommendations: List[Dict]) -> List[str]:
+    """Generate specific next steps for change readiness."""
+    next_steps = []
+    readiness_level = determine_change_readiness_level(scoring_analysis)
+    
+    if readiness_level == "get_help":
+        next_steps = [
+            "Schedule consultation with change management expert",
+            "Conduct organizational readiness diagnostic",
+            "Address fundamental leadership and resource gaps",
+            "Develop comprehensive change management strategy"
+        ]
+    elif readiness_level == "prepare_first":
+        next_steps = [
+            "Secure executive sponsorship for AI initiative",
+            "Form cross-functional AI steering committee",
+            "Develop communication and training plans",
+            "Identify low-risk pilot project for initial implementation"
+        ]
+    else:  # start_now
+        next_steps = [
+            "Launch AI pilot project with selected tool",
+            "Implement regular progress monitoring and feedback",
+            "Begin training program for affected team members",
+            "Document lessons learned for scaling decisions"
+        ]
+    
+    return next_steps
+
+def generate_change_visual_analytics(scoring_analysis: Dict) -> Dict:
+    """Generate visual analytics data for change readiness assessment."""
+    dimension_scores = scoring_analysis.get("dimension_scores", {})
+    
+    return {
+        "readiness_radar": {
+            "dimensions": ["Leadership", "Team", "Change History", "Resources", "Communication"],
+            "scores": [
+                dimension_scores.get("leadership_support", 50),
+                dimension_scores.get("team_capability", 50),
+                dimension_scores.get("change_history", 50),
+                dimension_scores.get("resource_allocation", 50),
+                dimension_scores.get("communication_culture", 50)
+            ],
+            "max_score": 100
+        },
+        "risk_matrix": {
+            "high_risk_areas": len([s for s in dimension_scores.values() if s < 40]),
+            "medium_risk_areas": len([s for s in dimension_scores.values() if 40 <= s < 60]),
+            "low_risk_areas": len([s for s in dimension_scores.values() if s >= 60])
+        },
+        "implementation_timeline": {
+            "current_readiness": scoring_analysis.get("overall_score", 50),
+            "target_readiness": 75,
+            "estimated_timeline": "3-6 months" if scoring_analysis.get("overall_score", 50) < 60 else "1-3 months"
+        }
+    }
+
+def estimate_implementation_timeline(scoring_analysis: Dict) -> Dict:
+    """Estimate AI implementation timeline based on change readiness."""
+    overall_score = scoring_analysis.get("overall_score", 50)
+    
+    if overall_score >= 70:
+        return {
+            "preparation_phase": "2-4 weeks",
+            "pilot_phase": "4-8 weeks", 
+            "scaling_phase": "8-12 weeks",
+            "total_timeline": "3-6 months",
+            "confidence": "High"
+        }
+    elif overall_score >= 50:
+        return {
+            "preparation_phase": "4-8 weeks",
+            "pilot_phase": "8-12 weeks",
+            "scaling_phase": "12-20 weeks", 
+            "total_timeline": "6-10 months",
+            "confidence": "Medium"
+        }
+    else:
+        return {
+            "preparation_phase": "8-16 weeks",
+            "pilot_phase": "12-20 weeks",
+            "scaling_phase": "20-32 weeks",
+            "total_timeline": "10-16 months",
+            "confidence": "Low"
+        }
+
 def generate_next_steps(maturity_scores: Dict, learning_path: Dict) -> List[str]:
     """Generate specific next steps based on assessment results."""
     next_steps = []
@@ -1614,8 +2174,31 @@ def build_assessment_context(assessment_type: str, question_history: List[Dict],
             context += "INSTRUCTION: Assessment complete - should not reach this point.\n"
             
         context += f"\nGenerate question for section {sections[min(current_section_index, len(sections)-1)]} as JSON."
+    elif assessment_type == "change_readiness":
+        # Change Readiness uses 5-section structure like AI Knowledge
+        sections = ["leadership_support", "team_capability", "change_history", "resource_allocation", "communication_culture"]
+        current_section_index = len(question_history)
+        
+        if current_section_index < len(sections):
+            current_section = sections[current_section_index]
+            context += f"INSTRUCTION: Generate question for section {current_section}. "
+            
+            if current_section == "leadership_support":
+                context += "Focus on executive sponsorship, decision-making authority, and change champions.\n"
+            elif current_section == "team_capability":
+                context += "Focus on team skills, bandwidth, training capacity, and motivation for change.\n"
+            elif current_section == "change_history":
+                context += "Focus on past change experiences, lessons learned, and organizational adaptation.\n"
+            elif current_section == "resource_allocation":
+                context += "Focus on budget reality, time allocation, and dedicated implementation capacity.\n"
+            elif current_section == "communication_culture":
+                context += "Focus on transparency, feedback systems, and stakeholder alignment.\n"
+        else:
+            context += "INSTRUCTION: Assessment complete - should not reach this point.\n"
+            
+        context += f"\nGenerate question for section {sections[min(current_section_index, len(sections)-1)]} as JSON."
     else:
-        # Change Readiness uses different structure (keep existing logic)
+        # Other assessment types use basic progress-based logic
         total_questions = 15
         progress = len(question_history) / total_questions
         
@@ -1873,14 +2456,34 @@ async def respond_change_readiness_assessment(request: AssessmentAnswerRequest):
             "answered_at": datetime.now().isoformat()
         })
         
-        # Check if assessment is complete (15 questions for Change Readiness)
-        if len(session["question_history"]) >= 15:
-            logger.info(f"Change Readiness assessment completed for session {session_id}")
+        # Check if assessment is complete (5 questions for Change Readiness multi-agent assessment)
+        if len(session["question_history"]) >= 5:
+            logger.info(f"Change Readiness assessment completed for session {session_id} - conducting CrewAI analysis")
+            
+            # Extract organization and project data from session or use defaults
+            org_data = {
+                "name": "Organization",
+                "size": 25,
+                "type": "small_business",
+                "industry": "general"
+            }
+            
+            project_data = {
+                "objective": "AI implementation",
+                "timeline": "6 months",
+                "budget_range": "$1000-5000"
+            }
+            
+            # Perform sophisticated CrewAI multi-agent analysis
+            analysis_result = perform_crewai_change_assessment(session_id, org_data, project_data, session["question_history"])
+            
             return {
                 "completed": True,
-                "total_questions": len(session["question_history"]),
+                "total_sections": 5,
+                "questions_answered": len(session["question_history"]),
                 "session_id": session_id,
-                "message": "Assessment completed! Thank you for your responses."
+                "analysis": analysis_result,
+                "message": "Assessment completed! Your change readiness analysis is ready."
             }
         
         # Generate next question using AI based on conversation history
