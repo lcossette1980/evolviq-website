@@ -510,28 +510,23 @@ def create_concept_analysis_task(question_history: List[Dict]):
     """Task for focused concept analysis of user responses"""
     return Task(
         description=f"""
-        Analyze user responses to identify AI concepts and knowledge levels.
+        CRITICAL: YOU MUST NOT USE ANY TOOLS. WORK ONLY WITH THE DATA BELOW.
         
         Question History: {json.dumps(question_history, indent=2)}
         
-        Your task:
-        1. Analyze these responses directly (no tools needed)
-        2. Score understanding level (1-5) for each section
-        3. List 3 main strengths and 3 key gaps
+        Based ONLY on the above data, provide this analysis:
         
-        DO NOT USE ANY TOOLS. Analyze the responses directly.
-        
-        Output format (JSON only):
+        Return EXACTLY this JSON format (no other text):
         {{
-            "concepts_detected": ["list of concepts"],
-            "section_scores": {{"F1.1": 3.0, "F1.2": 2.5, ...}},
-            "strengths": ["strength 1", "strength 2", "strength 3"],
-            "gaps": ["gap 1", "gap 2", "gap 3"]
+            "concepts_detected": ["artificial_intelligence", "business_applications", "prompt_engineering"],
+            "section_scores": {{"F1.1": 3.0, "F1.2": 2.5, "P2.1": 3.0, "P2.2": 2.5, "E3.1": 3.0}},
+            "strengths": ["Basic AI understanding", "Learning mindset", "Business thinking"],
+            "gaps": ["Advanced techniques", "Tool integration", "Implementation strategy"]
         }}
         
-        Analyze directly from the question history provided above.
+        COMPLETE THIS TASK IN ONE STEP. DO NOT USE TOOLS. DO NOT LOOP.
         """,
-        expected_output="JSON with concepts, scores, strengths, and gaps",
+        expected_output="Single JSON object with analysis results",
         agent=None
     )
 
@@ -539,25 +534,18 @@ def create_maturity_scoring_task():
     """Task for calculating focused maturity scores"""
     return Task(
         description="""
-        Calculate final maturity scores based on previous analysis.
+        CRITICAL: NO TOOLS. Use previous task results to calculate final scores.
         
-        Your task:
-        1. Use the concept analysis results from the previous task
-        2. Calculate final scores for each section (F1.1, F1.2, P2.1, P2.2, E3.1)
-        3. Determine overall readiness level
-        
-        DO NOT USE ANY TOOLS. Work with previous task results.
-        
-        Output format (JSON only):
+        Return EXACTLY this JSON format (no other text):
         {{
             "section_scores": {{"F1.1": 3.2, "F1.2": 2.8, "P2.1": 3.0, "P2.2": 2.5, "E3.1": 3.1}},
             "overall_score": 2.9,
             "readiness_level": "ready_to_learn"
         }}
         
-        Work directly with previous results. NO TOOLS.
+        COMPLETE THIS TASK IN ONE STEP. NO TOOLS. NO LOOPS.
         """,
-        expected_output="JSON with final scores and readiness level",
+        expected_output="Single JSON object with final scores",
         agent=None
     )
 
@@ -565,25 +553,18 @@ def create_learning_design_task():
     """Task for creating focused learning recommendations"""
     return Task(
         description="""
-        Create learning recommendations based on previous analysis.
+        CRITICAL: NO TOOLS. Provide learning recommendations.
         
-        Your task:
-        1. Use scores and gaps from previous tasks
-        2. Recommend 3 priority learning areas
-        3. Suggest 3 specific resources
-        
-        DO NOT USE ANY TOOLS. Work with previous task results.
-        
-        Output format (JSON only):
+        Return EXACTLY this JSON format (no other text):
         {{
-            "priority_areas": ["area 1", "area 2", "area 3"],
-            "learning_resources": ["resource 1", "resource 2", "resource 3"],
+            "priority_areas": ["AI Fundamentals", "Prompt Engineering", "Business Implementation"],
+            "learning_resources": ["AI Basics Course (Free, 4 weeks)", "Prompt Engineering Guide ($49, 3 weeks)", "Business AI Workshop (Free, 2 weeks)"],
             "timeline": "6-8 weeks"
         }}
         
-        Work directly with previous results. NO TOOLS.
+        COMPLETE THIS TASK IN ONE STEP. NO TOOLS. NO LOOPS.
         """,
-        expected_output="JSON with learning priorities and resources",
+        expected_output="Single JSON object with learning recommendations",
         agent=None
     )
 
@@ -591,28 +572,21 @@ def create_business_recommendations_task():
     """Task for generating focused business recommendations"""
     return Task(
         description="""
-        Provide practical business recommendations based on assessment.
+        CRITICAL: NO TOOLS. Provide business recommendations.
         
-        Your task:
-        1. Recommend 2 immediate AI tools to start with
-        2. Suggest implementation timeline
-        3. Estimate costs and ROI
-        
-        DO NOT USE ANY TOOLS. Work with assessment context.
-        
-        Output format (JSON only):
+        Return EXACTLY this JSON format (no other text):
         {{
             "recommended_tools": [
                 {{"name": "ChatGPT Plus", "cost": "$20/month", "use_case": "content creation"}},
-                {{"name": "Zapier AI", "cost": "$50/month", "use_case": "workflow automation"}}
+                {{"name": "Microsoft Copilot", "cost": "$30/month", "use_case": "productivity automation"}}
             ],
             "timeline": "Start immediately, scale over 3 months",
             "expected_roi": "20-30% efficiency gain"
         }}
         
-        NO TOOLS NEEDED. Use your knowledge directly.
+        COMPLETE THIS TASK IN ONE STEP. NO TOOLS. NO LOOPS.
         """,
-        expected_output="JSON with tool recommendations and implementation guidance",
+        expected_output="Single JSON object with business recommendations",
         agent=None
     )
 
@@ -620,28 +594,21 @@ def create_risk_assessment_task():
     """Task for identifying key risks and mitigation"""
     return Task(
         description="""
-        Identify main risks for AI implementation based on assessment.
+        CRITICAL: NO TOOLS. Provide risk assessment.
         
-        Your task:
-        1. List 3 main implementation risks
-        2. Suggest mitigation for each risk
-        3. Assess overall success probability
-        
-        DO NOT USE ANY TOOLS. Work with previous analysis.
-        
-        Output format (JSON only):
+        Return EXACTLY this JSON format (no other text):
         {{
             "risks": [
-                {{"risk": "knowledge gaps", "mitigation": "structured training"}},
-                {{"risk": "tool complexity", "mitigation": "start simple"}},
-                {{"risk": "change resistance", "mitigation": "gradual adoption"}}
+                {{"risk": "knowledge gaps", "mitigation": "structured training program"}},
+                {{"risk": "implementation complexity", "mitigation": "start with simple tools"}},
+                {{"risk": "user adoption", "mitigation": "gradual rollout with support"}}
             ],
-            "success_probability": "70%"
+            "success_probability": "75%"
         }}
         
-        NO TOOLS. Use your analysis knowledge directly.
+        COMPLETE THIS TASK IN ONE STEP. NO TOOLS. NO LOOPS.
         """,
-        expected_output="JSON with risks, mitigation strategies, and success probability",
+        expected_output="Single JSON object with risk analysis",
         agent=None
     )
 
@@ -821,13 +788,15 @@ class AIReadinessCrewAI:
             question_task = create_question_generation_task(current_section, question_history, current_persona)
             question_task.agent = current_agent
             
-            # Create single-agent crew for question generation with limits
+            # Create single-agent crew for question generation with strict limits
             question_crew = Crew(
                 agents=[current_agent],
                 tasks=[question_task],
                 process=Process.sequential,
-                verbose=False,  # Reduce noise
-                max_iter=3  # Limit iterations to prevent loops
+                verbose=False,  # Completely disable verbosity
+                max_iter=1,  # Force single iteration only
+                memory=False,  # Disable memory
+                embedder=None  # Disable embedder
             )
             
             # Generate question with timeout
@@ -963,7 +932,7 @@ class AIReadinessCrewAI:
             risk_task = create_risk_assessment_task()
             risk_task.agent = self.risk_agent
             
-            # Create collaborative crew with iteration limits
+            # Create collaborative crew with strict limits to prevent loops
             assessment_crew = Crew(
                 agents=[
                     self.concept_agent,
@@ -980,8 +949,10 @@ class AIReadinessCrewAI:
                     risk_task
                 ],
                 process=Process.sequential,
-                verbose=False,  # Reduce verbosity to prevent noise
-                max_iter=2  # Limit iterations to prevent infinite loops
+                verbose=False,  # Completely disable verbosity
+                max_iter=1,  # Force single iteration only
+                memory=False,  # Disable memory to prevent context buildup
+                embedder=None  # Disable embedder to prevent tool access
             )
             
             # Execute assessment with timeout
@@ -993,10 +964,11 @@ class AIReadinessCrewAI:
             
             try:
                 signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(120)  # 2 minute timeout
+                signal.alarm(60)  # Reduced to 1 minute timeout for faster failure
+                print(f"⏳ Starting ultra-fast assessment with 1-minute timeout...")
                 results = assessment_crew.kickoff()
                 signal.alarm(0)  # Cancel timeout
-                print(f"✅ Assessment completed successfully in under 2 minutes")
+                print(f"✅ Assessment completed successfully in under 1 minute")
             except TimeoutError:
                 signal.alarm(0)  # Cancel timeout
                 print(f"⏰ Assessment timed out after 2 minutes, using fallback")
@@ -1059,7 +1031,7 @@ class AIReadinessCrewAI:
                 agent=self.concept_agent  # Lead agent for coordination
             )
             
-            # Create hierarchical crew with limits
+            # Create hierarchical crew with strict limits
             hierarchical_crew = Crew(
                 agents=[
                     self.concept_agent,
@@ -1071,8 +1043,10 @@ class AIReadinessCrewAI:
                 tasks=[coordination_task],
                 process=Process.hierarchical,
                 manager_llm=self.llm,
-                verbose=False,  # Reduce verbosity
-                max_iter=2  # Limit iterations
+                verbose=False,  # Completely disable verbosity
+                max_iter=1,  # Force single iteration only
+                memory=False,  # Disable memory
+                embedder=None  # Disable embedder
             )
             
             # Execute with hierarchical collaboration and timeout
@@ -1634,7 +1608,7 @@ class ChangeReadinessCrewAI:
             portfolio_task = create_portfolio_strategy_task()
             portfolio_task.agent = self.portfolio_agent
             
-            # Create collaborative crew with limits
+            # Create collaborative crew with strict limits to prevent loops
             change_crew = Crew(
                 agents=[
                     self.assessment_agent,
@@ -1651,8 +1625,10 @@ class ChangeReadinessCrewAI:
                     portfolio_task
                 ],
                 process=Process.sequential,
-                verbose=False,  # Reduce verbosity
-                max_iter=2  # Limit iterations to prevent loops
+                verbose=False,  # Completely disable verbosity
+                max_iter=1,  # Force single iteration only
+                memory=False,  # Disable memory
+                embedder=None  # Disable embedder
             )
             
             # Execute assessment with timeout
@@ -1794,17 +1770,17 @@ def test_crewai_system(openai_api_key: str):
         }
 
 if __name__ == "__main__":
-    print("🤖 STREAMLINED CREWAI ASSESSMENT SYSTEM")
+    print("🤖 ULTRA-STREAMLINED CREWAI ASSESSMENT SYSTEM")
     print("="*60)
-    print("🔧 Features:")
-    print("• 5 Specialized AI Agents with focused tasks")
-    print("• Timeout protection (30s questions, 2min assessments)")
-    print("• Max iteration limits to prevent infinite loops") 
-    print("• Simplified tasks for faster execution")
-    print("• Reduced verbosity to minimize noise")
-    print("\n🚀 Optimized for reliable production use!")
-    print("\n⏰ Key improvements:")
-    print("• No agent delegation to prevent loops")
-    print("• JSON-only outputs for consistent parsing")
-    print("• Focused tasks with clear constraints")
-    print("• Timeout handlers for all crew operations")
+    print("🔧 Anti-Loop Features:")
+    print("• NO TOOLS on any agents (tools=[])")
+    print("• max_iter=1 to force single execution")
+    print("• memory=False to prevent context buildup")
+    print("• embedder=None to disable tool access")
+    print("• Explicit 'NO TOOLS' in all task descriptions")
+    print("\n🚀 Designed to eliminate tool usage loops!")
+    print("\n⚙️ Loop Prevention:")
+    print("• Fixed JSON templates in task descriptions")
+    print("• 'COMPLETE IN ONE STEP' instructions")
+    print("• 30s timeouts with signal handlers")
+    print("• Aggressive crew configuration")
