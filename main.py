@@ -1078,6 +1078,11 @@ def generate_ai_question(assessment_type: str, question_history: List[Dict], use
         logger.warning(f"OpenAI client not available - using fallback question for {assessment_type}")
         return get_fallback_question(assessment_type, len(question_history))
     
+    # TEMPORARY: Force fallback for testing the new agentic format
+    if assessment_type in ["ai_knowledge", "change_readiness"]:
+        logger.info(f"Using fallback agentic question for {assessment_type} - question #{len(question_history) + 1}")
+        return get_fallback_question(assessment_type, len(question_history))
+    
     try:
         logger.info(f"Generating AI question #{len(question_history) + 1} for {assessment_type}")
         
@@ -2216,27 +2221,54 @@ def build_assessment_context(assessment_type: str, question_history: List[Dict],
     return context
 
 def parse_ai_question_response(ai_response: str, assessment_type: str, question_number: int) -> Dict:
-    """Parse OpenAI response into structured question format."""
+    """Parse OpenAI response into structured question format - updated for agentic assessments."""
     try:
         # Try to parse as JSON
         parsed_json = json.loads(ai_response)
         
-        total_questions = 20 if assessment_type == "ai_knowledge" else 15
-        
-        return {
-            "question": parsed_json.get("question", ""),
-            "options": parsed_json.get("options", []),
-            "question_id": f"{assessment_type}_{question_number}_{uuid.uuid4().hex[:8]}",
-            "category": parsed_json.get("category", "General"),
-            "difficulty": parsed_json.get("difficulty", "intermediate"),
-            "rationale": parsed_json.get("rationale", ""),
-            "progress": {
-                "current_question": question_number + 1,
-                "total_questions": total_questions,
-                "category": parsed_json.get("category", "General"),
-                "percentage": int(((question_number + 1) / total_questions) * 100)
+        # For agentic assessments, use the new format
+        if assessment_type in ["ai_knowledge", "change_readiness"]:
+            question_response = {
+                "question": parsed_json.get("question", ""),
+                "question_id": f"{assessment_type}_{question_number + 1}_{uuid.uuid4().hex[:8]}",
+                "rationale": parsed_json.get("rationale", "")
             }
-        }
+            
+            # Add assessment-specific fields
+            if assessment_type == "ai_knowledge":
+                question_response.update({
+                    "section": parsed_json.get("section", "F1.1"),
+                    "follow_up": parsed_json.get("follow_up", False),
+                    "concepts_to_detect": parsed_json.get("concepts_to_detect", []),
+                    "maturity_indicators": parsed_json.get("maturity_indicators", {})
+                })
+            else:  # change_readiness
+                question_response.update({
+                    "section": parsed_json.get("section", "leadership_support"),
+                    "probe_for": parsed_json.get("probe_for", []),
+                    "red_flags": parsed_json.get("red_flags", []),
+                    "positive_indicators": parsed_json.get("positive_indicators", [])
+                })
+            
+            return question_response
+        else:
+            # Legacy format for other assessments
+            total_questions = 20
+            return {
+                "question": parsed_json.get("question", ""),
+                "options": parsed_json.get("options", []),
+                "question_id": f"{assessment_type}_{question_number}_{uuid.uuid4().hex[:8]}",
+                "category": parsed_json.get("category", "General"),
+                "difficulty": parsed_json.get("difficulty", "intermediate"),
+                "rationale": parsed_json.get("rationale", ""),
+                "progress": {
+                    "current_question": question_number + 1,
+                    "total_questions": total_questions,
+                    "category": parsed_json.get("category", "General"),
+                    "percentage": int(((question_number + 1) / total_questions) * 100)
+                }
+            }
+            
     except json.JSONDecodeError:
         # If JSON parsing fails, try to extract question from text
         lines = ai_response.strip().split('\n')
@@ -2245,63 +2277,105 @@ def parse_ai_question_response(ai_response: str, assessment_type: str, question_
         return get_fallback_question(assessment_type, question_number, custom_question=question)
 
 def get_fallback_question(assessment_type: str, question_number: int, custom_question: str = None) -> Dict:
-    """Provide fallback questions when AI generation fails."""
-    total_questions = 20 if assessment_type == "ai_knowledge" else 15
+    """Provide fallback questions when AI generation fails - updated for 5-section agentic format."""
     
     if assessment_type == "ai_knowledge":
+        # 5 sections for AI Knowledge agentic assessment
+        sections = ["F1.1", "F1.2", "P2.1", "P2.2", "E3.1"]
+        section_names = ["AI Fundamentals - Concepts", "AI Fundamentals - Business", "Prompt Engineering - Basics", "Prompt Engineering - Advanced", "AI Ecosystem"]
+        
         fallback_questions = [
             {
-                "question": custom_question or "How familiar are you with machine learning concepts?",
-                "options": [
-                    "Not familiar at all",
-                    "Basic understanding",
-                    "Moderate understanding", 
-                    "Good understanding",
-                    "Expert level"
-                ],
-                "category": "AI Fundamentals"
+                "question": "How would you describe your current understanding of artificial intelligence and machine learning concepts?",
+                "section": "F1.1",
+                "concepts_to_detect": ["machine learning", "AI", "algorithms", "data"],
+                "rationale": "Assess foundational AI knowledge"
             },
             {
-                "question": custom_question or "What AI applications are most relevant to your business?",
-                "options": [
-                    "Customer service automation",
-                    "Data analysis and insights",
-                    "Process optimization",
-                    "Content creation",
-                    "Predictive analytics"
-                ],
-                "category": "Business Application"
+                "question": "What business value do you believe AI can provide to small organizations like yours?",
+                "section": "F1.2", 
+                "concepts_to_detect": ["ROI", "efficiency", "automation", "competitive advantage"],
+                "rationale": "Evaluate understanding of AI business applications"
+            },
+            {
+                "question": "Have you used AI tools like ChatGPT or similar language models? If so, how effectively can you write prompts to get useful results?",
+                "section": "P2.1",
+                "concepts_to_detect": ["ChatGPT", "prompts", "language models", "prompt engineering"],
+                "rationale": "Assess basic prompt engineering skills"
+            },
+            {
+                "question": "How would you approach optimizing and refining AI prompts to get better, more specific results for your business needs?",
+                "section": "P2.2",
+                "concepts_to_detect": ["optimization", "iterative improvement", "context", "specificity"],
+                "rationale": "Evaluate advanced prompt engineering capabilities"
+            },
+            {
+                "question": "How familiar are you with the AI tool ecosystem - different vendors, platforms, and how to select the right tools for your organization?",
+                "section": "E3.1",
+                "concepts_to_detect": ["vendors", "platforms", "tool selection", "ecosystem"],
+                "rationale": "Assess knowledge of AI marketplace and selection criteria"
             }
         ]
-    else:  # change_readiness
+        
+        section_index = min(question_number, len(fallback_questions) - 1)
+        fallback = fallback_questions[section_index]
+        
+        return {
+            "question": fallback["question"],
+            "question_id": f"ai_knowledge_{question_number + 1}_{uuid.uuid4().hex[:8]}",
+            "section": fallback["section"],
+            "concepts_to_detect": fallback["concepts_to_detect"],
+            "rationale": fallback["rationale"],
+            "session_id": None  # Will be set by caller
+        }
+        
+    else:  # change_readiness - 5 sections for multi-agent assessment
+        sections = ["leadership_support", "team_capability", "change_history", "resource_allocation", "communication_culture"]
+        
         fallback_questions = [
             {
-                "question": custom_question or "How does your organization typically handle change?",
-                "options": [
-                    "Resist change strongly",
-                    "Cautious but adaptable",
-                    "Neutral approach",
-                    "Embrace change readily",
-                    "Lead change actively"
-                ],
-                "category": "Change Culture"
+                "question": "How would you describe your organization's leadership support and executive sponsorship for new technology initiatives like AI?",
+                "section": "leadership_support",
+                "probe_for": ["executive buy-in", "sponsorship", "decision authority"],
+                "rationale": "Assess leadership commitment to change"
+            },
+            {
+                "question": "What is your team's current capability and readiness for learning and adopting new AI technologies?",
+                "section": "team_capability", 
+                "probe_for": ["skills", "training capacity", "motivation", "bandwidth"],
+                "rationale": "Evaluate team readiness for change"
+            },
+            {
+                "question": "How has your organization handled significant technology or process changes in the past? What lessons have you learned?",
+                "section": "change_history",
+                "probe_for": ["past successes", "failures", "lessons learned", "adaptation"],
+                "rationale": "Understand change management track record"
+            },
+            {
+                "question": "What resources (time, budget, personnel) can your organization realistically dedicate to AI implementation and change management?",
+                "section": "resource_allocation",
+                "probe_for": ["budget", "time allocation", "dedicated staff", "capacity"],
+                "rationale": "Assess resource availability for change"
+            },
+            {
+                "question": "How would you describe your organization's communication culture and ability to engage stakeholders during major changes?",
+                "section": "communication_culture",
+                "probe_for": ["transparency", "feedback", "stakeholder engagement", "alignment"],
+                "rationale": "Evaluate communication effectiveness for change"
             }
         ]
-    
-    fallback = fallback_questions[question_number % len(fallback_questions)]
-    
-    return {
-        "question": fallback["question"],
-        "options": fallback["options"],
-        "question_id": f"{assessment_type}_{question_number}_{uuid.uuid4().hex[:8]}",
-        "category": fallback["category"],
-        "progress": {
-            "current_question": question_number + 1,
-            "total_questions": total_questions,
-            "category": fallback["category"],
-            "percentage": int(((question_number + 1) / total_questions) * 100)
+        
+        section_index = min(question_number, len(fallback_questions) - 1)
+        fallback = fallback_questions[section_index]
+        
+        return {
+            "question": fallback["question"],
+            "question_id": f"change_readiness_{question_number + 1}_{uuid.uuid4().hex[:8]}",
+            "section": fallback["section"],
+            "probe_for": fallback["probe_for"],
+            "rationale": fallback["rationale"],
+            "session_id": None  # Will be set by caller
         }
-    }
 
 @app.post("/api/ai-knowledge/start")
 async def start_ai_knowledge_assessment(request: AssessmentStartRequest):
