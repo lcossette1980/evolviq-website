@@ -132,8 +132,8 @@ class AssessmentAPI {
     try {
       // Call backend to start AI knowledge assessment using centralized config
       const response = await this.makeAPICall(API_CONFIG.ENDPOINTS.ASSESSMENTS.AI_KNOWLEDGE_START, 'POST', {
-        userId,
-        timestamp: new Date().toISOString()
+        user_id: userId,
+        assessment_type: "ai_knowledge"
       });
 
       // Save initial state to Firebase
@@ -154,6 +154,14 @@ class AssessmentAPI {
 
   async submitAssessmentResponse(userId, assessmentType, responseData) {
     try {
+      // Map frontend assessment types to backend types
+      const assessmentTypeMapping = {
+        'ai_knowledge_navigator': 'ai_knowledge',
+        'change_readiness': 'change_readiness'
+      };
+      
+      const backendAssessmentType = assessmentTypeMapping[assessmentType] || assessmentType;
+      
       // Call backend to process response using centralized config
       let endpoint;
       if (assessmentType === 'ai_knowledge_navigator') {
@@ -161,13 +169,15 @@ class AssessmentAPI {
       } else if (assessmentType === 'change_readiness') {
         endpoint = API_CONFIG.ENDPOINTS.ASSESSMENTS.CHANGE_READINESS_RESPOND;
       } else {
-        endpoint = `/api/${assessmentType}/respond`;
+        endpoint = `/api/${backendAssessmentType}/respond`;
       }
       
       const response = await this.makeAPICall(endpoint, 'POST', {
-        userId,
-        ...responseData,
-        timestamp: new Date().toISOString()
+        user_id: userId,
+        assessment_type: backendAssessmentType,
+        question_id: responseData.questionId,
+        answer: responseData.answer,
+        session_data: responseData.sessionData || {}
       });
 
       // Check if the response was successful
@@ -191,10 +201,8 @@ class AssessmentAPI {
     try {
       // Call backend to start change readiness assessment using centralized config
       const response = await this.makeAPICall(API_CONFIG.ENDPOINTS.ASSESSMENTS.CHANGE_READINESS_START, 'POST', {
-        userId,
-        organizationData,
-        projectData,
-        timestamp: new Date().toISOString()
+        user_id: userId,
+        assessment_type: "change_readiness"
       });
 
       // Save initial state to Firebase
@@ -219,9 +227,11 @@ class AssessmentAPI {
     try {
       // Call backend to process response using centralized config
       const response = await this.makeAPICall(API_CONFIG.ENDPOINTS.ASSESSMENTS.CHANGE_READINESS_RESPOND, 'POST', {
-        userId,
-        ...responseData,
-        timestamp: new Date().toISOString()
+        user_id: userId,
+        assessment_type: "change_readiness",
+        question_id: responseData.questionId,
+        answer: responseData.answer,
+        session_data: responseData.sessionData || {}
       });
 
       return response.data || response;
