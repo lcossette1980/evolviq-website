@@ -1028,12 +1028,15 @@ async def get_nlp_insights(session_id: str):
 try:
     openai_api_key = os.getenv("OPENAI_API_KEY")
     if openai_api_key:
-        openai.api_key = openai_api_key
+        from openai import OpenAI
+        openai_client = OpenAI(api_key=openai_api_key)
         logger.info("✅ OpenAI API key configured")
     else:
         logger.warning("⚠️ OPENAI_API_KEY not found - assessment features will be limited")
+        openai_client = None
 except Exception as e:
     logger.error(f"❌ OpenAI initialization failed: {e}")
+    openai_client = None
 
 # Assessment data models
 class AssessmentStartRequest(BaseModel):
@@ -1053,31 +1056,232 @@ class AssessmentAnswerRequest(BaseModel):
     answer: Any
     session_data: Optional[Dict] = None
 
+# Assessment session storage
+assessment_sessions: Dict[str, Dict] = {}
+
+def generate_ai_question(assessment_type: str, question_history: List[Dict], user_profile: Dict = None) -> Dict:
+    """Generate next question using OpenAI based on assessment history."""
+    if not openai_client:
+        # Fallback to sample questions if OpenAI not available
+        return get_fallback_question(assessment_type, len(question_history))
+    
+    try:
+        # Build conversation history
+        conversation_context = build_assessment_context(assessment_type, question_history, user_profile)
+        
+        response = openai_client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {
+                    "role": "system",
+                    "content": get_assessment_system_prompt(assessment_type)
+                },
+                {
+                    "role": "user", 
+                    "content": conversation_context
+                }
+            ],
+            temperature=0.7,
+            max_tokens=500
+        )
+        
+        # Parse the AI response
+        ai_response = response.choices[0].message.content
+        return parse_ai_question_response(ai_response, assessment_type, len(question_history))
+        
+    except Exception as e:
+        logger.error(f"OpenAI question generation failed: {e}")
+        return get_fallback_question(assessment_type, len(question_history))
+
+def get_assessment_system_prompt(assessment_type: str) -> str:
+    """Get the system prompt for the specific assessment type."""
+    if assessment_type == "ai_knowledge":
+        return """You are an AI Knowledge Assessment expert. Your role is to evaluate a user's understanding of artificial intelligence concepts and their readiness to implement AI in their business.
+
+Generate the next assessment question based on the conversation history. Consider:
+1. The user's previous answers to gauge their knowledge level
+2. Areas that need deeper exploration
+3. Practical business applications vs theoretical knowledge
+4. Progressive difficulty based on demonstrated competence
+
+Response format (JSON):
+{
+    "question": "Your specific question here",
+    "options": ["Option 1", "Option 2", "Option 3", "Option 4", "Option 5"],
+    "category": "Category name (e.g. AI Fundamentals, Business Application, Ethics, Implementation)",
+    "difficulty": "beginner|intermediate|advanced",
+    "rationale": "Why this question is important for assessment"
+}
+
+Keep questions practical, business-focused, and progressively adaptive to the user's demonstrated knowledge level."""
+
+    elif assessment_type == "change_readiness":
+        return """You are an Organizational Change Readiness expert. Your role is to evaluate how prepared an organization is to successfully implement AI and other transformative changes.
+
+Generate the next assessment question based on the conversation history. Consider:
+1. Organizational culture and leadership style
+2. Change management processes and history
+3. Resource allocation and support systems
+4. Communication patterns and stakeholder engagement
+5. Previous change successes and failures
+
+Response format (JSON):
+{
+    "question": "Your specific question here",
+    "options": ["Option 1", "Option 2", "Option 3", "Option 4", "Option 5"],
+    "category": "Category name (e.g. Leadership, Culture, Resources, Communication, Process)",
+    "difficulty": "basic|intermediate|complex",
+    "rationale": "Why this question reveals change readiness"
+}
+
+Focus on practical organizational dynamics, leadership effectiveness, and change management capabilities."""
+
+    return "You are an assessment expert. Generate appropriate questions for evaluation."
+
+def build_assessment_context(assessment_type: str, question_history: List[Dict], user_profile: Dict = None) -> str:
+    """Build context for OpenAI based on assessment history."""
+    context = f"Assessment Type: {assessment_type}\n"
+    context += f"Questions Completed: {len(question_history)}\n\n"
+    
+    if user_profile:
+        context += f"User Profile: {json.dumps(user_profile, indent=2)}\n\n"
+    
+    context += "Previous Questions and Answers:\n"
+    for i, item in enumerate(question_history, 1):
+        context += f"{i}. Q: {item['question']}\n"
+        context += f"   A: {item['answer']}\n"
+        if 'category' in item:
+            context += f"   Category: {item['category']}\n"
+        context += "\n"
+    
+    # Add adaptive instructions based on progress
+    total_questions = 20 if assessment_type == "ai_knowledge" else 15
+    progress = len(question_history) / total_questions
+    
+    if progress < 0.3:
+        context += "INSTRUCTION: Generate a foundational question to establish baseline knowledge/readiness.\n"
+    elif progress < 0.6:
+        context += "INSTRUCTION: Generate an intermediate question that builds on previous answers to explore specific areas.\n"
+    elif progress < 0.8:
+        context += "INSTRUCTION: Generate an advanced question that tests deeper understanding/readiness in identified areas.\n"
+    else:
+        context += "INSTRUCTION: Generate a final assessment question that captures remaining knowledge gaps or readiness factors.\n"
+    
+    context += f"\nGenerate the next question (#{len(question_history) + 1} of {total_questions}) as JSON."
+    
+    return context
+
+def parse_ai_question_response(ai_response: str, assessment_type: str, question_number: int) -> Dict:
+    """Parse OpenAI response into structured question format."""
+    try:
+        # Try to parse as JSON
+        parsed_json = json.loads(ai_response)
+        
+        total_questions = 20 if assessment_type == "ai_knowledge" else 15
+        
+        return {
+            "question": parsed_json.get("question", ""),
+            "options": parsed_json.get("options", []),
+            "question_id": f"{assessment_type}_{question_number}_{uuid.uuid4().hex[:8]}",
+            "category": parsed_json.get("category", "General"),
+            "difficulty": parsed_json.get("difficulty", "intermediate"),
+            "rationale": parsed_json.get("rationale", ""),
+            "progress": {
+                "current_question": question_number + 1,
+                "total_questions": total_questions,
+                "category": parsed_json.get("category", "General"),
+                "percentage": int(((question_number + 1) / total_questions) * 100)
+            }
+        }
+    except json.JSONDecodeError:
+        # If JSON parsing fails, try to extract question from text
+        lines = ai_response.strip().split('\n')
+        question = next((line for line in lines if '?' in line), "Could you provide more information about your experience?")
+        
+        return get_fallback_question(assessment_type, question_number, custom_question=question)
+
+def get_fallback_question(assessment_type: str, question_number: int, custom_question: str = None) -> Dict:
+    """Provide fallback questions when AI generation fails."""
+    total_questions = 20 if assessment_type == "ai_knowledge" else 15
+    
+    if assessment_type == "ai_knowledge":
+        fallback_questions = [
+            {
+                "question": custom_question or "How familiar are you with machine learning concepts?",
+                "options": [
+                    "Not familiar at all",
+                    "Basic understanding",
+                    "Moderate understanding", 
+                    "Good understanding",
+                    "Expert level"
+                ],
+                "category": "AI Fundamentals"
+            },
+            {
+                "question": custom_question or "What AI applications are most relevant to your business?",
+                "options": [
+                    "Customer service automation",
+                    "Data analysis and insights",
+                    "Process optimization",
+                    "Content creation",
+                    "Predictive analytics"
+                ],
+                "category": "Business Application"
+            }
+        ]
+    else:  # change_readiness
+        fallback_questions = [
+            {
+                "question": custom_question or "How does your organization typically handle change?",
+                "options": [
+                    "Resist change strongly",
+                    "Cautious but adaptable",
+                    "Neutral approach",
+                    "Embrace change readily",
+                    "Lead change actively"
+                ],
+                "category": "Change Culture"
+            }
+        ]
+    
+    fallback = fallback_questions[question_number % len(fallback_questions)]
+    
+    return {
+        "question": fallback["question"],
+        "options": fallback["options"],
+        "question_id": f"{assessment_type}_{question_number}_{uuid.uuid4().hex[:8]}",
+        "category": fallback["category"],
+        "progress": {
+            "current_question": question_number + 1,
+            "total_questions": total_questions,
+            "category": fallback["category"],
+            "percentage": int(((question_number + 1) / total_questions) * 100)
+        }
+    }
+
 @app.post("/api/ai-knowledge/start")
 async def start_ai_knowledge_assessment(request: AssessmentStartRequest):
-    """Start AI Knowledge Assessment."""
+    """Start AI Knowledge Assessment with AI-generated questions."""
     try:
         logger.info(f"Starting AI Knowledge Assessment for user: {request.user_id}")
         
-        # First question for AI Knowledge Assessment
-        first_question = {
-            "question": "How familiar are you with artificial intelligence concepts?",
-            "options": [
-                "Complete beginner - I've heard of AI but don't know much",
-                "Some knowledge - I understand basic concepts",
-                "Intermediate - I can discuss AI applications",
-                "Advanced - I understand technical details",
-                "Expert - I work with AI regularly"
-            ],
-            "question_id": "ai_familiarity_level",
-            "progress": {
-                "current_question": 1,
-                "total_questions": 20,
-                "category": "AI Fundamentals",
-                "percentage": 5
-            }
+        # Create session ID
+        session_id = f"ai_knowledge_{request.user_id or 'anonymous'}_{uuid.uuid4().hex[:8]}"
+        
+        # Initialize session
+        assessment_sessions[session_id] = {
+            "assessment_type": "ai_knowledge",
+            "user_id": request.user_id,
+            "question_history": [],
+            "started_at": datetime.now().isoformat(),
+            "current_question_number": 0
         }
         
+        # Generate first question using AI
+        first_question = generate_ai_question("ai_knowledge", [])
+        first_question["session_id"] = session_id
+        
+        logger.info(f"Generated first AI Knowledge question for session {session_id}")
         return first_question
         
     except Exception as e:
@@ -1086,53 +1290,52 @@ async def start_ai_knowledge_assessment(request: AssessmentStartRequest):
 
 @app.post("/api/ai-knowledge/respond")
 async def respond_ai_knowledge_assessment(request: AssessmentAnswerRequest):
-    """Process AI Knowledge Assessment response and get next question."""
+    """Process AI Knowledge Assessment response and get next AI-generated question."""
     try:
         logger.info(f"Processing AI Knowledge response for question: {request.question_id}")
         
-        # For demo purposes, return a sample next question
-        # In production, this would use OpenAI to generate dynamic questions
-        sample_questions = [
-            {
-                "question": "Which AI application would be most valuable for your business?",
-                "options": [
-                    "Customer service automation",
-                    "Data analysis and insights",
-                    "Process optimization",
-                    "Content creation",
-                    "Predictive analytics"
-                ],
-                "question_id": "business_ai_priority",
-                "progress": {
-                    "current_question": 2,
-                    "total_questions": 20,
-                    "category": "Business Application",
-                    "percentage": 10
-                }
-            },
-            {
-                "question": "What's your biggest concern about implementing AI?",
-                "options": [
-                    "Cost and ROI uncertainty",
-                    "Technical complexity",
-                    "Data privacy and security",
-                    "Employee job displacement",
-                    "Lack of expertise"
-                ],
-                "question_id": "ai_concerns",
-                "progress": {
-                    "current_question": 3,
-                    "total_questions": 20,
-                    "category": "Implementation Challenges",
-                    "percentage": 15
-                }
+        # Extract session ID from request or try to find session
+        session_id = None
+        if request.session_data and "session_id" in request.session_data:
+            session_id = request.session_data["session_id"]
+        else:
+            # Find session by user_id and assessment type
+            for sid, session in assessment_sessions.items():
+                if (session["user_id"] == request.user_id and 
+                    session["assessment_type"] == "ai_knowledge"):
+                    session_id = sid
+                    break
+        
+        if not session_id or session_id not in assessment_sessions:
+            raise HTTPException(status_code=404, detail="Assessment session not found")
+        
+        session = assessment_sessions[session_id]
+        
+        # Store the previous question and answer
+        session["question_history"].append({
+            "question_id": request.question_id,
+            "question": request.session_data.get("current_question", "") if request.session_data else "",
+            "answer": request.answer,
+            "answered_at": datetime.now().isoformat()
+        })
+        
+        # Check if assessment is complete (20 questions for AI Knowledge)
+        if len(session["question_history"]) >= 20:
+            logger.info(f"AI Knowledge assessment completed for session {session_id}")
+            return {
+                "completed": True,
+                "total_questions": len(session["question_history"]),
+                "session_id": session_id,
+                "message": "Assessment completed! Thank you for your responses."
             }
-        ]
         
-        # Simple logic to return next question (in production, use AI)
-        question_index = hash(request.question_id) % len(sample_questions)
-        next_question = sample_questions[question_index]
+        # Generate next question using AI based on conversation history
+        next_question = generate_ai_question("ai_knowledge", session["question_history"])
+        next_question["session_id"] = session_id
         
+        session["current_question_number"] = len(session["question_history"])
+        
+        logger.info(f"Generated next AI Knowledge question #{len(session['question_history']) + 1} for session {session_id}")
         return next_question
         
     except Exception as e:
@@ -1141,28 +1344,27 @@ async def respond_ai_knowledge_assessment(request: AssessmentAnswerRequest):
 
 @app.post("/api/change-readiness/start")
 async def start_change_readiness_assessment(request: AssessmentStartRequest):
-    """Start Change Readiness Assessment."""
+    """Start Change Readiness Assessment with AI-generated questions."""
     try:
         logger.info(f"Starting Change Readiness Assessment for user: {request.user_id}")
         
-        first_question = {
-            "question": "How would you describe your organization's current approach to change?",
-            "options": [
-                "We resist change and prefer stability",
-                "We're cautious but open to necessary changes",
-                "We adapt to change when required",
-                "We actively seek and embrace change",
-                "We're change leaders in our industry"
-            ],
-            "question_id": "change_approach",
-            "progress": {
-                "current_question": 1,
-                "total_questions": 15,
-                "category": "Organizational Culture",
-                "percentage": 7
-            }
+        # Create session ID
+        session_id = f"change_readiness_{request.user_id or 'anonymous'}_{uuid.uuid4().hex[:8]}"
+        
+        # Initialize session
+        assessment_sessions[session_id] = {
+            "assessment_type": "change_readiness",
+            "user_id": request.user_id,
+            "question_history": [],
+            "started_at": datetime.now().isoformat(),
+            "current_question_number": 0
         }
         
+        # Generate first question using AI
+        first_question = generate_ai_question("change_readiness", [])
+        first_question["session_id"] = session_id
+        
+        logger.info(f"Generated first Change Readiness question for session {session_id}")
         return first_question
         
     except Exception as e:
@@ -1171,50 +1373,52 @@ async def start_change_readiness_assessment(request: AssessmentStartRequest):
 
 @app.post("/api/change-readiness/respond")
 async def respond_change_readiness_assessment(request: AssessmentAnswerRequest):
-    """Process Change Readiness Assessment response and get next question."""
+    """Process Change Readiness Assessment response and get next AI-generated question."""
     try:
         logger.info(f"Processing Change Readiness response for question: {request.question_id}")
         
-        sample_questions = [
-            {
-                "question": "How does leadership typically communicate change initiatives?",
-                "options": [
-                    "Top-down announcements with little explanation",
-                    "Formal communications with basic rationale",
-                    "Regular updates with clear reasoning",
-                    "Transparent dialogue with stakeholder input",
-                    "Collaborative planning with full transparency"
-                ],
-                "question_id": "leadership_communication",
-                "progress": {
-                    "current_question": 2,
-                    "total_questions": 15,
-                    "category": "Leadership & Communication",
-                    "percentage": 13
-                }
-            },
-            {
-                "question": "What resources does your organization typically allocate for change initiatives?",
-                "options": [
-                    "Minimal resources - changes must be self-funded",
-                    "Basic resources - limited budget and time",
-                    "Adequate resources - reasonable support provided",
-                    "Strong resources - dedicated budget and team",
-                    "Comprehensive resources - full organizational support"
-                ],
-                "question_id": "change_resources",
-                "progress": {
-                    "current_question": 3,
-                    "total_questions": 15,
-                    "category": "Resources & Support",
-                    "percentage": 20
-                }
+        # Extract session ID from request or try to find session
+        session_id = None
+        if request.session_data and "session_id" in request.session_data:
+            session_id = request.session_data["session_id"]
+        else:
+            # Find session by user_id and assessment type
+            for sid, session in assessment_sessions.items():
+                if (session["user_id"] == request.user_id and 
+                    session["assessment_type"] == "change_readiness"):
+                    session_id = sid
+                    break
+        
+        if not session_id or session_id not in assessment_sessions:
+            raise HTTPException(status_code=404, detail="Assessment session not found")
+        
+        session = assessment_sessions[session_id]
+        
+        # Store the previous question and answer
+        session["question_history"].append({
+            "question_id": request.question_id,
+            "question": request.session_data.get("current_question", "") if request.session_data else "",
+            "answer": request.answer,
+            "answered_at": datetime.now().isoformat()
+        })
+        
+        # Check if assessment is complete (15 questions for Change Readiness)
+        if len(session["question_history"]) >= 15:
+            logger.info(f"Change Readiness assessment completed for session {session_id}")
+            return {
+                "completed": True,
+                "total_questions": len(session["question_history"]),
+                "session_id": session_id,
+                "message": "Assessment completed! Thank you for your responses."
             }
-        ]
         
-        question_index = hash(request.question_id) % len(sample_questions)
-        next_question = sample_questions[question_index]
+        # Generate next question using AI based on conversation history
+        next_question = generate_ai_question("change_readiness", session["question_history"])
+        next_question["session_id"] = session_id
         
+        session["current_question_number"] = len(session["question_history"])
+        
+        logger.info(f"Generated next Change Readiness question #{len(session['question_history']) + 1} for session {session_id}")
         return next_question
         
     except Exception as e:
