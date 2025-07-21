@@ -21,6 +21,9 @@ kneed==0.8.5
 plotly==5.17.0
 kaleido==0.2.1
 
+# AI/OpenAI
+openai==1.35.3
+
 # Utilities
 python-dotenv==1.0.0
 aiofiles==23.2.1

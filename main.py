@@ -17,7 +17,6 @@ import logging
 from pathlib import Path
 import tempfile
 import os
-import openai
 
 # Import all ML frameworks
 from regression.enhanced_regression_framework import RegressionWorkflow, RegressionConfig
