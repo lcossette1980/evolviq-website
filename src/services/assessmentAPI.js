@@ -563,9 +563,28 @@ class AssessmentAPI {
         if (recommendations.length > 0) {
           console.log(`Creating action items from ${recommendations.length} recommendations`);
           recommendations.slice(0, 3).forEach((recommendation, index) => {
+            // Ensure description is always a string, never an object
+            let description;
+            if (typeof recommendation === 'string') {
+              description = recommendation;
+            } else if (recommendation && typeof recommendation === 'object') {
+              // Handle object recommendations by creating a descriptive string
+              if (recommendation.description) {
+                description = recommendation.description;
+              } else if (recommendation.title) {
+                const cost = recommendation.cost ? ` (${recommendation.cost})` : '';
+                const duration = recommendation.duration ? ` - ${recommendation.duration}` : '';
+                description = `${recommendation.title}${cost}${duration}`;
+              } else {
+                description = `Learning resource ${index + 1}`;
+              }
+            } else {
+              description = `Learning recommendation ${index + 1}`;
+            }
+            
             const actionItem = {
               title: recommendation.title || `Learning Recommendation ${index + 1}`,
-              description: recommendation.description || recommendation,
+              description: description,
               category: 'learning',
               priority: index === 0 ? 'high' : 'medium',
               source: 'ai_knowledge_navigator',
