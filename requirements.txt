@@ -21,8 +21,15 @@ kneed==0.8.5
 plotly==5.17.0
 kaleido==0.2.1
 
-# AI/OpenAI (using stable version with global API pattern)
-openai==0.28.1
+# AI/OpenAI (compatible with CrewAI)
+openai>=1.13.3
+
+# CrewAI and Agent Framework
+crewai==0.141.0
+crewai-tools==0.17.0
+langchain==0.3.13
+langchain-openai==0.2.10
+langchain-community==0.3.13
 
 # Utilities
 python-dotenv==1.0.0

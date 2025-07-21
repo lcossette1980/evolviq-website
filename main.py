@@ -1024,26 +1024,30 @@ async def get_nlp_insights(session_id: str):
 # ============================================================================
 
 # Initialize OpenAI (using clean global approach)
-import openai
+from openai import OpenAI
+
+# CrewAI Integration
+try:
+    from crewai_assessment import (
+        AIReadinessCrewAI, 
+        convert_question_history_to_crewai_format,
+        extract_crewai_results_for_api,
+        generate_crewai_question
+    )
+    crewai_available = True
+    logger.info("✅ CrewAI Assessment System loaded successfully")
+except ImportError as e:
+    crewai_available = False
+    logger.warning(f"⚠️ CrewAI not available: {e}")
 
 openai_client_available = False
+openai_client = None
 try:
     openai_api_key = os.getenv("OPENAI_API_KEY")
     if openai_api_key:
-        openai.api_key = openai_api_key
-        logger.info("✅ OpenAI API key loaded")
-
-        # Test the client with a safe call
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "ping"},
-                {"role": "user", "content": "ping"}
-            ],
-            max_tokens=1
-        )
-        openai_client_available = True
-        logger.info("✅ OpenAI client test call succeeded")
+        openai_client = OpenAI(api_key=openai_api_key)
+        openai_client_available = True  # Set to True if we have API key
+        logger.info("✅ OpenAI API key loaded and client initialized")
     else:
         logger.warning("⚠️ OPENAI_API_KEY not found")
 except Exception as e:
@@ -1072,21 +1076,54 @@ class AssessmentAnswerRequest(BaseModel):
 assessment_sessions: Dict[str, Dict] = {}
 
 def generate_ai_question(assessment_type: str, question_history: List[Dict], user_profile: Dict = None) -> Dict:
-    """Generate next question using OpenAI based on assessment history."""
+    """Generate next question using CrewAI agents or OpenAI fallback."""
+    
+    # Try CrewAI first for AI knowledge assessments
+    logger.info(f"🔍 Question generation conditions: assessment_type={assessment_type}, crewai_available={crewai_available}, openai_client_available={openai_client_available}")
+    
+    if assessment_type == "ai_knowledge" and crewai_available and openai_client_available:
+        try:
+            logger.info(f"🤖 Generating CrewAI agent question #{len(question_history) + 1} for {assessment_type}")
+            
+            # Get OpenAI API key for CrewAI
+            openai_api_key = os.getenv("OPENAI_API_KEY")
+            if openai_api_key:
+                logger.info("🔑 OpenAI API key found, calling CrewAI question generation...")
+                crewai_result = generate_crewai_question(openai_api_key, question_history)
+                logger.info(f"🔍 CrewAI result type: {type(crewai_result)}")
+                logger.info(f"🔍 CrewAI result keys: {list(crewai_result.keys()) if isinstance(crewai_result, dict) else 'Not a dict'}")
+                
+                if not crewai_result.get("error") and not crewai_result.get("fallback_needed"):
+                    logger.info(f"✅ CrewAI agent question generated successfully")
+                    logger.info(f"📝 Generated question: {crewai_result.get('question', 'No question')[:100]}...")
+                    return crewai_result
+                else:
+                    logger.warning(f"CrewAI failed: {crewai_result.get('error', 'Unknown error')}")
+                    logger.warning(f"Fallback needed: {crewai_result.get('fallback_needed', False)}")
+            else:
+                logger.error("❌ OpenAI API key not found for CrewAI")
+            
+        except Exception as e:
+            logger.error(f"CrewAI question generation failed: {e}", exc_info=True)
+            logger.error(f"Full traceback for CrewAI failure: {e}")
+            # Also log the specific conditions
+            logger.error(f"Debug - openai_api_key exists: {bool(openai_api_key)}")
+            logger.error(f"Debug - question_history length: {len(question_history)}")
+            logger.error(f"Debug - assessment_type: {assessment_type}")
+    
+    # Fallback to OpenAI or static questions
     if not openai_client_available:
-        # Fallback to sample questions if OpenAI not available
         logger.warning(f"OpenAI client not available - using fallback question for {assessment_type}")
         return get_fallback_question(assessment_type, len(question_history))
     
-    
     try:
-        logger.info(f"Generating AI question #{len(question_history) + 1} for {assessment_type}")
+        logger.info(f"📝 Generating OpenAI question #{len(question_history) + 1} for {assessment_type}")
         
         # Build conversation history
         conversation_context = build_assessment_context(assessment_type, question_history, user_profile)
         logger.info(f"Context length: {len(conversation_context)} chars")
         
-        response = openai.ChatCompletion.create(
+        response = openai_client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {
@@ -1214,9 +1251,61 @@ def perform_agentic_analysis(session_id: str, question_history: List[Dict], asse
         }
 
 def perform_crewai_knowledge_assessment(session_id: str, question_history: List[Dict]) -> Dict:
-    """Perform sophisticated AI knowledge assessment using CrewAI-inspired multi-agent approach."""
+    """Perform sophisticated AI knowledge assessment using TRUE CrewAI multi-agent collaboration."""
     try:
-        logger.info(f"Starting CrewAI knowledge assessment for session {session_id}")
+        logger.info(f"🚀 Starting TRUE CrewAI knowledge assessment for session {session_id}")
+        
+        # Check if CrewAI is available and we have OpenAI API key
+        if not crewai_available:
+            logger.warning("CrewAI not available, falling back to function-based simulation")
+            return perform_function_based_assessment(session_id, question_history)
+        
+        if not openai_client_available:
+            logger.warning("OpenAI not available, falling back to function-based simulation")
+            return perform_function_based_assessment(session_id, question_history)
+        
+        # Get OpenAI API key
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        if not openai_api_key:
+            logger.error("OpenAI API key not found")
+            return perform_function_based_assessment(session_id, question_history)
+        
+        # Initialize TRUE CrewAI system
+        logger.info("🤖 Initializing CrewAI agents...")
+        crew_system = AIReadinessCrewAI(openai_api_key)
+        
+        # Convert question history to CrewAI format
+        formatted_history = convert_question_history_to_crewai_format(question_history)
+        logger.info(f"📝 Formatted {len(formatted_history)} questions for agent analysis")
+        
+        # Run comprehensive CrewAI assessment with real agent collaboration
+        logger.info("🔄 Running comprehensive agent collaboration...")
+        crewai_results = crew_system.run_comprehensive_assessment(
+            formatted_history,
+            user_context={"session_id": session_id}
+        )
+        
+        # Extract and format results for API response
+        logger.info("📊 Processing agent collaboration results...")
+        formatted_results = extract_crewai_results_for_api(crewai_results)
+        
+        # Add session metadata
+        formatted_results["session_id"] = session_id
+        formatted_results["assessment_type"] = "ai_knowledge_crewai"
+        formatted_results["raw_crewai_output"] = crewai_results
+        
+        logger.info(f"✅ TRUE CrewAI assessment completed for session {session_id}")
+        return formatted_results
+        
+    except Exception as e:
+        logger.error(f"❌ TRUE CrewAI assessment failed for session {session_id}: {e}")
+        logger.info("🔄 Falling back to function-based assessment...")
+        return perform_function_based_assessment(session_id, question_history)
+
+def perform_function_based_assessment(session_id: str, question_history: List[Dict]) -> Dict:
+    """Fallback function-based assessment (original implementation)."""
+    try:
+        logger.info(f"Running function-based assessment for session {session_id}")
         
         # Agent 1: Concept Detection Agent - Analyzes understanding and knowledge gaps
         concept_analysis = analyze_ai_concepts_and_understanding(question_history)
@@ -1243,15 +1332,16 @@ def perform_crewai_knowledge_assessment(session_id: str, question_history: List[
             "visual_analytics": generate_knowledge_visual_analytics(maturity_analysis, confidence_assessment),
             "overall_readiness_level": determine_ai_readiness_level(maturity_analysis),
             "next_steps": generate_knowledge_next_steps(maturity_analysis, learning_path),
-            "agents_used": ["concept_detection", "maturity_scoring", "learning_path", "business_application", "confidence_risk"],
-            "analysis_timestamp": datetime.now().isoformat()
+            "agents_used": ["concept_detection_function", "maturity_scoring_function", "learning_path_function", "business_application_function", "confidence_risk_function"],
+            "analysis_timestamp": datetime.now().isoformat(),
+            "assessment_mode": "function_based_fallback"
         }
         
-        logger.info(f"CrewAI knowledge assessment completed for session {session_id}")
+        logger.info(f"Function-based assessment completed for session {session_id}")
         return knowledge_assessment_result
         
     except Exception as e:
-        logger.error(f"CrewAI knowledge assessment failed for session {session_id}: {e}")
+        logger.error(f"Function-based assessment failed for session {session_id}: {e}")
         return perform_basic_agentic_analysis(session_id, question_history)
 
 def perform_basic_agentic_analysis(session_id: str, question_history: List[Dict]) -> Dict:
