@@ -1120,45 +1120,37 @@ def generate_ai_question(assessment_type: str, question_history: List[Dict], use
 def get_assessment_system_prompt(assessment_type: str) -> str:
     """Get the system prompt for the specific assessment type."""
     if assessment_type == "ai_knowledge":
-        return """You are an AI Readiness Assessment Agent for small businesses (5-50 employees). Your role is to conduct an intelligent, adaptive assessment across 5 key sections to determine their AI readiness and generate personalized learning paths.
+        return """You are an AI Readiness Assessment Agent conducting a structured 5-question assessment. You MUST ALWAYS respond with ONLY valid JSON - no other text, explanations, or formatting.
 
-ASSESSMENT STRUCTURE (5 sections total):
-1. AI Fundamentals (F1.1, F1.2) - Basic understanding of AI concepts
-2. Prompt Engineering (P2.1, P2.2) - Ability to work with AI tools effectively  
-3. AI Ecosystem (E3.1) - Understanding of AI landscape and tools
+CRITICAL INSTRUCTIONS:
+- Generate ONLY open-ended questions (NO multiple choice options)
+- NEVER include "options", "progress", or "total_questions" fields
+- Response must be valid JSON only
 
-ASSESSMENT APPROACH:
-- Ask intelligent follow-up questions based on user responses
-- Detect key concepts and evidence in their answers
-- Adapt difficulty and focus based on demonstrated knowledge
-- Generate maturity scores (1-5) with confidence levels and evidence
+Assessment covers 5 sections:
+F1.1: AI vs ML vs LLM understanding
+F1.2: Business applications of AI
+P2.1: Basic prompt engineering
+P2.2: Advanced prompting techniques  
+E3.1: AI tool ecosystem knowledge
 
-MATURITY LEVELS:
-1. Nascent - Limited or no understanding
-2. Developing - Basic awareness, some gaps
-3. Competent - Solid understanding, practical knowledge
-4. Advanced - Deep knowledge, can teach others
-5. Expert - Leading-edge knowledge, innovation capability
-
-CRITICAL: You MUST respond with ONLY valid JSON. No other text before or after.
-
-Response format (JSON):
+JSON Response Format (EXACTLY this structure):
 {
-    "question": "Open-ended question for text response (NOT multiple choice)",
-    "section": "Current section (F1.1, F1.2, P2.1, P2.2, E3.1)",
-    "follow_up": false,
-    "concepts_to_detect": ["concept1", "concept2", "concept3"],
-    "maturity_indicators": {
-        "level_1": ["indicators for nascent"],
-        "level_2": ["indicators for developing"], 
-        "level_3": ["indicators for competent"],
-        "level_4": ["indicators for advanced"],
-        "level_5": ["indicators for expert"]
-    },
-    "rationale": "Why this question reveals AI readiness"
+    "question": "Open-ended question asking for detailed explanation",
+    "section": "One of: F1.1, F1.2, P2.1, P2.2, E3.1",
+    "concepts_to_detect": ["concept1", "concept2"],
+    "rationale": "Brief explanation of what this assesses"
 }
 
-Focus on practical business application for small organizations with limited resources."""
+Example valid response:
+{
+    "question": "Explain the difference between AI, machine learning, and large language models in your own words.",
+    "section": "F1.1", 
+    "concepts_to_detect": ["ai hierarchy", "ml subset", "llm definition"],
+    "rationale": "Tests foundational AI knowledge"
+}
+
+RESPOND WITH ONLY THE JSON OBJECT - NO OTHER TEXT."""
 
     elif assessment_type == "change_readiness":
         return """You are an Organizational Change Readiness expert specializing in small business AI adoption. Your role is to evaluate how prepared an organization is to successfully implement AI changes through intelligent questioning across 5 critical dimensions.
@@ -1210,7 +1202,7 @@ def perform_agentic_analysis(session_id: str, question_history: List[Dict], asse
         # Calculate maturity scores for each section
         maturity_scores = calculate_maturity_scores(question_history, concept_analysis)
         
-        # Generate personalized learning path using RAG approach
+        # Generate personalized learning path 
         learning_path = generate_personalized_learning_path(maturity_scores, concept_analysis)
         
         # Create business recommendations with budget constraints
