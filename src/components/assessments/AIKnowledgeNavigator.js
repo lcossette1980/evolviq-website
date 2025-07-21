@@ -151,34 +151,59 @@ const AIKnowledgeNavigator = () => {
         // Assessment is complete
         setCurrentStep('results');
         updatedAssessment.isComplete = true;
+        
+        // Calculate basic results from the assessment responses
+        const totalQuestions = response.total_questions || 20;
+        const questionsAnswered = updatedAssessment.responses.length;
+        
+        // Basic scoring - this should be enhanced with proper AI analysis
+        const basicScore = Math.round((questionsAnswered / totalQuestions) * 100);
+        
         updatedAssessment.results = {
-          totalQuestions: response.total_questions,
+          totalQuestions: totalQuestions,
           sessionId: response.session_id,
-          message: response.message
+          message: response.message,
+          overallScore: basicScore,
+          maturityLevel: Math.ceil(basicScore / 20), // 1-5 scale
+          questionsAnswered: questionsAnswered,
+          completedAt: new Date().toISOString()
         };
+        
         setAssessment(updatedAssessment);
+        setResults(updatedAssessment.results);
         
         // Track assessment completion in project
         if (currentProject) {
           const assessmentData = {
-            overallScore: response.results?.overallScore || 0,
-            maturityLevel: response.results?.overallMaturityLevel || 1,
-            maturityScores: response.results?.maturityScores || {},
-            learningPlan: response.learningPlan,
+            overallScore: basicScore,
+            maturityLevel: Math.ceil(basicScore / 20),
+            maturityScores: {}, // Would need proper analysis
             completedAt: new Date().toISOString(),
-            assessmentId: `ai_knowledge_${user.uid}_${Date.now()}`
+            assessmentId: `ai_knowledge_${user.uid}_${Date.now()}`,
+            questionsAnswered: questionsAnswered,
+            sessionId: response.session_id
           };
           
-          await addAssessmentToProject(currentProject.id, 'ai_knowledge_navigator', assessmentData);
+          // Only add fields that are defined
+          try {
+            await addAssessmentToProject(currentProject.id, 'ai_knowledge_navigator', assessmentData);
+            console.log('Assessment saved to project successfully');
+          } catch (error) {
+            console.error('Error saving assessment to project:', error);
+          }
           
           // Generate action items from assessment results
           console.log('Generating action items from AI Knowledge Navigator assessment...');
-          const actionItems = await generateActionItemsFromAssessment(
-            currentProject.id,
-            'ai_knowledge_navigator',
-            assessmentData
-          );
-          console.log(`Generated ${actionItems.length} action items`);
+          try {
+            const actionItems = await generateActionItemsFromAssessment(
+              currentProject.id,
+              'ai_knowledge_navigator',
+              assessmentData
+            );
+            console.log(`Generated ${actionItems.length} action items`);
+          } catch (error) {
+            console.error('Error generating action items:', error);
+          }
         }
       } else {
         // Continue with next question
