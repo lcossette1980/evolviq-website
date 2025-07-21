@@ -1028,6 +1028,17 @@ from openai import OpenAI
 
 # CrewAI Integration
 try:
+    import sys
+    logger.info(f"🔍 Python path: {sys.path[:3]}")
+    logger.info(f"🔍 Current working directory: {os.getcwd()}")
+    logger.info(f"🔍 Files in current directory: {[f for f in os.listdir('.') if f.endswith('.py')]}")
+    
+    # Check if crewai_assessment.py exists
+    if os.path.exists('crewai_assessment.py'):
+        logger.info("✅ crewai_assessment.py file found")
+    else:
+        logger.error("❌ crewai_assessment.py file NOT found")
+    
     from crewai_assessment import (
         AIReadinessCrewAI, 
         convert_question_history_to_crewai_format,
@@ -1039,6 +1050,49 @@ try:
 except ImportError as e:
     crewai_available = False
     logger.warning(f"⚠️ CrewAI not available: {e}")
+    logger.error(f"⚠️ Full import error details: {e}")
+    
+    # Create stub functions as fallback
+    def generate_crewai_question(openai_api_key: str, question_history: list) -> dict:
+        return {"error": "CrewAI module not available", "fallback_needed": True}
+    
+    def convert_question_history_to_crewai_format(question_history: list) -> list:
+        return question_history
+    
+    def extract_crewai_results_for_api(crewai_output: dict) -> dict:
+        return {"error": "CrewAI not available"}
+    
+    class AIReadinessCrewAI:
+        def __init__(self, *args, **kwargs):
+            pass
+        def run_comprehensive_assessment(self, *args, **kwargs):
+            return {"error": "CrewAI not available"}
+    
+    logger.info("📦 Created CrewAI fallback stubs")
+    
+except Exception as e:
+    crewai_available = False
+    logger.error(f"❌ Unexpected error loading CrewAI: {e}")
+    import traceback
+    logger.error(f"❌ Full traceback: {traceback.format_exc()}")
+    
+    # Same fallback stubs for unexpected errors
+    def generate_crewai_question(openai_api_key: str, question_history: list) -> dict:
+        return {"error": "CrewAI module error", "fallback_needed": True}
+    
+    def convert_question_history_to_crewai_format(question_history: list) -> list:
+        return question_history
+    
+    def extract_crewai_results_for_api(crewai_output: dict) -> dict:
+        return {"error": "CrewAI error"}
+    
+    class AIReadinessCrewAI:
+        def __init__(self, *args, **kwargs):
+            pass
+        def run_comprehensive_assessment(self, *args, **kwargs):
+            return {"error": "CrewAI error"}
+    
+    logger.info("📦 Created CrewAI error fallback stubs")
 
 openai_client_available = False
 openai_client = None
