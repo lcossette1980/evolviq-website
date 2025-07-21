@@ -1028,13 +1028,22 @@ import openai
 
 openai_client_available = False
 try:
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    if openai.api_key:
-        logger.info(f"✅ OpenAI API key loaded")
-        # Test if client works
-        models = openai.models.list()
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    if openai_api_key:
+        openai.api_key = openai_api_key
+        logger.info("✅ OpenAI API key loaded")
+
+        # Test the client with a safe call
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "ping"},
+                {"role": "user", "content": "ping"}
+            ],
+            max_tokens=1
+        )
         openai_client_available = True
-        logger.info("✅ OpenAI client initialized and test request succeeded")
+        logger.info("✅ OpenAI client test call succeeded")
     else:
         logger.warning("⚠️ OPENAI_API_KEY not found")
 except Exception as e:
