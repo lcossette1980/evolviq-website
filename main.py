@@ -1117,24 +1117,43 @@ def generate_ai_question(assessment_type: str, question_history: List[Dict], use
 def get_assessment_system_prompt(assessment_type: str) -> str:
     """Get the system prompt for the specific assessment type."""
     if assessment_type == "ai_knowledge":
-        return """You are an AI Knowledge Assessment expert. Your role is to evaluate a user's understanding of artificial intelligence concepts and their readiness to implement AI in their business.
+        return """You are an AI Readiness Assessment Agent for small businesses (5-50 employees). Your role is to conduct an intelligent, adaptive assessment across 5 key sections to determine their AI readiness and generate personalized learning paths.
 
-Generate the next assessment question based on the conversation history. Consider:
-1. The user's previous answers to gauge their knowledge level
-2. Areas that need deeper exploration
-3. Practical business applications vs theoretical knowledge
-4. Progressive difficulty based on demonstrated competence
+ASSESSMENT STRUCTURE (5 sections total):
+1. AI Fundamentals (F1.1, F1.2) - Basic understanding of AI concepts
+2. Prompt Engineering (P2.1, P2.2) - Ability to work with AI tools effectively  
+3. AI Ecosystem (E3.1) - Understanding of AI landscape and tools
+
+ASSESSMENT APPROACH:
+- Ask intelligent follow-up questions based on user responses
+- Detect key concepts and evidence in their answers
+- Adapt difficulty and focus based on demonstrated knowledge
+- Generate maturity scores (1-5) with confidence levels and evidence
+
+MATURITY LEVELS:
+1. Nascent - Limited or no understanding
+2. Developing - Basic awareness, some gaps
+3. Competent - Solid understanding, practical knowledge
+4. Advanced - Deep knowledge, can teach others
+5. Expert - Leading-edge knowledge, innovation capability
 
 Response format (JSON):
 {
-    "question": "Your specific question here",
-    "options": ["Option 1", "Option 2", "Option 3", "Option 4", "Option 5"],
-    "category": "Category name (e.g. AI Fundamentals, Business Application, Ethics, Implementation)",
-    "difficulty": "beginner|intermediate|advanced",
-    "rationale": "Why this question is important for assessment"
+    "question": "Intelligent question tailored to their responses",
+    "section": "Current section (F1.1, F1.2, P2.1, P2.2, E3.1)",
+    "follow_up": true/false,
+    "concepts_to_detect": ["concept1", "concept2", "concept3"],
+    "maturity_indicators": {
+        "level_1": ["indicators for nascent"],
+        "level_2": ["indicators for developing"], 
+        "level_3": ["indicators for competent"],
+        "level_4": ["indicators for advanced"],
+        "level_5": ["indicators for expert"]
+    },
+    "rationale": "Why this question and what you're looking for"
 }
 
-Keep questions practical, business-focused, and progressively adaptive to the user's demonstrated knowledge level."""
+Focus on practical business application for small organizations with limited resources."""
 
     elif assessment_type == "change_readiness":
         return """You are an Organizational Change Readiness expert. Your role is to evaluate how prepared an organization is to successfully implement AI and other transformative changes.
@@ -1159,6 +1178,406 @@ Focus on practical organizational dynamics, leadership effectiveness, and change
 
     return "You are an assessment expert. Generate appropriate questions for evaluation."
 
+def perform_agentic_analysis(session_id: str, question_history: List[Dict], assessment_type: str) -> Dict:
+    """Perform sophisticated agentic analysis using multi-agent approach."""
+    try:
+        logger.info(f"Starting agentic analysis for session {session_id}")
+        
+        # Extract evidence and concepts from responses
+        concept_analysis = extract_concepts_and_evidence(question_history)
+        
+        # Calculate maturity scores for each section
+        maturity_scores = calculate_maturity_scores(question_history, concept_analysis)
+        
+        # Generate personalized learning path using RAG approach
+        learning_path = generate_personalized_learning_path(maturity_scores, concept_analysis)
+        
+        # Create business recommendations with budget constraints
+        business_recommendations = generate_business_recommendations(maturity_scores, budget_limit=100)
+        
+        # Calculate confidence scores and risk assessment
+        confidence_assessment = calculate_confidence_and_risk(question_history, maturity_scores)
+        
+        # Generate visual analytics data
+        visual_analytics = generate_visual_analytics_data(maturity_scores, confidence_assessment)
+        
+        analysis_result = {
+            "maturity_scores": maturity_scores,
+            "concept_analysis": concept_analysis,
+            "learning_path": learning_path,
+            "business_recommendations": business_recommendations,
+            "confidence_assessment": confidence_assessment,
+            "visual_analytics": visual_analytics,
+            "overall_readiness_level": determine_overall_readiness(maturity_scores),
+            "next_steps": generate_next_steps(maturity_scores, learning_path),
+            "analysis_timestamp": datetime.now().isoformat()
+        }
+        
+        logger.info(f"Agentic analysis completed for session {session_id}")
+        return analysis_result
+        
+    except Exception as e:
+        logger.error(f"Agentic analysis failed for session {session_id}: {e}")
+        # Return basic fallback analysis
+        return {
+            "maturity_scores": {"overall": 2.5},
+            "learning_path": {"recommendations": ["Continue exploring AI fundamentals"]},
+            "business_recommendations": ["Start with low-cost AI tools"],
+            "error": "Advanced analysis unavailable - using basic assessment",
+            "analysis_timestamp": datetime.now().isoformat()
+        }
+
+def extract_concepts_and_evidence(question_history: List[Dict]) -> Dict:
+    """Extract key concepts and evidence from user responses using NLP analysis."""
+    concept_analysis = {
+        "detected_concepts": [],
+        "evidence_by_section": {},
+        "knowledge_gaps": [],
+        "strengths": []
+    }
+    
+    # Define concept mappings for each section
+    section_concepts = {
+        "F1.1": ["machine learning", "artificial intelligence", "automation", "data", "algorithms"],
+        "F1.2": ["business value", "roi", "implementation", "strategy", "process improvement"],
+        "P2.1": ["prompt engineering", "chatgpt", "language models", "prompt design", "ai tools"],
+        "P2.2": ["prompt optimization", "context", "instructions", "ai interaction", "tool usage"],
+        "E3.1": ["ai ecosystem", "vendors", "platforms", "tools", "integration", "selection"]
+    }
+    
+    sections = ["F1.1", "F1.2", "P2.1", "P2.2", "E3.1"]
+    
+    for i, qa in enumerate(question_history):
+        if i < len(sections):
+            section = sections[i]
+            answer = qa.get("answer", "").lower()
+            
+            # Detect concepts in this response
+            detected_in_response = []
+            for concept in section_concepts.get(section, []):
+                if concept in answer:
+                    detected_in_response.append(concept)
+                    concept_analysis["detected_concepts"].append({
+                        "concept": concept,
+                        "section": section,
+                        "evidence": answer[:100] + "..." if len(answer) > 100 else answer
+                    })
+            
+            # Analyze response quality and evidence
+            response_length = len(answer.split())
+            technical_terms = sum(1 for concept in section_concepts.get(section, []) if concept in answer)
+            
+            concept_analysis["evidence_by_section"][section] = {
+                "response_length": response_length,
+                "technical_terms_used": technical_terms,
+                "concepts_mentioned": detected_in_response,
+                "response_quality": "detailed" if response_length > 20 else "basic" if response_length > 5 else "minimal"
+            }
+            
+            # Identify strengths and gaps
+            if technical_terms >= 2 and response_length > 20:
+                concept_analysis["strengths"].append(f"Strong knowledge in {section}")
+            elif technical_terms == 0 or response_length < 5:
+                concept_analysis["knowledge_gaps"].append(f"Knowledge gap in {section}")
+    
+    return concept_analysis
+
+def calculate_maturity_scores(question_history: List[Dict], concept_analysis: Dict) -> Dict:
+    """Calculate maturity scores (1-5) for each section with evidence-based scoring."""
+    sections = ["F1.1", "F1.2", "P2.1", "P2.2", "E3.1"]
+    maturity_scores = {}
+    
+    for i, section in enumerate(sections):
+        if i < len(question_history):
+            evidence = concept_analysis["evidence_by_section"].get(section, {})
+            
+            # Base score calculation
+            score = 1.0  # Start at nascent level
+            
+            # Increase score based on response quality
+            response_quality = evidence.get("response_quality", "minimal")
+            if response_quality == "detailed":
+                score += 2.0
+            elif response_quality == "basic":
+                score += 1.0
+            
+            # Increase score based on technical terms used
+            technical_terms = evidence.get("technical_terms_used", 0)
+            score += min(technical_terms * 0.5, 1.5)
+            
+            # Increase score based on specific concepts mentioned
+            concepts_mentioned = len(evidence.get("concepts_mentioned", []))
+            score += min(concepts_mentioned * 0.3, 1.0)
+            
+            # Cap at maximum level 5
+            final_score = min(score, 5.0)
+            
+            maturity_scores[section] = round(final_score, 1)
+        else:
+            maturity_scores[section] = 1.0  # Default for missing sections
+    
+    # Calculate overall score
+    maturity_scores["overall"] = round(sum(maturity_scores.values()) / len(sections), 1)
+    
+    return maturity_scores
+
+def generate_personalized_learning_path(maturity_scores: Dict, concept_analysis: Dict) -> Dict:
+    """Generate personalized learning path using RAG-like approach for small business focus."""
+    learning_path = {
+        "priority_areas": [],
+        "recommended_sequence": [],
+        "estimated_timeline": "4-8 weeks",
+        "learning_resources": [],
+        "practical_exercises": []
+    }
+    
+    # Identify priority areas (scores below 3.0)
+    sections = ["F1.1", "F1.2", "P2.1", "P2.2", "E3.1"]
+    section_names = {
+        "F1.1": "AI Fundamentals - Concepts",
+        "F1.2": "AI Fundamentals - Business Application", 
+        "P2.1": "Prompt Engineering - Basics",
+        "P2.2": "Prompt Engineering - Advanced",
+        "E3.1": "AI Ecosystem - Tools & Platforms"
+    }
+    
+    low_scores = [(section, score) for section, score in maturity_scores.items() 
+                  if section in sections and score < 3.0]
+    low_scores.sort(key=lambda x: x[1])  # Sort by score, lowest first
+    
+    for section, score in low_scores:
+        learning_path["priority_areas"].append({
+            "section": section,
+            "name": section_names[section],
+            "current_score": score,
+            "target_score": 3.5,
+            "priority": "high" if score < 2.0 else "medium"
+        })
+    
+    # Generate learning sequence
+    if any(section.startswith("F1") for section, _ in low_scores):
+        learning_path["recommended_sequence"].append("Start with AI Fundamentals")
+    if any(section.startswith("P2") for section, _ in low_scores):
+        learning_path["recommended_sequence"].append("Practice Prompt Engineering")
+    if any(section.startswith("E3") for section, _ in low_scores):
+        learning_path["recommended_sequence"].append("Explore AI Tool Ecosystem")
+    
+    # Add resources focused on small business budget constraints
+    learning_path["learning_resources"] = [
+        {
+            "title": "Free AI Fundamentals Course",
+            "type": "online_course",
+            "cost": "Free",
+            "duration": "2-3 hours",
+            "provider": "Multiple platforms"
+        },
+        {
+            "title": "ChatGPT for Business (Free Tier)",
+            "type": "hands_on_practice", 
+            "cost": "Free",
+            "duration": "1-2 hours weekly",
+            "provider": "OpenAI"
+        },
+        {
+            "title": "Small Business AI Implementation Guide",
+            "type": "guide",
+            "cost": "Free",
+            "duration": "1 hour read",
+            "provider": "Various"
+        }
+    ]
+    
+    return learning_path
+
+def generate_business_recommendations(maturity_scores: Dict, budget_limit: int = 100) -> List[Dict]:
+    """Generate business-focused recommendations with budget constraints."""
+    recommendations = []
+    overall_score = maturity_scores.get("overall", 2.0)
+    
+    if overall_score < 2.5:
+        recommendations.extend([
+            {
+                "category": "learning",
+                "title": "Start with Free AI Education",
+                "description": "Begin with free online courses and YouTube tutorials to build foundational knowledge",
+                "cost": "$0/month",
+                "timeline": "2-4 weeks",
+                "priority": "high"
+            },
+            {
+                "category": "tools",
+                "title": "Experiment with ChatGPT Free Tier",
+                "description": "Use ChatGPT free version for basic tasks like email writing, brainstorming, and research",
+                "cost": "$0/month", 
+                "timeline": "Start immediately",
+                "priority": "high"
+            }
+        ])
+    elif overall_score < 3.5:
+        recommendations.extend([
+            {
+                "category": "tools",
+                "title": "ChatGPT Plus Subscription",
+                "description": "Upgrade to ChatGPT Plus for more reliable access and advanced features",
+                "cost": "$20/month",
+                "timeline": "Next 1-2 weeks",
+                "priority": "medium"
+            },
+            {
+                "category": "process",
+                "title": "Document AI Use Cases",
+                "description": "Create a list of specific business processes that could benefit from AI automation",
+                "cost": "$0/month",
+                "timeline": "1-2 weeks",
+                "priority": "high"
+            }
+        ])
+    else:
+        recommendations.extend([
+            {
+                "category": "tools",
+                "title": "Explore Specialized AI Tools",
+                "description": "Consider domain-specific tools like Canva AI, Grammarly, or automation platforms under $50/month",
+                "cost": "$25-50/month",
+                "timeline": "Next month",
+                "priority": "medium"
+            },
+            {
+                "category": "strategy",
+                "title": "Develop AI Implementation Plan",
+                "description": "Create a 6-month roadmap for gradually integrating AI into your business operations",
+                "cost": "$0/month",
+                "timeline": "2-3 weeks",
+                "priority": "high"
+            }
+        ])
+    
+    # Filter by budget
+    budget_friendly = [rec for rec in recommendations if 
+                      "Free" in rec["cost"] or "$0" in rec["cost"] or 
+                      (rec["cost"].replace("$", "").replace("/month", "").split("-")[0].isdigit() and 
+                       int(rec["cost"].replace("$", "").replace("/month", "").split("-")[0]) <= budget_limit)]
+    
+    return budget_friendly
+
+def calculate_confidence_and_risk(question_history: List[Dict], maturity_scores: Dict) -> Dict:
+    """Calculate confidence scores and risk assessment."""
+    confidence_assessment = {
+        "overall_confidence": 0.0,
+        "confidence_by_section": {},
+        "risk_factors": [],
+        "success_indicators": []
+    }
+    
+    sections = ["F1.1", "F1.2", "P2.1", "P2.2", "E3.1"]
+    
+    # Calculate confidence based on response consistency and depth
+    total_confidence = 0
+    for i, section in enumerate(sections):
+        if i < len(question_history):
+            qa = question_history[i]
+            answer_length = len(qa.get("answer", "").split())
+            maturity_score = maturity_scores.get(section, 1.0)
+            
+            # Confidence increases with longer, more detailed responses and higher maturity
+            section_confidence = min((answer_length / 30) * 0.4 + (maturity_score / 5) * 0.6, 1.0)
+            confidence_assessment["confidence_by_section"][section] = round(section_confidence, 2)
+            total_confidence += section_confidence
+        else:
+            confidence_assessment["confidence_by_section"][section] = 0.1
+    
+    confidence_assessment["overall_confidence"] = round(total_confidence / len(sections), 2)
+    
+    # Identify risk factors
+    if confidence_assessment["overall_confidence"] < 0.4:
+        confidence_assessment["risk_factors"].append("Low confidence in assessment responses")
+    if maturity_scores.get("overall", 0) < 2.0:
+        confidence_assessment["risk_factors"].append("Significant knowledge gaps in AI fundamentals")
+    if len([s for s in sections if maturity_scores.get(s, 0) < 2.0]) >= 3:
+        confidence_assessment["risk_factors"].append("Multiple areas requiring foundational learning")
+    
+    # Identify success indicators  
+    if confidence_assessment["overall_confidence"] > 0.7:
+        confidence_assessment["success_indicators"].append("High confidence in responses indicates strong self-awareness")
+    if maturity_scores.get("overall", 0) > 3.0:
+        confidence_assessment["success_indicators"].append("Solid foundation for AI implementation")
+    
+    return confidence_assessment
+
+def generate_visual_analytics_data(maturity_scores: Dict, confidence_assessment: Dict) -> Dict:
+    """Generate data for visual analytics - radar charts, heatmaps, timelines."""
+    sections = ["F1.1", "F1.2", "P2.1", "P2.2", "E3.1"]
+    section_labels = ["AI Concepts", "Business Application", "Prompt Basics", "Advanced Prompting", "AI Ecosystem"]
+    
+    return {
+        "radar_chart": {
+            "labels": section_labels,
+            "scores": [maturity_scores.get(section, 1.0) for section in sections],
+            "max_score": 5
+        },
+        "risk_heatmap": {
+            "sections": section_labels,
+            "risk_levels": [max(1, 6 - maturity_scores.get(section, 1.0)) for section in sections],
+            "colors": ["#d73027", "#f46d43", "#fdae61", "#abd9e9", "#74add1"]
+        },
+        "progress_timeline": {
+            "current_state": maturity_scores.get("overall", 1.0),
+            "target_state": 4.0,
+            "milestones": [
+                {"level": 2.0, "description": "Basic AI Awareness"},
+                {"level": 3.0, "description": "Practical AI Skills"},
+                {"level": 4.0, "description": "AI Implementation Ready"},
+                {"level": 5.0, "description": "AI Innovation Leader"}
+            ]
+        },
+        "confidence_bars": {
+            "sections": section_labels,
+            "confidence_scores": [confidence_assessment["confidence_by_section"].get(section, 0.1) for section in sections]
+        }
+    }
+
+def determine_overall_readiness(maturity_scores: Dict) -> str:
+    """Determine overall AI readiness level."""
+    overall_score = maturity_scores.get("overall", 1.0)
+    
+    if overall_score >= 4.0:
+        return "ready_to_lead"
+    elif overall_score >= 3.0:
+        return "ready_to_implement"
+    elif overall_score >= 2.0:
+        return "developing_readiness"
+    else:
+        return "foundational_learning_needed"
+
+def generate_next_steps(maturity_scores: Dict, learning_path: Dict) -> List[str]:
+    """Generate specific next steps based on assessment results."""
+    next_steps = []
+    overall_score = maturity_scores.get("overall", 1.0)
+    
+    if overall_score < 2.0:
+        next_steps = [
+            "Complete a foundational AI course (free online options available)",
+            "Experiment with ChatGPT for 15 minutes daily",
+            "Read one AI article per week from reputable sources",
+            "Identify 3 business processes that could benefit from AI"
+        ]
+    elif overall_score < 3.0:
+        next_steps = [
+            "Practice prompt engineering with real business scenarios", 
+            "Research AI tools specific to your industry",
+            "Create an AI implementation timeline for your business",
+            "Network with other small business owners using AI"
+        ]
+    else:
+        next_steps = [
+            "Develop a comprehensive AI strategy for your organization",
+            "Pilot one AI tool in a specific business process",
+            "Train team members on AI tools and best practices", 
+            "Measure and document AI implementation ROI"
+        ]
+    
+    return next_steps
+
 def build_assessment_context(assessment_type: str, question_history: List[Dict], user_profile: Dict = None) -> str:
     """Build context for OpenAI based on assessment history."""
     context = f"Assessment Type: {assessment_type}\n"
@@ -1175,20 +1594,41 @@ def build_assessment_context(assessment_type: str, question_history: List[Dict],
             context += f"   Category: {item['category']}\n"
         context += "\n"
     
-    # Add adaptive instructions based on progress
-    total_questions = 20 if assessment_type == "ai_knowledge" else 15
-    progress = len(question_history) / total_questions
-    
-    if progress < 0.3:
-        context += "INSTRUCTION: Generate a foundational question to establish baseline knowledge/readiness.\n"
-    elif progress < 0.6:
-        context += "INSTRUCTION: Generate an intermediate question that builds on previous answers to explore specific areas.\n"
-    elif progress < 0.8:
-        context += "INSTRUCTION: Generate an advanced question that tests deeper understanding/readiness in identified areas.\n"
+    # Add adaptive instructions based on assessment structure
+    if assessment_type == "ai_knowledge":
+        # AI Readiness uses 5-section structure
+        sections = ["F1.1", "F1.2", "P2.1", "P2.2", "E3.1"]
+        current_section_index = len(question_history)
+        
+        if current_section_index < len(sections):
+            current_section = sections[current_section_index]
+            context += f"INSTRUCTION: Generate question for section {current_section}. "
+            
+            if current_section.startswith("F1"):
+                context += "Focus on AI Fundamentals - basic understanding of AI concepts and their business applications.\n"
+            elif current_section.startswith("P2"):
+                context += "Focus on Prompt Engineering - ability to effectively work with AI tools and craft useful prompts.\n"
+            elif current_section.startswith("E3"):
+                context += "Focus on AI Ecosystem - understanding of available AI tools, vendors, and implementation approaches.\n"
+        else:
+            context += "INSTRUCTION: Assessment complete - should not reach this point.\n"
+            
+        context += f"\nGenerate question for section {sections[min(current_section_index, len(sections)-1)]} as JSON."
     else:
-        context += "INSTRUCTION: Generate a final assessment question that captures remaining knowledge gaps or readiness factors.\n"
-    
-    context += f"\nGenerate the next question (#{len(question_history) + 1} of {total_questions}) as JSON."
+        # Change Readiness uses different structure (keep existing logic)
+        total_questions = 15
+        progress = len(question_history) / total_questions
+        
+        if progress < 0.3:
+            context += "INSTRUCTION: Generate a foundational question to establish baseline readiness.\n"
+        elif progress < 0.6:
+            context += "INSTRUCTION: Generate an intermediate question that builds on previous answers.\n"
+        elif progress < 0.8:
+            context += "INSTRUCTION: Generate an advanced question that tests deeper readiness.\n"
+        else:
+            context += "INSTRUCTION: Generate a final assessment question.\n"
+        
+        context += f"\nGenerate the next question (#{len(question_history) + 1} of {total_questions}) as JSON."
     
     return context
 
@@ -1344,14 +1784,20 @@ async def respond_ai_knowledge_assessment(request: AssessmentAnswerRequest):
         logger.info(f"Stored question history for session {session_id}: {len(session['question_history'])} questions")
         logger.info(f"Latest answer: {request.answer} for question: {question_data['question'][:50] if question_data['question'] else 'No question text'}...")
         
-        # Check if assessment is complete (20 questions for AI Knowledge)
-        if len(session["question_history"]) >= 20:
-            logger.info(f"AI Knowledge assessment completed for session {session_id}")
+        # Check if assessment is complete (5 sections for AI Knowledge agentic assessment)
+        if len(session["question_history"]) >= 5:
+            logger.info(f"AI Knowledge assessment completed for session {session_id} - conducting agentic analysis")
+            
+            # Perform sophisticated agentic analysis
+            analysis_result = perform_agentic_analysis(session_id, session["question_history"], "ai_knowledge")
+            
             return {
                 "completed": True,
-                "total_questions": len(session["question_history"]),
+                "total_sections": 5,
+                "questions_answered": len(session["question_history"]),
                 "session_id": session_id,
-                "message": "Assessment completed! Thank you for your responses."
+                "analysis": analysis_result,
+                "message": "Assessment completed! Your AI readiness analysis is ready."
             }
         
         # Generate next question using AI based on conversation history

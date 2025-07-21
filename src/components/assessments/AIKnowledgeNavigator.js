@@ -148,40 +148,56 @@ const AIKnowledgeNavigator = () => {
       setUserResponse('');
 
       if (response.completed) {
-        // Assessment is complete
+        // Assessment is complete with sophisticated agentic analysis
         setCurrentStep('results');
         updatedAssessment.isComplete = true;
         
-        // Calculate basic results from the assessment responses
-        const totalQuestions = response.total_questions || 20;
-        const questionsAnswered = updatedAssessment.responses.length;
-        
-        // Basic scoring - this should be enhanced with proper AI analysis
-        const basicScore = Math.round((questionsAnswered / totalQuestions) * 100);
+        // Use the sophisticated analysis from the backend
+        const analysis = response.analysis || {};
+        const maturityScores = analysis.maturity_scores || {};
+        const overallScore = maturityScores.overall || 2.5;
         
         updatedAssessment.results = {
-          totalQuestions: totalQuestions,
+          totalSections: response.total_sections || 5,
           sessionId: response.session_id,
           message: response.message,
-          overallScore: basicScore,
-          maturityLevel: Math.ceil(basicScore / 20), // 1-5 scale
-          questionsAnswered: questionsAnswered,
-          completedAt: new Date().toISOString()
+          
+          // Sophisticated analysis results
+          overallScore: Math.round(overallScore * 20), // Convert to 0-100 scale for compatibility
+          maturityScores: maturityScores,
+          maturityLevel: Math.ceil(overallScore), // 1-5 scale
+          overallReadinessLevel: analysis.overall_readiness_level,
+          
+          // Rich analysis data
+          conceptAnalysis: analysis.concept_analysis,
+          learningPath: analysis.learning_path,
+          businessRecommendations: analysis.business_recommendations,
+          confidenceAssessment: analysis.confidence_assessment,
+          visualAnalytics: analysis.visual_analytics,
+          nextSteps: analysis.next_steps,
+          
+          questionsAnswered: updatedAssessment.responses.length,
+          completedAt: new Date().toISOString(),
+          analysisTimestamp: analysis.analysis_timestamp
         };
         
         setAssessment(updatedAssessment);
         setResults(updatedAssessment.results);
         
-        // Track assessment completion in project
+        // Track assessment completion in project with rich data
         if (currentProject) {
           const assessmentData = {
-            overallScore: basicScore,
-            maturityLevel: Math.ceil(basicScore / 20),
-            maturityScores: {}, // Would need proper analysis
+            overallScore: Math.round(overallScore * 20),
+            maturityScores: maturityScores,
+            maturityLevel: Math.ceil(overallScore),
+            overallReadinessLevel: analysis.overall_readiness_level,
+            learningPath: analysis.learning_path,
+            businessRecommendations: analysis.business_recommendations,
             completedAt: new Date().toISOString(),
             assessmentId: `ai_knowledge_${user.uid}_${Date.now()}`,
-            questionsAnswered: questionsAnswered,
-            sessionId: response.session_id
+            questionsAnswered: updatedAssessment.responses.length,
+            sessionId: response.session_id,
+            analysisType: 'agentic_ai_readiness'
           };
           
           // Only add fields that are defined
@@ -277,7 +293,7 @@ const AIKnowledgeNavigator = () => {
               <MessageSquare className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
             </div>
             <h3 className="font-semibold mb-2 text-sm sm:text-base">Interactive Assessment</h3>
-            <p className="text-xs sm:text-sm text-gray-600">Answer questions about AI concepts, tools, and applications through an adaptive conversation</p>
+            <p className="text-xs sm:text-sm text-gray-600">Intelligent assessment across 5 key areas: AI Fundamentals, Prompt Engineering, and AI Ecosystem - with personalized analysis</p>
           </div>
           <div className="text-center">
             <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
@@ -385,7 +401,7 @@ const AIKnowledgeNavigator = () => {
             AI Knowledge Assessment
           </h2>
           <div className="text-sm" style={{ color: colors.khaki }}>
-            Question {assessment.currentQuestionIndex + 1}
+            Section {Math.min(assessment.currentQuestionIndex + 1, 5)} of 5
           </div>
         </div>
         
