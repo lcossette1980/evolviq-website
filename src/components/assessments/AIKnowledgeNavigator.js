@@ -96,7 +96,8 @@ const AIKnowledgeNavigator = () => {
     setIsLoading(true);
     try {
       const response = await assessmentAPI.startAIKnowledgeAssessment(user.uid);
-      setCurrentQuestion(response.question);
+      console.log('Start assessment response:', response);
+      setCurrentQuestion(response); // The response itself contains question, options, etc.
       setCurrentStep('assessment');
       setAssessment(prev => ({
         ...prev,
@@ -121,9 +122,13 @@ const AIKnowledgeNavigator = () => {
         user.uid,
         'ai_knowledge_navigator',
         {
-          question: currentQuestion,
-          response: userResponse,
-          questionIndex: assessment.currentQuestionIndex
+          questionId: currentQuestion?.question_id || 'unknown',
+          answer: userResponse,
+          sessionData: {
+            session_id: currentQuestion?.session_id,
+            current_question: currentQuestion?.question,
+            questionIndex: assessment.currentQuestionIndex
+          }
         }
       );
       
@@ -142,14 +147,15 @@ const AIKnowledgeNavigator = () => {
 
       setUserResponse('');
 
-      if (response.isComplete) {
+      if (response.completed) {
         // Assessment is complete
-        setResults(response.results);
-        setLearningPlan(response.learningPlan);
         setCurrentStep('results');
         updatedAssessment.isComplete = true;
-        updatedAssessment.results = response.results;
-        updatedAssessment.learningPlan = response.learningPlan;
+        updatedAssessment.results = {
+          totalQuestions: response.total_questions,
+          sessionId: response.session_id,
+          message: response.message
+        };
         setAssessment(updatedAssessment);
         
         // Track assessment completion in project
@@ -176,9 +182,9 @@ const AIKnowledgeNavigator = () => {
         }
       } else {
         // Continue with next question
-        console.log('Setting next question:', response.nextQuestion);
+        console.log('Setting next question:', response);
         console.log('New question index:', updatedAssessment.currentQuestionIndex);
-        setCurrentQuestion(response.nextQuestion);
+        setCurrentQuestion(response); // The response itself is the next question object
         setAssessment(updatedAssessment);
       }
 
