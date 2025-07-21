@@ -496,29 +496,64 @@ class AssessmentAPI {
         console.log('maturityScores:', maturityScores);
         console.log('learningPlan:', learningPlan);
 
-        // Create action items for low maturity areas
+        // Create action items for all maturity areas based on experience level
         Object.entries(maturityScores).forEach(([area, score]) => {
-          console.log(`Checking maturity area ${area}: ${score}`);
-          if (score < 3) { // Below intermediate level
-            console.log(`Creating action item for low maturity area: ${area}`);
-            const actionItem = {
-              title: `Improve ${area.replace('_', ' ')} knowledge`,
-              description: `Focus on building foundational knowledge in ${area.replace('_', ' ')} to reach intermediate level`,
+          console.log(`Creating action item for area ${area}: ${score}`);
+          
+          let actionItem;
+          if (score < 2) {
+            // Beginner level - foundational learning
+            actionItem = {
+              title: `Build foundational ${area.replace(/[_.]/g, ' ')} knowledge`,
+              description: `Start with basics in ${area.replace(/[_.]/g, ' ')} to establish core understanding`,
               category: 'learning',
-              priority: score < 2 ? 'high' : 'medium',
-              source: 'ai_knowledge_navigator',
-              sourceAssessmentId: assessmentData.assessmentId,
-              generatedBy: 'assessment',
-              estimatedHours: 8,
-              tags: ['learning', area],
-              metadata: {
-                currentScore: score,
-                targetScore: 3,
-                assessmentArea: area
-              }
+              priority: 'high',
+              estimatedHours: 12,
+              tags: ['learning', 'foundational', area]
             };
-            actionItems.push(actionItem);
+          } else if (score < 3) {
+            // Below intermediate - skill building
+            actionItem = {
+              title: `Develop ${area.replace(/[_.]/g, ' ')} skills`,
+              description: `Focus on building practical skills in ${area.replace(/[_.]/g, ' ')} to reach intermediate level`,
+              category: 'learning',
+              priority: 'medium',
+              estimatedHours: 8,
+              tags: ['learning', 'skill-building', area]
+            };
+          } else if (score < 4) {
+            // Intermediate - practical application
+            actionItem = {
+              title: `Apply ${area.replace(/[_.]/g, ' ')} in practice`,
+              description: `Start implementing ${area.replace(/[_.]/g, ' ')} in real projects to gain advanced skills`,
+              category: 'implementation',
+              priority: 'medium',
+              estimatedHours: 6,
+              tags: ['implementation', 'practice', area]
+            };
+          } else {
+            // Advanced - leadership and optimization
+            actionItem = {
+              title: `Lead ${area.replace(/[_.]/g, ' ')} initiatives`,
+              description: `Share knowledge and optimize ${area.replace(/[_.]/g, ' ')} practices in your organization`,
+              category: 'leadership',
+              priority: 'low',
+              estimatedHours: 4,
+              tags: ['leadership', 'optimization', area]
+            };
           }
+          
+          // Add common fields
+          actionItem.source = 'ai_knowledge_navigator';
+          actionItem.sourceAssessmentId = assessmentData.assessmentId;
+          actionItem.generatedBy = 'assessment';
+          actionItem.metadata = {
+            currentScore: score,
+            targetScore: Math.min(5, score + 1),
+            assessmentArea: area
+          };
+          
+          actionItems.push(actionItem);
         });
 
         // Create action items from learning plan recommendations

@@ -1192,45 +1192,18 @@ Focus on practical small business dynamics and realistic change management capab
     return "You are an assessment expert. Generate appropriate questions for evaluation."
 
 def perform_agentic_analysis(session_id: str, question_history: List[Dict], assessment_type: str) -> Dict:
-    """Perform sophisticated agentic analysis using multi-agent approach."""
+    """Perform sophisticated agentic analysis using CrewAI-inspired multi-agent approach."""
     try:
-        logger.info(f"Starting agentic analysis for session {session_id}")
+        logger.info(f"Starting CrewAI agentic analysis for session {session_id}")
         
-        # Extract evidence and concepts from responses
-        concept_analysis = extract_concepts_and_evidence(question_history)
-        
-        # Calculate maturity scores for each section
-        maturity_scores = calculate_maturity_scores(question_history, concept_analysis)
-        
-        # Generate personalized learning path 
-        learning_path = generate_personalized_learning_path(maturity_scores, concept_analysis)
-        
-        # Create business recommendations with budget constraints
-        business_recommendations = generate_business_recommendations(maturity_scores, budget_limit=100)
-        
-        # Calculate confidence scores and risk assessment
-        confidence_assessment = calculate_confidence_and_risk(question_history, maturity_scores)
-        
-        # Generate visual analytics data
-        visual_analytics = generate_visual_analytics_data(maturity_scores, confidence_assessment)
-        
-        analysis_result = {
-            "maturity_scores": maturity_scores,
-            "concept_analysis": concept_analysis,
-            "learning_path": learning_path,
-            "business_recommendations": business_recommendations,
-            "confidence_assessment": confidence_assessment,
-            "visual_analytics": visual_analytics,
-            "overall_readiness_level": determine_overall_readiness(maturity_scores),
-            "next_steps": generate_next_steps(maturity_scores, learning_path),
-            "analysis_timestamp": datetime.now().isoformat()
-        }
-        
-        logger.info(f"Agentic analysis completed for session {session_id}")
-        return analysis_result
+        if assessment_type == "ai_knowledge":
+            return perform_crewai_knowledge_assessment(session_id, question_history)
+        else:
+            # Fallback to basic analysis for other types
+            return perform_basic_agentic_analysis(session_id, question_history)
         
     except Exception as e:
-        logger.error(f"Agentic analysis failed for session {session_id}: {e}")
+        logger.error(f"CrewAI agentic analysis failed for session {session_id}: {e}")
         # Return basic fallback analysis
         return {
             "maturity_scores": {"overall": 2.5},
@@ -1239,6 +1212,378 @@ def perform_agentic_analysis(session_id: str, question_history: List[Dict], asse
             "error": "Advanced analysis unavailable - using basic assessment",
             "analysis_timestamp": datetime.now().isoformat()
         }
+
+def perform_crewai_knowledge_assessment(session_id: str, question_history: List[Dict]) -> Dict:
+    """Perform sophisticated AI knowledge assessment using CrewAI-inspired multi-agent approach."""
+    try:
+        logger.info(f"Starting CrewAI knowledge assessment for session {session_id}")
+        
+        # Agent 1: Concept Detection Agent - Analyzes understanding and knowledge gaps
+        concept_analysis = analyze_ai_concepts_and_understanding(question_history)
+        
+        # Agent 2: Maturity Scoring Agent - Calculates skill maturity across domains
+        maturity_analysis = calculate_knowledge_maturity_scores(question_history, concept_analysis)
+        
+        # Agent 3: Learning Path Agent - Creates personalized learning roadmap
+        learning_path = generate_intelligent_learning_path(maturity_analysis, concept_analysis)
+        
+        # Agent 4: Business Application Agent - Recommends practical AI implementations
+        business_recommendations = generate_practical_ai_recommendations(maturity_analysis, budget_limit=100)
+        
+        # Agent 5: Confidence & Risk Agent - Assesses readiness and identifies risks
+        confidence_assessment = analyze_confidence_and_learning_risks(question_history, maturity_analysis)
+        
+        # Combine all agent outputs
+        knowledge_assessment_result = {
+            "maturity_scores": maturity_analysis["scores"],
+            "concept_analysis": concept_analysis,
+            "learning_path": learning_path,
+            "business_recommendations": business_recommendations,
+            "confidence_assessment": confidence_assessment,
+            "visual_analytics": generate_knowledge_visual_analytics(maturity_analysis, confidence_assessment),
+            "overall_readiness_level": determine_ai_readiness_level(maturity_analysis),
+            "next_steps": generate_knowledge_next_steps(maturity_analysis, learning_path),
+            "agents_used": ["concept_detection", "maturity_scoring", "learning_path", "business_application", "confidence_risk"],
+            "analysis_timestamp": datetime.now().isoformat()
+        }
+        
+        logger.info(f"CrewAI knowledge assessment completed for session {session_id}")
+        return knowledge_assessment_result
+        
+    except Exception as e:
+        logger.error(f"CrewAI knowledge assessment failed for session {session_id}: {e}")
+        return perform_basic_agentic_analysis(session_id, question_history)
+
+def perform_basic_agentic_analysis(session_id: str, question_history: List[Dict]) -> Dict:
+    """Fallback basic agentic analysis."""
+    # Extract evidence and concepts from responses
+    concept_analysis = extract_concepts_and_evidence(question_history)
+    
+    # Calculate maturity scores for each section
+    maturity_scores = calculate_maturity_scores(question_history, concept_analysis)
+    
+    # Generate personalized learning path 
+    learning_path = generate_personalized_learning_path(maturity_scores, concept_analysis)
+    
+    # Create business recommendations with budget constraints
+    business_recommendations = generate_business_recommendations(maturity_scores, budget_limit=100)
+    
+    # Calculate confidence scores and risk assessment
+    confidence_assessment = calculate_confidence_and_risk(question_history, maturity_scores)
+    
+    # Generate visual analytics data
+    visual_analytics = generate_visual_analytics_data(maturity_scores, confidence_assessment)
+    
+    analysis_result = {
+        "maturity_scores": maturity_scores,
+        "concept_analysis": concept_analysis,
+        "learning_path": learning_path,
+        "business_recommendations": business_recommendations,
+        "confidence_assessment": confidence_assessment,
+        "visual_analytics": visual_analytics,
+        "overall_readiness_level": determine_overall_readiness(maturity_scores),
+        "next_steps": generate_next_steps(maturity_scores, learning_path),
+        "analysis_timestamp": datetime.now().isoformat()
+    }
+    
+    return analysis_result
+
+# =============================================================================
+# CREWAI-INSPIRED AGENT FUNCTIONS FOR AI KNOWLEDGE ASSESSMENT
+# =============================================================================
+
+def analyze_ai_concepts_and_understanding(question_history: List[Dict]) -> Dict:
+    """Agent 1: Concept Detection Agent - Deep analysis of AI understanding and knowledge gaps."""
+    concept_analysis = {
+        "detected_concepts": [],
+        "understanding_depth": {},
+        "knowledge_gaps": [],
+        "conceptual_strengths": [],
+        "evidence_by_section": {}
+    }
+    
+    # Advanced concept mappings for each section
+    section_concepts = {
+        "F1.1": {
+            "core_concepts": ["artificial intelligence", "machine learning", "automation", "algorithms", "data processing"],
+            "advanced_concepts": ["neural networks", "deep learning", "supervised learning", "unsupervised learning"],
+            "business_concepts": ["ai strategy", "digital transformation", "competitive advantage"]
+        },
+        "F1.2": {
+            "core_concepts": ["business value", "roi", "process improvement", "efficiency", "cost reduction"],
+            "advanced_concepts": ["implementation strategy", "change management", "stakeholder buy-in"],
+            "business_concepts": ["revenue generation", "customer experience", "operational excellence"]
+        },
+        "P2.1": {
+            "core_concepts": ["prompt engineering", "language models", "chatgpt", "ai tools", "prompt design"],
+            "advanced_concepts": ["context setting", "instruction clarity", "output formatting"],
+            "business_concepts": ["practical applications", "workflow integration", "productivity gains"]
+        },
+        "P2.2": {
+            "core_concepts": ["prompt optimization", "iteration", "testing", "refinement"],
+            "advanced_concepts": ["advanced prompting", "chain of thought", "few-shot learning"],
+            "business_concepts": ["quality improvement", "consistency", "reliability"]
+        },
+        "E3.1": {
+            "core_concepts": ["ai ecosystem", "vendors", "platforms", "tools", "apis"],
+            "advanced_concepts": ["integration", "scalability", "vendor selection", "technical requirements"],
+            "business_concepts": ["cost analysis", "implementation planning", "vendor management"]
+        }
+    }
+    
+    sections = ["F1.1", "F1.2", "P2.1", "P2.2", "E3.1"]
+    
+    for i, qa in enumerate(question_history):
+        if i < len(sections):
+            section = sections[i]
+            answer = qa.get("answer", "").lower()
+            
+            # Analyze understanding depth for this section
+            understanding_score = 0
+            detected_in_response = []
+            
+            for concept_type, concepts in section_concepts[section].items():
+                type_score = 0
+                for concept in concepts:
+                    if concept in answer:
+                        detected_in_response.append(concept)
+                        if concept_type == "core_concepts":
+                            type_score += 1
+                        elif concept_type == "advanced_concepts":
+                            type_score += 2
+                        elif concept_type == "business_concepts":
+                            type_score += 1.5
+                
+                understanding_score += type_score
+            
+            concept_analysis["understanding_depth"][section] = understanding_score
+            concept_analysis["evidence_by_section"][section] = {
+                "detected_concepts": detected_in_response,
+                "response_length": len(answer),
+                "understanding_indicators": understanding_score
+            }
+            
+            # Identify strengths and gaps
+            if understanding_score > 5:
+                concept_analysis["conceptual_strengths"].append(f"Strong understanding in {section}")
+            elif understanding_score < 2:
+                concept_analysis["knowledge_gaps"].append(f"Knowledge gap in {section}")
+    
+    return concept_analysis
+
+def calculate_knowledge_maturity_scores(question_history: List[Dict], concept_analysis: Dict) -> Dict:
+    """Agent 2: Maturity Scoring Agent - Advanced scoring with confidence levels."""
+    sections = ["F1.1", "F1.2", "P2.1", "P2.2", "E3.1"]
+    scores = {}
+    confidence_levels = {}
+    
+    for i, qa in enumerate(question_history):
+        if i < len(sections):
+            section = sections[i]
+            answer = qa.get("answer", "")
+            
+            # Base score from answer length and complexity
+            base_score = min(5, len(answer.split()) / 10)
+            
+            # Adjust based on concept understanding
+            understanding_score = concept_analysis["understanding_depth"].get(section, 0)
+            concept_bonus = min(2, understanding_score / 3)
+            
+            # Calculate final score with confidence
+            final_score = min(5, base_score + concept_bonus)
+            confidence = min(1.0, len(answer) / 100)  # Confidence based on response detail
+            
+            scores[section] = round(final_score, 1)
+            confidence_levels[section] = round(confidence, 2)
+    
+    return {
+        "scores": scores,
+        "confidence_levels": confidence_levels,
+        "overall_maturity": round(sum(scores.values()) / len(scores), 1) if scores else 2.5
+    }
+
+def generate_intelligent_learning_path(maturity_analysis: Dict, concept_analysis: Dict) -> Dict:
+    """Agent 3: Learning Path Agent - Creates sophisticated learning roadmap."""
+    scores = maturity_analysis["scores"]
+    priority_areas = []
+    
+    # Identify priority areas based on scores
+    for section, score in scores.items():
+        if score < 3:
+            priority_areas.append({"section": section, "score": score, "priority": "high"})
+        elif score < 4:
+            priority_areas.append({"section": section, "score": score, "priority": "medium"})
+    
+    # Generate learning resources
+    learning_resources = [
+        {
+            "title": "AI Fundamentals Course",
+            "type": "online_course",
+            "duration": "4-6 weeks",
+            "cost": "Free",
+            "priority": "high"
+        },
+        {
+            "title": "Prompt Engineering Masterclass",
+            "type": "workshop",
+            "duration": "2-3 weeks",
+            "cost": "$49",
+            "priority": "medium"
+        },
+        {
+            "title": "AI Tools Ecosystem Guide",
+            "type": "guide",
+            "duration": "1 week",
+            "cost": "Free",
+            "priority": "medium"
+        }
+    ]
+    
+    return {
+        "priority_areas": priority_areas,
+        "recommended_sequence": ["F1.1", "F1.2", "P2.1", "P2.2", "E3.1"],
+        "estimated_timeline": "6-12 weeks",
+        "learning_resources": learning_resources,
+        "practical_exercises": [
+            "Create your first AI prompt",
+            "Evaluate 3 AI tools for your business",
+            "Design an AI implementation plan"
+        ]
+    }
+
+def generate_practical_ai_recommendations(maturity_analysis: Dict, budget_limit: int = 100) -> List[Dict]:
+    """Agent 4: Business Application Agent - Practical AI implementation recommendations."""
+    overall_maturity = maturity_analysis["overall_maturity"]
+    
+    recommendations = []
+    
+    if overall_maturity < 2.5:
+        recommendations.extend([
+            {
+                "category": "Getting Started",
+                "title": "Start with ChatGPT Plus",
+                "description": "Begin with basic AI tools to build familiarity",
+                "cost": "$20/month",
+                "implementation_time": "1-2 weeks",
+                "roi_timeline": "Immediate"
+            },
+            {
+                "category": "Learning",
+                "title": "Free AI Training Resources",
+                "description": "Complete foundational AI courses",
+                "cost": "Free",
+                "implementation_time": "4-6 weeks",
+                "roi_timeline": "1-2 months"
+            }
+        ])
+    elif overall_maturity < 4:
+        recommendations.extend([
+            {
+                "category": "Automation",
+                "title": "Workflow Automation Tools",
+                "description": "Implement Zapier or similar automation",
+                "cost": "$20-50/month",
+                "implementation_time": "2-4 weeks",
+                "roi_timeline": "1-2 months"
+            },
+            {
+                "category": "Content Creation",
+                "title": "AI Content Tools",
+                "description": "Use Canva AI or Jasper for content",
+                "cost": "$15-49/month",
+                "implementation_time": "1-2 weeks",
+                "roi_timeline": "Immediate"
+            }
+        ])
+    else:
+        recommendations.extend([
+            {
+                "category": "Advanced Implementation",
+                "title": "Custom AI Solutions",
+                "description": "Develop custom AI workflows",
+                "cost": "$50-100/month",
+                "implementation_time": "4-8 weeks",
+                "roi_timeline": "2-3 months"
+            }
+        ])
+    
+    return recommendations
+
+def analyze_confidence_and_learning_risks(question_history: List[Dict], maturity_analysis: Dict) -> Dict:
+    """Agent 5: Confidence & Risk Agent - Assesses learning readiness and identifies risks."""
+    confidence_levels = maturity_analysis["confidence_levels"]
+    overall_confidence = sum(confidence_levels.values()) / len(confidence_levels) if confidence_levels else 0.5
+    
+    risks = []
+    mitigations = []
+    
+    # Identify risks based on confidence and maturity
+    if overall_confidence < 0.4:
+        risks.append("Low confidence in responses - may need more foundational learning")
+        mitigations.append("Start with basic AI literacy courses")
+    
+    if maturity_analysis["overall_maturity"] < 2.5:
+        risks.append("Beginner level - risk of choosing inappropriate tools")
+        mitigations.append("Focus on guided learning paths and mentorship")
+    
+    return {
+        "overall_confidence": round(overall_confidence, 2),
+        "confidence_by_section": confidence_levels,
+        "identified_risks": risks,
+        "mitigation_strategies": mitigations,
+        "readiness_assessment": "ready" if overall_confidence > 0.7 else "needs_preparation"
+    }
+
+def generate_knowledge_visual_analytics(maturity_analysis: Dict, confidence_assessment: Dict) -> Dict:
+    """Generate visual analytics data for knowledge assessment."""
+    return {
+        "radar_chart_data": maturity_analysis["scores"],
+        "confidence_heatmap": confidence_assessment["confidence_by_section"],
+        "progress_timeline": ["Foundation", "Application", "Implementation", "Mastery"],
+        "risk_matrix": {
+            "technical_risk": "low" if maturity_analysis["overall_maturity"] > 3 else "medium",
+            "implementation_risk": "low" if confidence_assessment["overall_confidence"] > 0.6 else "high"
+        }
+    }
+
+def determine_ai_readiness_level(maturity_analysis: Dict) -> str:
+    """Determine overall AI readiness level."""
+    overall_maturity = maturity_analysis["overall_maturity"]
+    
+    if overall_maturity >= 4:
+        return "ready_to_implement"
+    elif overall_maturity >= 3:
+        return "ready_with_guidance"
+    elif overall_maturity >= 2:
+        return "prepare_first"
+    else:
+        return "build_foundation"
+
+def generate_knowledge_next_steps(maturity_analysis: Dict, learning_path: Dict) -> List[str]:
+    """Generate specific next steps based on analysis."""
+    next_steps = []
+    overall_maturity = maturity_analysis["overall_maturity"]
+    
+    if overall_maturity < 2.5:
+        next_steps.extend([
+            "Complete AI fundamentals course",
+            "Practice with free AI tools daily",
+            "Join AI learning community"
+        ])
+    elif overall_maturity < 4:
+        next_steps.extend([
+            "Implement first AI tool in workflow",
+            "Develop prompt engineering skills",
+            "Create AI implementation plan"
+        ])
+    else:
+        next_steps.extend([
+            "Design comprehensive AI strategy",
+            "Lead AI adoption in organization",
+            "Mentor others in AI implementation"
+        ])
+    
+    return next_steps
 
 def extract_concepts_and_evidence(question_history: List[Dict]) -> Dict:
     """Extract key concepts and evidence from user responses using NLP analysis."""
