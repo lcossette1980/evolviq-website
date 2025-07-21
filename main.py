@@ -1024,17 +1024,34 @@ async def get_nlp_insights(session_id: str):
 # ============================================================================
 
 # Initialize OpenAI client
+openai_client = None
 try:
     openai_api_key = os.getenv("OPENAI_API_KEY")
     if openai_api_key:
+        logger.info(f"🔑 Found OpenAI API key: {openai_api_key[:10]}...{openai_api_key[-4:]}")
         from openai import OpenAI
-        openai_client = OpenAI(api_key=openai_api_key)
-        logger.info("✅ OpenAI API key configured")
+        
+        # Initialize with minimal configuration to avoid compatibility issues
+        openai_client = OpenAI(
+            api_key=openai_api_key,
+            timeout=30.0,  # 30 second timeout
+        )
+        
+        # Test the client with a simple call
+        try:
+            # Make a test call to verify the client works
+            test_response = openai_client.models.list()
+            logger.info("✅ OpenAI client initialized and tested successfully")
+        except Exception as test_error:
+            logger.error(f"❌ OpenAI client test failed: {test_error}")
+            openai_client = None
     else:
         logger.warning("⚠️ OPENAI_API_KEY not found - assessment features will be limited")
         openai_client = None
 except Exception as e:
     logger.error(f"❌ OpenAI initialization failed: {e}")
+    logger.error(f"Exception type: {type(e).__name__}")
+    logger.error(f"Exception args: {e.args}")
     openai_client = None
 
 # Assessment data models
