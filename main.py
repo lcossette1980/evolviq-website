@@ -1023,70 +1023,23 @@ async def get_nlp_insights(session_id: str):
 # ASSESSMENT ENDPOINTS
 # ============================================================================
 
-# Initialize OpenAI client
-openai_client = None
+# Initialize OpenAI (using clean global approach)
+import openai
+
+openai_client_available = False
 try:
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-    if openai_api_key:
-        logger.info(f"🔑 Found OpenAI API key: {openai_api_key[:10]}...{openai_api_key[-4:]}")
-        
-        # Check for proxy-related environment variables
-        proxy_vars = {
-            'HTTP_PROXY': os.getenv('HTTP_PROXY'),
-            'HTTPS_PROXY': os.getenv('HTTPS_PROXY'), 
-            'http_proxy': os.getenv('http_proxy'),
-            'https_proxy': os.getenv('https_proxy'),
-            'ALL_PROXY': os.getenv('ALL_PROXY'),
-            'OPENAI_PROXY': os.getenv('OPENAI_PROXY')
-        }
-        logger.info(f"🔍 Proxy environment variables: {proxy_vars}")
-        
-        # Clear any proxy environment variables that might interfere
-        for var in proxy_vars:
-            if os.getenv(var):
-                logger.warning(f"⚠️ Clearing proxy variable: {var}")
-                os.environ.pop(var, None)
-        
-        from openai import OpenAI
-        
-        # Initialize with absolutely minimal configuration
-        logger.info("🔧 Initializing OpenAI client with minimal config...")
-        
-        # Try different initialization approaches for compatibility
-        try:
-            # Method 1: Standard initialization
-            openai_client = OpenAI(api_key=openai_api_key)
-            logger.info("✅ OpenAI client initialized with standard method")
-        except Exception as init_error:
-            logger.warning(f"⚠️ Standard init failed: {init_error}, trying alternative...")
-            try:
-                # Method 2: Alternative initialization without any extra parameters
-                import openai
-                openai.api_key = openai_api_key
-                openai_client = OpenAI()
-                logger.info("✅ OpenAI client initialized with alternative method")
-            except Exception as alt_error:
-                logger.error(f"❌ Alternative init also failed: {alt_error}")
-                openai_client = None
-        
-        # Test the client if initialization succeeded
-        if openai_client:
-            try:
-                # Make a test call to verify the client works
-                test_response = openai_client.models.list()
-                logger.info("✅ OpenAI client tested successfully")
-            except Exception as test_error:
-                logger.error(f"❌ OpenAI client test failed: {test_error}")
-                # Don't set to None - the client might still work for chat completions
-                logger.warning("⚠️ Client test failed but keeping client for chat completions")
+    openai.api_key = os.getenv("OPENAI_API_KEY")
+    if openai.api_key:
+        logger.info(f"✅ OpenAI API key loaded")
+        # Test if client works
+        models = openai.models.list()
+        openai_client_available = True
+        logger.info("✅ OpenAI client initialized and test request succeeded")
     else:
-        logger.warning("⚠️ OPENAI_API_KEY not found - assessment features will be limited")
-        openai_client = None
+        logger.warning("⚠️ OPENAI_API_KEY not found")
 except Exception as e:
     logger.error(f"❌ OpenAI initialization failed: {e}")
-    logger.error(f"Exception type: {type(e).__name__}")
-    logger.error(f"Exception args: {e.args}")
-    openai_client = None
+    openai_client_available = False
 
 # Assessment data models
 class AssessmentStartRequest(BaseModel):
@@ -1111,7 +1064,7 @@ assessment_sessions: Dict[str, Dict] = {}
 
 def generate_ai_question(assessment_type: str, question_history: List[Dict], user_profile: Dict = None) -> Dict:
     """Generate next question using OpenAI based on assessment history."""
-    if not openai_client:
+    if not openai_client_available:
         # Fallback to sample questions if OpenAI not available
         logger.warning(f"OpenAI client not available - using fallback question for {assessment_type}")
         return get_fallback_question(assessment_type, len(question_history))
@@ -1123,7 +1076,7 @@ def generate_ai_question(assessment_type: str, question_history: List[Dict], use
         conversation_context = build_assessment_context(assessment_type, question_history, user_profile)
         logger.info(f"Context length: {len(conversation_context)} chars")
         
-        response = openai_client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
                 {
