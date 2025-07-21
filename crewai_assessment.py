@@ -748,7 +748,7 @@ class AIReadinessCrewAI:
         # Initialize LLM
         self.llm = ChatOpenAI(
             openai_api_key=openai_api_key,
-            model_name="gpt-4",
+            model_name="gpt-4o-mini",
             temperature=0.7
         )
         
@@ -1219,10 +1219,15 @@ def extract_crewai_results_for_api(crewai_output: Dict) -> Dict:
                 "growthAreas": growth_areas
             },
             
+            # Required timestamp fields for Firebase
+            "analysis_timestamp": datetime.now().isoformat(),
+            "analysisTimestamp": datetime.now().isoformat(),  # Alternative field name
+            "completedAt": datetime.now().isoformat(),
+            
             "crewai_metadata": {
                 "agents_used": agents_used,
                 "collaboration_type": collaboration_type,
-                "assessment_timestamp": timestamp,
+                "assessment_timestamp": timestamp or datetime.now().isoformat(),
                 "agents_involved": [
                     "AI Concept Detection Specialist",
                     "Maturity Scoring Expert", 
@@ -1283,10 +1288,14 @@ def extract_crewai_results_for_api(crewai_output: Dict) -> Dict:
                 "strengths": ["Learning mindset", "Business focus"],
                 "growthAreas": ["Technical implementation", "Advanced AI techniques"]
             },
+            # Required timestamp fields for Firebase
+            "analysis_timestamp": datetime.now().isoformat(),
+            "analysisTimestamp": datetime.now().isoformat(),  # Alternative field name
+            "completedAt": datetime.now().isoformat(),
             "crewai_metadata": {
                 "agents_used": [],
                 "collaboration_type": "fallback",
-                "assessment_timestamp": "",
+                "assessment_timestamp": datetime.now().isoformat(),
                 "error": str(e)
             }
         }
@@ -1509,7 +1518,7 @@ class ChangeReadinessCrewAI:
         # Initialize LLM
         self.llm = ChatOpenAI(
             openai_api_key=openai_api_key,
-            model_name="gpt-4",
+            model_name="gpt-4o-mini",
             temperature=0.7
         )
         
