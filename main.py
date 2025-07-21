@@ -1182,7 +1182,7 @@ def generate_ai_question(assessment_type: str, question_history: List[Dict], use
         logger.info(f"Context length: {len(conversation_context)} chars")
         
         response = openai_client.chat.completions.create(
-            model="gpt-4",
+            model="pt-4o-mini",
             messages=[
                 {
                     "role": "system",

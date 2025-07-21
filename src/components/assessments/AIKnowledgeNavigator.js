@@ -162,19 +162,30 @@ const AIKnowledgeNavigator = () => {
           sessionId: response.session_id,
           message: response.message,
           
-          // Sophisticated analysis results
-          overallScore: Math.round(overallScore * 20), // Convert to 0-100 scale for compatibility
-          maturityScores: maturityScores,
-          maturityLevel: Math.ceil(overallScore), // 1-5 scale
+          // Use the analysis data directly since it has the correct scores
+          overallScore: analysis.overall_score_percentage || Math.round(overallScore * 20),
+          maturityScores: analysis.maturity_scores || maturityScores,
+          maturityLevel: analysis.maturity_level || Math.ceil(overallScore),
           overallReadinessLevel: analysis.overall_readiness_level,
+          
+          // Extract basicInsights properly for frontend display
+          basicInsights: analysis.basicInsights || {
+            strengths: analysis.concept_analysis?.strengths || ["AI Understanding", "Learning Mindset"],
+            growthAreas: analysis.concept_analysis?.knowledge_gaps || ["Advanced Implementation", "Tool Integration"]
+          },
           
           // Rich analysis data
           conceptAnalysis: analysis.concept_analysis,
+          concept_analysis: analysis.concept_analysis, // Keep both for compatibility
           learningPath: analysis.learning_path,
           businessRecommendations: analysis.business_recommendations,
           confidenceAssessment: analysis.confidence_assessment,
           visualAnalytics: analysis.visual_analytics,
           nextSteps: analysis.next_steps,
+          
+          // CrewAI metadata for agent display
+          crewai_metadata: analysis.crewai_metadata,
+          agents_used: analysis.crewai_metadata?.agents_used || [],
           
           questionsAnswered: updatedAssessment.responses.length,
           completedAt: new Date().toISOString(),
@@ -408,6 +419,29 @@ const AIKnowledgeNavigator = () => {
         {/* Current Question */}
         {currentQuestion && (
           <div className="space-y-3 sm:space-y-4">
+            {/* Agent Info Banner (if available) */}
+            {currentQuestion.agent_name && (
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Brain className="w-4 h-4 text-blue-600" />
+                  <span className="font-medium text-blue-800 text-sm">
+                    {currentQuestion.agent_name} is asking:
+                  </span>
+                </div>
+                {currentQuestion.agent_focus && (
+                  <p className="text-xs text-blue-700 mb-1">
+                    Focus: {currentQuestion.agent_focus}
+                  </p>
+                )}
+                {currentQuestion.generated_by === 'crewai_agent' && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <Star className="w-3 h-3 text-amber-500" />
+                    <span className="text-xs text-amber-700">AI Agent Collaboration</span>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
               <h3 className="font-medium mb-2 text-sm sm:text-base" style={{ color: colors.charcoal }}>
                 {currentQuestion.question}
@@ -416,6 +450,14 @@ const AIKnowledgeNavigator = () => {
                 <p className="text-sm text-gray-600 mb-3">
                   {currentQuestion.context}
                 </p>
+              )}
+              {currentQuestion.rationale && (
+                <div className="mt-3 p-2 bg-blue-50 rounded border-l-4 border-blue-200">
+                  <p className="text-xs text-blue-700">
+                    <Lightbulb className="w-3 h-3 inline mr-1" />
+                    {currentQuestion.rationale}
+                  </p>
+                </div>
               )}
             </div>
             
@@ -527,6 +569,95 @@ const AIKnowledgeNavigator = () => {
           </div>
         </div>
       </div>
+
+      {/* CrewAI Analysis Results - Show when available */}
+      {results?.crewai_metadata && (
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 sm:p-6 md:p-8 shadow-sm border border-blue-200">
+          <div className="flex items-center gap-3 mb-4">
+            <Brain className="w-6 h-6 text-blue-600" />
+            <h3 className="text-xl sm:text-2xl font-bold" style={{ color: colors.charcoal }}>
+              AI Agent Collaboration Analysis
+            </h3>
+            <div className="flex items-center gap-1 ml-auto">
+              <Star className="w-4 h-4 text-amber-500" />
+              <span className="text-sm text-amber-700 font-medium">Multi-Agent Assessment</span>
+            </div>
+          </div>
+          
+          {/* Agent Summary */}
+          {results.agents_used && results.agents_used.length > 0 && (
+            <div className="mb-6">
+              <h4 className="font-semibold mb-3 text-blue-800">Specialized Agents Involved:</h4>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {results.agents_used.map((agent, index) => (
+                  <div key={index} className="bg-white rounded-lg p-3 border border-blue-100">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-800">
+                        {agent.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Key Insights from CrewAI */}
+          {results?.concept_analysis && (
+            <div className="space-y-4">
+              <h4 className="font-semibold text-blue-800">Agent Insights:</h4>
+              
+              {results.concept_analysis.detected_concepts && (
+                <div className="bg-white rounded-lg p-4">
+                  <h5 className="font-medium mb-2 text-green-700">✅ Concepts Detected</h5>
+                  <div className="flex flex-wrap gap-2">
+                    {results.concept_analysis.detected_concepts.map((concept, index) => (
+                      <span key={index} className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                        {concept}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {results.concept_analysis.knowledge_gaps && (
+                <div className="bg-white rounded-lg p-4">
+                  <h5 className="font-medium mb-2 text-orange-700">🎯 Areas for Development</h5>
+                  <div className="flex flex-wrap gap-2">
+                    {results.concept_analysis.knowledge_gaps.map((gap, index) => (
+                      <span key={index} className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs">
+                        {gap}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {results.concept_analysis.strengths && (
+                <div className="bg-white rounded-lg p-4">
+                  <h5 className="font-medium mb-2 text-blue-700">💪 Core Strengths</h5>
+                  <div className="flex flex-wrap gap-2">
+                    {results.concept_analysis.strengths.map((strength, index) => (
+                      <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                        {strength}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Agent Collaboration Info */}
+          <div className="mt-4 p-3 bg-blue-100 rounded-lg">
+            <p className="text-xs text-blue-700">
+              <MessageSquare className="w-3 h-3 inline mr-1" />
+              This assessment used real AI agent collaboration - multiple specialized agents worked together to analyze your responses and provide comprehensive insights.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Premium Features Preview */}
       {!user.isPremium && (

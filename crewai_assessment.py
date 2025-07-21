@@ -37,10 +37,14 @@ class AssessmentResponse:
 
 class AssessmentDataTool(BaseTool):
     name: str = "assessment_data_tool"
-    description: str = "Access and analyze assessment data including questions, user responses, and scoring criteria for AI knowledge assessment"
+    description: str = "Access assessment data - use sparingly, only when absolutely needed for analysis"
     
     def _run(self, query: str) -> str:
-        """Access AI literacy assessment questions and criteria"""
+        """Access AI literacy assessment questions and criteria - cached for efficiency"""
+        # Return simplified, cached data to prevent repeated tool usage
+        if hasattr(self, '_cached_data'):
+            return self._cached_data
+            
         questions_data = {
             'F1.1': {
                 'section': 'AI Fundamentals - Concepts',
@@ -104,19 +108,24 @@ class AssessmentDataTool(BaseTool):
             }
         }
         
-        if query in questions_data:
-            return json.dumps(questions_data[query], indent=2)
-        elif "all_questions" in query.lower():
-            return json.dumps(questions_data, indent=2)
-        else:
-            return f"Assessment framework for AI knowledge evaluation covering: {list(questions_data.keys())}"
+        # Cache the result to prevent repeated tool usage
+        self._cached_data = json.dumps(questions_data, indent=2)
+        return self._cached_data
 
 class ConceptExtractionTool(BaseTool):
     name: str = "concept_extraction_tool"
-    description: str = "Extract AI literacy concepts from user responses and match them to assessment criteria with confidence scoring"
+    description: str = "Extract concepts from responses - use only once per task to avoid loops"
     
     def _run(self, response_text: str, question_section: str = "") -> str:
-        """Extract and score AI concepts from user responses"""
+        """Extract and score AI concepts from user responses - optimized for single use"""
+        
+        # Prevent excessive tool usage by caching similar requests
+        cache_key = f"{response_text[:50]}_{question_section}"
+        if hasattr(self, '_concept_cache') and cache_key in self._concept_cache:
+            return self._concept_cache[cache_key]
+            
+        if not hasattr(self, '_concept_cache'):
+            self._concept_cache = {}
         
         # Advanced concept mappings for each section
         concept_mappings = {
@@ -182,7 +191,11 @@ class ConceptExtractionTool(BaseTool):
                     'section': question_section
                 })
         
-        return json.dumps(found_concepts, indent=2)
+        result = json.dumps(found_concepts, indent=2)
+        
+        # Cache the result to prevent repeated tool usage
+        self._concept_cache[cache_key] = result
+        return result
 
 class RAGRetrievalTool(BaseTool):
     name: str = "rag_retrieval_tool" 
@@ -474,6 +487,8 @@ def create_concept_analysis_task(question_history: List[Dict]):
         2. Score understanding level (1-5) for each section
         3. List 3 main strengths and 3 key gaps
         
+        IMPORTANT: Use tools only ONCE. Do not repeat tool usage.
+        
         Output format (JSON only):
         {{
             "concepts_detected": ["list of concepts"],
@@ -482,7 +497,7 @@ def create_concept_analysis_task(question_history: List[Dict]):
             "gaps": ["gap 1", "gap 2", "gap 3"]
         }}
         
-        Keep analysis concise and focused. Do not use tools repeatedly.
+        Keep analysis concise and focused. Use each tool ONLY ONCE.
         """,
         expected_output="JSON with concepts, scores, strengths, and gaps",
         agent=None
