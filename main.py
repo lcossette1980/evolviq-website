@@ -17,6 +17,7 @@ import logging
 from pathlib import Path
 import tempfile
 import os
+import openai
 
 # Import all ML frameworks
 from regression.enhanced_regression_framework import RegressionWorkflow, RegressionConfig
@@ -39,7 +40,14 @@ app = FastAPI(
 )
 
 # Configure CORS for React frontend
-cors_origins = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",") if os.getenv("CORS_ALLOWED_ORIGINS") != "*" else ["*"]
+cors_origins_env = os.getenv("CORS_ALLOWED_ORIGINS", "*")
+if cors_origins_env == "*":
+    cors_origins = ["*"]
+else:
+    cors_origins = cors_origins_env.split(",")
+    # Always allow localhost for development
+    if "http://localhost:3000" not in cors_origins:
+        cors_origins.append("http://localhost:3000")
 
 app.add_middleware(
     CORSMiddleware,
@@ -1011,6 +1019,207 @@ async def get_nlp_insights(session_id: str):
     except Exception as e:
         logger.error(f"Failed to get NLP insights: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================================================
+# ASSESSMENT ENDPOINTS
+# ============================================================================
+
+# Initialize OpenAI client
+try:
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    if openai_api_key:
+        openai.api_key = openai_api_key
+        logger.info("✅ OpenAI API key configured")
+    else:
+        logger.warning("⚠️ OPENAI_API_KEY not found - assessment features will be limited")
+except Exception as e:
+    logger.error(f"❌ OpenAI initialization failed: {e}")
+
+# Assessment data models
+class AssessmentStartRequest(BaseModel):
+    user_id: Optional[str] = None
+    assessment_type: str = Field(..., description="Type of assessment (ai_knowledge_navigator, change_readiness)")
+
+class AssessmentResponse(BaseModel):
+    question: str
+    options: Optional[List[str]] = None
+    question_id: str
+    progress: Dict[str, Any]
+
+class AssessmentAnswerRequest(BaseModel):
+    user_id: Optional[str] = None
+    assessment_type: str
+    question_id: str
+    answer: Any
+    session_data: Optional[Dict] = None
+
+@app.post("/api/ai-knowledge/start")
+async def start_ai_knowledge_assessment(request: AssessmentStartRequest):
+    """Start AI Knowledge Assessment."""
+    try:
+        logger.info(f"Starting AI Knowledge Assessment for user: {request.user_id}")
+        
+        # First question for AI Knowledge Assessment
+        first_question = {
+            "question": "How familiar are you with artificial intelligence concepts?",
+            "options": [
+                "Complete beginner - I've heard of AI but don't know much",
+                "Some knowledge - I understand basic concepts",
+                "Intermediate - I can discuss AI applications",
+                "Advanced - I understand technical details",
+                "Expert - I work with AI regularly"
+            ],
+            "question_id": "ai_familiarity_level",
+            "progress": {
+                "current_question": 1,
+                "total_questions": 20,
+                "category": "AI Fundamentals",
+                "percentage": 5
+            }
+        }
+        
+        return first_question
+        
+    except Exception as e:
+        logger.error(f"Failed to start AI Knowledge assessment: {e}")
+        raise HTTPException(status_code=500, detail=f"Assessment initialization failed: {str(e)}")
+
+@app.post("/api/ai-knowledge/respond")
+async def respond_ai_knowledge_assessment(request: AssessmentAnswerRequest):
+    """Process AI Knowledge Assessment response and get next question."""
+    try:
+        logger.info(f"Processing AI Knowledge response for question: {request.question_id}")
+        
+        # For demo purposes, return a sample next question
+        # In production, this would use OpenAI to generate dynamic questions
+        sample_questions = [
+            {
+                "question": "Which AI application would be most valuable for your business?",
+                "options": [
+                    "Customer service automation",
+                    "Data analysis and insights",
+                    "Process optimization",
+                    "Content creation",
+                    "Predictive analytics"
+                ],
+                "question_id": "business_ai_priority",
+                "progress": {
+                    "current_question": 2,
+                    "total_questions": 20,
+                    "category": "Business Application",
+                    "percentage": 10
+                }
+            },
+            {
+                "question": "What's your biggest concern about implementing AI?",
+                "options": [
+                    "Cost and ROI uncertainty",
+                    "Technical complexity",
+                    "Data privacy and security",
+                    "Employee job displacement",
+                    "Lack of expertise"
+                ],
+                "question_id": "ai_concerns",
+                "progress": {
+                    "current_question": 3,
+                    "total_questions": 20,
+                    "category": "Implementation Challenges",
+                    "percentage": 15
+                }
+            }
+        ]
+        
+        # Simple logic to return next question (in production, use AI)
+        question_index = hash(request.question_id) % len(sample_questions)
+        next_question = sample_questions[question_index]
+        
+        return next_question
+        
+    except Exception as e:
+        logger.error(f"Failed to process AI Knowledge response: {e}")
+        raise HTTPException(status_code=500, detail=f"Response processing failed: {str(e)}")
+
+@app.post("/api/change-readiness/start")
+async def start_change_readiness_assessment(request: AssessmentStartRequest):
+    """Start Change Readiness Assessment."""
+    try:
+        logger.info(f"Starting Change Readiness Assessment for user: {request.user_id}")
+        
+        first_question = {
+            "question": "How would you describe your organization's current approach to change?",
+            "options": [
+                "We resist change and prefer stability",
+                "We're cautious but open to necessary changes",
+                "We adapt to change when required",
+                "We actively seek and embrace change",
+                "We're change leaders in our industry"
+            ],
+            "question_id": "change_approach",
+            "progress": {
+                "current_question": 1,
+                "total_questions": 15,
+                "category": "Organizational Culture",
+                "percentage": 7
+            }
+        }
+        
+        return first_question
+        
+    except Exception as e:
+        logger.error(f"Failed to start Change Readiness assessment: {e}")
+        raise HTTPException(status_code=500, detail=f"Assessment initialization failed: {str(e)}")
+
+@app.post("/api/change-readiness/respond")
+async def respond_change_readiness_assessment(request: AssessmentAnswerRequest):
+    """Process Change Readiness Assessment response and get next question."""
+    try:
+        logger.info(f"Processing Change Readiness response for question: {request.question_id}")
+        
+        sample_questions = [
+            {
+                "question": "How does leadership typically communicate change initiatives?",
+                "options": [
+                    "Top-down announcements with little explanation",
+                    "Formal communications with basic rationale",
+                    "Regular updates with clear reasoning",
+                    "Transparent dialogue with stakeholder input",
+                    "Collaborative planning with full transparency"
+                ],
+                "question_id": "leadership_communication",
+                "progress": {
+                    "current_question": 2,
+                    "total_questions": 15,
+                    "category": "Leadership & Communication",
+                    "percentage": 13
+                }
+            },
+            {
+                "question": "What resources does your organization typically allocate for change initiatives?",
+                "options": [
+                    "Minimal resources - changes must be self-funded",
+                    "Basic resources - limited budget and time",
+                    "Adequate resources - reasonable support provided",
+                    "Strong resources - dedicated budget and team",
+                    "Comprehensive resources - full organizational support"
+                ],
+                "question_id": "change_resources",
+                "progress": {
+                    "current_question": 3,
+                    "total_questions": 15,
+                    "category": "Resources & Support",
+                    "percentage": 20
+                }
+            }
+        ]
+        
+        question_index = hash(request.question_id) % len(sample_questions)
+        next_question = sample_questions[question_index]
+        
+        return next_question
+        
+    except Exception as e:
+        logger.error(f"Failed to process Change Readiness response: {e}")
+        raise HTTPException(status_code=500, detail=f"Response processing failed: {str(e)}")
 
 # Error handlers
 @app.exception_handler(404)
