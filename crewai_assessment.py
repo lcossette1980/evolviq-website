@@ -1199,6 +1199,20 @@ def extract_crewai_results_for_api(crewai_output: Dict) -> Dict:
                 ]
             },
             
+            # Required fields for Firebase compatibility (prevent undefined errors)
+            "visual_analytics": {
+                "readiness_score": overall_score,
+                "confidence_level": min(0.9, overall_score / 5.0),
+                "assessment_completion": 100,
+                "score_distribution": maturity_scores
+            },
+            
+            "next_steps": [
+                "Begin with foundational AI education" if overall_score < 3.0 else "Start implementing AI tools",
+                "Focus on " + (growth_areas[0] if growth_areas else "skill development"),
+                "Consider " + ("basic training programs" if overall_score < 3.5 else "advanced implementation strategies")
+            ],
+            
             # For frontend compatibility
             "basicInsights": {
                 "strengths": strengths,
@@ -1254,6 +1268,17 @@ def extract_crewai_results_for_api(crewai_output: Dict) -> Dict:
                 "identified_risks": ["knowledge gaps"],
                 "mitigation_strategies": ["structured learning"]
             },
+            "visual_analytics": {
+                "readiness_score": 3.0,
+                "confidence_level": 0.6,
+                "assessment_completion": 100,
+                "score_distribution": {"F1.1": 3.0, "F1.2": 3.0, "P2.1": 3.0, "P2.2": 3.0, "E3.1": 3.0}
+            },
+            "next_steps": [
+                "Begin with foundational AI education",
+                "Focus on basic understanding",
+                "Consider structured learning programs"
+            ],
             "basicInsights": {
                 "strengths": ["Learning mindset", "Business focus"],
                 "growthAreas": ["Technical implementation", "Advanced AI techniques"]
