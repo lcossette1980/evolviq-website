@@ -1,5 +1,6 @@
 # AI Readiness Assessment System - True CrewAI Implementation
 # This implements the sophisticated agentic framework using real CrewAI agents
+# Railway deployment fix - force file update
 
 import json
 import os
