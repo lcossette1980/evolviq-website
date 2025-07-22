@@ -285,8 +285,17 @@ const ChangeReadinessAssessment = () => {
           console.log(`Generated ${actionItems.length} action items`);
         }
       } else {
-        // Continue with next agent
-        setCurrentAgent(response.nextAgent);
+        // Continue with next agent - transform backend response like in startAssessment
+        const nextAgent = {
+          id: response.section || 'leadership_support',
+          name: getSectionName(response.section || 'leadership_support'),
+          role: getSectionRole(response.section || 'leadership_support'),
+          question: response.question,
+          context: response.rationale,
+          sessionId: response.session_id,
+          questionId: response.question_id
+        };
+        setCurrentAgent(nextAgent);
       }
 
       // Save progress
