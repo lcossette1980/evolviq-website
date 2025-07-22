@@ -13,8 +13,22 @@ import {
   Card, 
   Button 
 } from './StandardComponents';
+import { useScrollToTop } from '../../utils/scrollUtils';
+
+// Color palette for consistent styling
+const colors = {
+  charcoal: '#2A2A2A',
+  chestnut: '#A44A3F',
+  khaki: '#A59E8C',
+  pearl: '#D7CEB2',
+  bone: '#F5F2EA',
+  navy: '#2C3E50'
+};
 
 const AIUseCaseROIToolkit = () => {
+  // Scroll to top when component mounts
+  useScrollToTop();
+  
   const guideId = 'AIUseCaseROIToolkit';
   const initialFormData = {
     useCases: [
