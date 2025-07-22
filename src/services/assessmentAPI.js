@@ -256,9 +256,6 @@ class AssessmentAPI {
         session_data: responseData.sessionData || {}
       };
       
-      console.log('🌐 Sending assessment response payload:', payload);
-      console.log('🔑 Session data being sent:', payload.session_data);
-      
       // Call backend to process response using centralized config
       const response = await this.makeAPICall(API_CONFIG.ENDPOINTS.ASSESSMENTS.CHANGE_READINESS_RESPOND, 'POST', payload);
 
@@ -790,17 +787,35 @@ class AssessmentAPI {
       } else {
         rawOutput = results.raw_crewai_output || results.crewai_results || '';
       }
-      console.log('🔍 Parsing CrewAI raw output length:', rawOutput.length);
-      console.log('🔍 Raw output preview:', rawOutput.substring(0, 200));
       
       if (typeof rawOutput === 'string' && rawOutput.length > 100) {
-        // Extract strategic initiatives using pattern matching
-        const initiativeMatches = rawOutput.match(/\*\*Initiative:\*\*([^\n]+)[\s\S]*?\*\*Objective:\*\*([^\n]+)[\s\S]*?\*\*Timeline:\*\*([^\n]+)/gi);
+        // Extract strategic initiatives using multiple patterns for different formats
         
-        if (initiativeMatches) {
-          console.log(`🎯 Found ${initiativeMatches.length} strategic initiatives`);
-          
-          initiativeMatches.forEach((match, index) => {
+        // Pattern 1: New CrewAI format - Initiative Prioritization Matrix
+        const matrixMatches = rawOutput.match(/\*\*(\d+\..*?Initiative.*?)\*\*[\s\S]*?(?=\*\*\d+\.|$)/gi);
+        if (matrixMatches) {
+          matrixMatches.forEach((match, index) => {
+            const titleMatch = match.match(/\*\*(\d+\.\s*(.+?))\*\*/i);
+            const descriptionMatch = match.match(/\*\*\d+\..*?\*\*([\s\S]*?)(?=\n\n|$)/i);
+            
+            if (titleMatch && titleMatch[2]) {
+              strategicInitiatives.push({
+                title: titleMatch[2].trim(),
+                description: this.cleanDescription(descriptionMatch ? descriptionMatch[1].trim() : titleMatch[2]),
+                timeline: this.extractTimelineFromText(match),
+                category: this.categorizeInitiative(titleMatch[2]),
+                priority: index < 2 ? 'high' : 'medium',
+                estimatedHours: this.estimateHoursFromDescription(match),
+                phase: `Phase ${index + 1}`
+              });
+            }
+          });
+        }
+
+        // Pattern 2: Original format for backwards compatibility
+        const legacyMatches = rawOutput.match(/\*\*Initiative:\*\*([^\n]+)[\s\S]*?\*\*Objective:\*\*([^\n]+)[\s\S]*?\*\*Timeline:\*\*([^\n]+)/gi);
+        if (legacyMatches) {
+          legacyMatches.forEach((match, index) => {
             const titleMatch = match.match(/\*\*Initiative:\*\*\s*(.+?)\n/i);
             const objectiveMatch = match.match(/\*\*Objective:\*\*\s*(.+?)\n/i);
             const timelineMatch = match.match(/\*\*Timeline:\*\*\s*(.+?)\n/i);
@@ -818,12 +833,32 @@ class AssessmentAPI {
             }
           });
         }
+
+        // Pattern 3: General strategic content extraction
+        const strategicSections = rawOutput.match(/\*\*([^*\n]+)\*\*\n([^*]+?)(?=\n\*\*|\n\n|$)/gi);
+        if (strategicSections && strategicInitiatives.length === 0) {
+          strategicSections.slice(0, 5).forEach((match, index) => {
+            const titleMatch = match.match(/\*\*([^*\n]+)\*\*/i);
+            const contentMatch = match.match(/\*\*[^*\n]+\*\*\n(.+)/si);
+            
+            if (titleMatch && contentMatch && titleMatch[1].length > 10) {
+              strategicInitiatives.push({
+                title: titleMatch[1].trim(),
+                description: this.cleanDescription(contentMatch[1].trim()),
+                timeline: this.extractTimelineFromText(match),
+                category: 'strategic',
+                priority: index < 3 ? 'high' : 'medium',
+                estimatedHours: this.estimateHoursFromDescription(contentMatch[1]),
+                phase: `Initiative ${index + 1}`
+              });
+            }
+          });
+        }
         
         // Extract governance and process recommendations
         const governanceMatches = rawOutput.match(/(governance|oversight|committee|framework)[\s\S]*?(?=\n\n|$)/gi);
         
         if (governanceMatches) {
-          console.log(`🏛️ Found ${governanceMatches.length} governance recommendations`);
           
           governanceMatches.slice(0, 3).forEach((match, index) => {
             governanceActions.push({
@@ -839,7 +874,6 @@ class AssessmentAPI {
         const capabilityMatches = rawOutput.match(/(capability building|training|skills development)[\s\S]*?(?=\n\n|$)/gi);
         
         if (capabilityMatches) {
-          console.log(`📚 Found ${capabilityMatches.length} learning recommendations`);
           
           capabilityMatches.slice(0, 3).forEach((match, index) => {
             learningRecommendations.push({
@@ -867,7 +901,6 @@ class AssessmentAPI {
         });
       }
       
-      console.log(`✅ Parsed: ${strategicInitiatives.length} initiatives, ${governanceActions.length} governance, ${learningRecommendations.length} learning`);
       
     } catch (error) {
       console.warn('❌ Error parsing CrewAI recommendations:', error);
@@ -1017,6 +1050,26 @@ class AssessmentAPI {
     return firstSentence || 'Learning Initiative';
   }
   
+  extractTimelineFromText(text) {
+    // Look for timeline patterns in the text
+    const timelinePatterns = [
+      /(\d+[-–]\d+)\s*months?/i,
+      /(\d+)\s*months?/i,
+      /(immediate|short[- ]term|medium[- ]term|long[- ]term)/i,
+      /(\d+[-–]\d+)\s*weeks?/i,
+      /(Q[1-4]|quarter [1-4])/i
+    ];
+    
+    for (const pattern of timelinePatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        return match[1] || match[0];
+      }
+    }
+    
+    return '6-12 months';
+  }
+
   cleanDescription(text) {
     return text.replace(/\*\*/g, '').replace(/\n+/g, ' ').trim();
   }

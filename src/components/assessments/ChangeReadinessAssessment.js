@@ -175,8 +175,6 @@ const ChangeReadinessAssessment = () => {
       
       // Transform the backend response to match frontend expectations
       const responseData = response.data || response;
-      console.log('🚀 Assessment started with response:', responseData);
-      console.log('🔑 Session ID received:', responseData.session_id);
       
       const mockAgent = {
         id: responseData.section || 'leadership_support',
@@ -197,9 +195,6 @@ const ChangeReadinessAssessment = () => {
         currentAgentIndex: 0,
         sessionData: { session_id: responseData.session_id }
       }));
-      
-      console.log('✅ Assessment initialized with agent:', mockAgent);
-      console.log('✅ Session data set:', { session_id: responseData.session_id });
     } catch (error) {
       console.error('Error starting assessment:', error);
     } finally {
@@ -236,10 +231,6 @@ const ChangeReadinessAssessment = () => {
     setIsLoading(true);
     try {
       const sessionId = assessment.sessionData?.session_id || currentAgent.sessionId;
-      console.log('📝 Submitting response with session ID:', sessionId);
-      console.log('🔍 Assessment sessionData:', assessment.sessionData);
-      console.log('🔍 Current agent sessionId:', currentAgent.sessionId);
-      console.log('🔍 Question ID:', currentAgent.questionId);
       
       if (!sessionId) {
         throw new Error('No session ID available. Assessment session may have been lost.');
@@ -948,74 +939,19 @@ const ChangeReadinessAssessment = () => {
           Expert Recommendations
         </h2>
         
-        {/* Show agent-specific recommendations if available */}
-        {agents.some(agent => assessment.agentAnalysis[agent.id]) ? 
-          agents.map((agent, index) => {
-            const analysis = assessment.agentAnalysis[agent.id];
-            const Icon = agent.icon;
-            
-            if (!analysis) return null;
-          
-          return (
-            <div key={agent.id} className="bg-white rounded-xl p-6 shadow-sm">
-              <div className="flex items-center mb-4">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-4 ${agent.color}`}>
-                  <Icon className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg" style={{ color: colors.charcoal }}>
-                    {agent.name}
-                  </h3>
-                  <p className="text-sm" style={{ color: colors.khaki }}>
-                    {agent.role}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium mb-2">Key Findings</h4>
-                  <ul className="space-y-1 text-sm">
-                    {analysis.findings?.map((finding, idx) => (
-                      <li key={idx} className="flex items-start">
-                        <CheckCircle className="w-4 h-4 text-green-600 mr-2 mt-0.5" />
-                        {finding}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium mb-2">Recommendations</h4>
-                  <ul className="space-y-1 text-sm">
-                    {analysis.recommendations?.map((rec, idx) => (
-                      <li key={idx} className="flex items-start">
-                        <Lightbulb className="w-4 h-4 text-yellow-600 mr-2 mt-0.5" />
-                        {rec}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          );
-        }) : 
-        /* Enhanced CrewAI Analysis Display */
-        results ? renderEnhancedCrewAIResults(results) : (
+        {/* Enhanced CrewAI Analysis Display - Always prioritize rich CrewAI insights */}
+        {results ? renderEnhancedCrewAIResults(results) : (
           <div className="bg-white rounded-xl p-6 shadow-sm">
-            <h3 className="font-bold text-lg mb-4" style={{ color: colors.charcoal }}>
-              Assessment Recommendations
-            </h3>
-            <div className="space-y-3">
-              {results?.displayRecommendations?.map((rec, index) => (
-                <div key={index} className="flex items-start space-x-3">
-                  <Lightbulb className="w-5 h-5 text-yellow-600 mt-1 flex-shrink-0" />
-                  <p className="text-sm">{typeof rec === 'string' ? rec : rec.description || rec.title}</p>
-                </div>
-              ))}
-              {(!results?.displayRecommendations || results.displayRecommendations.length === 0) && (
-                <p className="text-sm text-gray-600">No specific recommendations available at this time.</p>
-              )}
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <RefreshCw className="w-8 h-8 text-blue-500 mx-auto mb-3 animate-spin" />
+                <h3 className="text-lg font-semibold mb-2" style={{ color: colors.charcoal }}>
+                  Generating Strategic Analysis
+                </h3>
+                <p className="text-gray-600">
+                  Our AI agents are analyzing your responses to create personalized recommendations...
+                </p>
+              </div>
             </div>
           </div>
         )}
