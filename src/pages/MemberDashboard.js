@@ -1527,7 +1527,14 @@ const MemberDashboard = () => {
                               {item.title}
                             </span>
                             {item.description && (
-                              <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                              <p className="text-sm text-gray-600 mt-1">
+                                {typeof item.description === 'string' 
+                                  ? item.description 
+                                  : typeof item.description === 'object' && item.description.title
+                                    ? `${item.description.title}${item.description.cost ? ` (${item.description.cost})` : ''}${item.description.duration ? ` - ${item.description.duration}` : ''}`
+                                    : JSON.stringify(item.description)
+                                }
+                              </p>
                             )}
                             
                             {/* Metadata */}

@@ -4,113 +4,116 @@
 export const PREMIUM_PRICING = {
   monthly: {
     id: 'monthly',
-    name: 'Monthly Premium',
-    price: 97,
+    name: 'Premium',
+    price: 47,
     billing: 'per month',
-    displayPrice: '$97',
+    displayPrice: '$47',
     badge: 'Most Popular',
     billingCycle: 'monthly'
   },
   annual: {
     id: 'annual', 
     name: 'Annual Premium',
-    price: 777,
+    price: 470,
     billing: 'per year',
-    displayPrice: '$777',
+    displayPrice: '$470',
     badge: 'Best Value',
-    savings: 'Save $387/year',
+    savings: 'Save $94/year (2 months free)',
     billingCycle: 'annual'
   },
-  enterprise: {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: 'Custom',
-    billing: 'contact sales',
-    displayPrice: 'Custom',
-    badge: 'Enterprise'
+  business: {
+    id: 'business',
+    name: 'Business',
+    price: 147,
+    billing: 'per month',
+    displayPrice: '$147',
+    badge: 'Growing Teams'
   }
 };
 
 export const PREMIUM_FEATURES = {
   core: [
-    'Access to all implementation guides',
-    'Advanced assessment tools', 
-    'Exclusive video training library',
+    'All intelligent AI assessments with AI agents',
+    'Unlimited interactive ML tool access',
+    'Complete implementation guides and playbooks',
     'Priority email support',
-    'Downloadable templates & frameworks'
+    'Sector-specific recommendations'
   ],
   monthly: [
-    'Access to all implementation guides',
-    'Advanced assessment tools',
-    'Exclusive video training library', 
+    'All intelligent assessments with AI agents',
+    'Unlimited interactive ML tool access',
+    'Complete implementation guides and playbooks',
+    'Automatic action item generation',
+    'Progress tracking and analytics',
     'Priority email support',
-    'Monthly strategy sessions',
-    'Downloadable templates & frameworks'
+    'Sector-specific recommendations',
+    'Export all your data and insights'
   ],
   annual: [
-    'Everything in Monthly Premium',
-    'Quarterly 1-on-1 strategy calls',
-    'Custom AI implementation roadmap',
-    'White-label presentation templates',
-    'Advanced ROI modeling tools',
-    'Private Slack community access'
+    'Everything in Premium',
+    '3-day free trial',
+    '2 months free (equivalent to $94 savings)',
+    'Priority implementation support',
+    'Advanced progress analytics',
+    'Custom assessment schedules'
   ],
-  enterprise: [
-    'Everything in Annual Premium',
-    'Custom assessments',
-    'Dedicated success manager',
-    'White-label solutions',
-    'API access',
-    'Custom integrations'
+  business: [
+    'Everything in Premium',
+    'Team collaboration features',
+    'Multiple user accounts (up to 10)',
+    'Advanced analytics dashboard',
+    'Priority phone support',
+    'Team progress reporting',
+    'Dedicated success manager'
   ]
 };
 
 export const PREMIUM_BENEFITS = [
   {
-    title: 'Complete Implementation Guides',
-    description: 'Step-by-step playbooks for AI transformation',
+    title: 'Intelligent AI Assessments',
+    description: 'Multi-agent AI assessments that provide personalized recommendations',
     icon: 'Crown'
   },
   {
-    title: 'Assessment Tools',
-    description: 'Evaluate readiness and identify opportunities', 
+    title: 'Interactive ML Tools',
+    description: 'Hands-on tools to explore AI capabilities for your business', 
     icon: 'CheckCircle'
   },
   {
-    title: 'Expert Support',
-    description: 'Direct access to AI implementation experts',
+    title: 'Action-Oriented Results',
+    description: 'Every assessment generates specific, actionable next steps',
     icon: 'Star'
   }
 ];
 
 export const PREMIUM_MESSAGING = {
   paywall: {
-    title: 'Premium Content',
-    subtitle: 'Unlock Advanced AI Implementation Resources',
-    description: 'Access exclusive guides, assessments, and expert support to accelerate your AI transformation.'
+    title: 'Premium Membership Required',
+    subtitle: 'Unlock Complete AI Transformation Tools',
+    description: 'Access intelligent assessments, interactive tools, and implementation guides designed for small businesses.'
   },
   upgrade: {
-    title: 'Upgrade to Premium',
-    subtitle: 'Accelerate Your AI Journey',
-    description: 'Join thousands of executives who\'ve successfully implemented AI with our proven frameworks.'
+    title: 'Start Your 3-Day Free Trial',
+    subtitle: 'Transform Your Business with AI',
+    description: 'Join thousands of small businesses already using AI to work smarter, not harder.'
   },
   benefits: {
     title: 'What You\'ll Get with Premium',
-    description: 'Comprehensive resources and expert guidance for successful AI implementation.'
+    description: 'Complete AI transformation toolkit designed specifically for small businesses and nonprofits.'
   }
 };
 
 export const PREMIUM_CTA = {
-  primary: 'Start Premium Access',
+  primary: 'Start 3-Day Free Trial',
   secondary: 'Upgrade to Premium', 
-  trial: 'Start Premium Trial',
+  trial: 'Start Free Trial',
   login: 'Sign In to Continue',
   maybe_later: 'Maybe Later',
   contact_sales: 'Contact Sales'
 };
 
 export const PREMIUM_GUARANTEES = [
-  '30-day money-back guarantee',
+  '3-day free trial',
   'Cancel anytime', 
   'Secure payment',
   'No setup fees'

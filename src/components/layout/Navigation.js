@@ -14,6 +14,7 @@ const Navigation = () => {
   const navItems = [
     { id: 'home', label: 'Home', path: '/' },
     { id: 'about', label: 'About', path: '/about' },
+    { id: 'why-ai-now', label: 'Why AI Now', path: '/why-ai-now' },
     { id: 'services', label: 'Services', path: '/services' },
     { id: 'projects', label: 'Projects', path: '/projects' },
     { id: 'blog', label: 'Blog', path: '/blog' },

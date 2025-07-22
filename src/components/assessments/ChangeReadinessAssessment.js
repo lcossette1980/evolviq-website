@@ -168,19 +168,55 @@ const ChangeReadinessAssessment = () => {
         organizationData,
         projectData
       );
-      setCurrentAgent(response.currentAgent);
+      
+      // Transform the backend response to match frontend expectations
+      const mockAgent = {
+        id: response.section || 'leadership_support',
+        name: getSectionName(response.section || 'leadership_support'),
+        role: getSectionRole(response.section || 'leadership_support'),
+        question: response.question,
+        context: response.rationale,
+        sessionId: response.session_id,
+        questionId: response.question_id
+      };
+      
+      setCurrentAgent(mockAgent);
       setCurrentStep('assessment');
       setAssessment(prev => ({
         ...prev,
         responses: [],
         agentAnalysis: {},
-        currentAgentIndex: 0
+        currentAgentIndex: 0,
+        sessionData: { session_id: response.session_id }
       }));
     } catch (error) {
       console.error('Error starting assessment:', error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Helper functions to get section display names and roles
+  const getSectionName = (section) => {
+    const names = {
+      leadership_support: 'Executive Sponsor',
+      team_capability: 'Team Readiness Expert',
+      change_history: 'Change Management Specialist',
+      resource_allocation: 'Resource Planning Analyst',
+      communication_culture: 'Communication Strategist'
+    };
+    return names[section] || 'Assessment Agent';
+  };
+
+  const getSectionRole = (section) => {
+    const roles = {
+      leadership_support: 'Evaluating leadership commitment and executive sponsorship',
+      team_capability: 'Assessing team skills and readiness for change',
+      change_history: 'Analyzing past change management experience',
+      resource_allocation: 'Reviewing available resources and capacity',
+      communication_culture: 'Examining communication and stakeholder engagement'
+    };
+    return roles[section] || 'Conducting change readiness assessment';
   };
 
   const submitResponse = async () => {
@@ -194,7 +230,8 @@ const ChangeReadinessAssessment = () => {
           agent: currentAgent,
           response: userResponse,
           organizationData,
-          projectData
+          projectData,
+          session_id: assessment.sessionData?.session_id || currentAgent.sessionId
         }
       );
 

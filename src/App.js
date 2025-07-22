@@ -25,6 +25,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import CookiePolicy from './pages/CookiePolicy';
 import ServiceIntake from './pages/ServiceIntake';
+import WhyAINow from './pages/WhyAINow';
 import AIImplementationPlaybook from './components/guides/ai-implementation-playbook.tsx';
 import AIReadinessAssessment from './components/guides/ai-readiness-assessment.tsx';
 import AIUseCaseROIToolkit from './components/guides/ai-use-case-roi-toolkit.tsx';
@@ -52,6 +53,7 @@ const AppContent = () => {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/why-ai-now" element={<WhyAINow />} />
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/blog" element={<BlogPage />} />

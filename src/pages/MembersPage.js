@@ -92,96 +92,96 @@ const MembersPage = () => {
 
   const features = [
     {
-      icon: <Target className="w-8 h-8" />,
-      title: "AI Assessments",
-      description: "Comprehensive multi-agent assessments that evaluate your AI knowledge and organizational readiness",
+      icon: <Brain className="w-8 h-8" />,
+      title: "Intelligent AI Assessments",
+      description: "Multi-agent AI assessments that understand you and provide personalized recommendations",
       details: [
-        "AI Knowledge Navigator with personalized learning paths",
-        "Change Readiness Assessment with expert agent analysis",
-        "Project-specific assessment tracking",
-        "Progress monitoring and recommendations"
+        "AI Knowledge Navigator with custom learning paths",
+        "Change Readiness Assessment for your team",
+        "Sector-specific recommendations and use cases",
+        "Real-time progress tracking and insights"
+      ]
+    },
+    {
+      icon: <Zap className="w-8 h-8" />,
+      title: "Interactive AI Tools",
+      description: "Hands-on tools to explore and understand AI capabilities for your business",
+      details: [
+        "Linear Regression Explorer for sales forecasting",
+        "Classification tools for customer segmentation", 
+        "Clustering analysis for market insights",
+        "NLP tools for customer feedback analysis"
       ]
     },
     {
       icon: <BookOpen className="w-8 h-8" />,
       title: "Implementation Guides",
-      description: "Step-by-step guides created by AI experts to help you successfully implement AI solutions",
+      description: "Step-by-step guides designed for small businesses to implement AI successfully",
       details: [
-        "AI Implementation Playbook",
-        "AI Readiness Assessment Guide",
-        "AI Use Case ROI Toolkit",
-        "AI Strategy Starter Kit"
+        "AI Implementation Playbook for your industry",
+        "Right-sized strategies for small teams",
+        "Budget-conscious implementation plans",
+        "ROI tracking and measurement tools"
       ]
     },
     {
-      icon: <BarChart3 className="w-8 h-8" />,
-      title: "Project Management",
-      description: "Organize multiple AI projects with comprehensive tracking and analytics",
+      icon: <Target className="w-8 h-8" />,
+      title: "Action-Oriented Results",
+      description: "Every assessment generates specific, actionable next steps tailored to your business",
       details: [
-        "Multi-project dashboard",
-        "Assessment history and progress tracking",
-        "Action item management",
-        "Timeline and milestone tracking"
+        "Prioritized action item lists",
+        "Timeline and resource estimates",
+        "Quick wins and long-term strategies",
+        "Implementation difficulty ratings"
       ]
     },
     {
       icon: <Users className="w-8 h-8" />,
-      title: "Expert Support",
-      description: "Access to AI implementation experts and community support",
+      title: "Small Business Focus",
+      description: "All tools and resources designed for small businesses, nonprofits, and service organizations",
       details: [
-        "Priority support channels",
-        "Expert consultation access",
-        "Community forum participation",
-        "Regular office hours and Q&A"
-      ]
-    },
-    {
-      icon: <Zap className="w-8 h-8" />,
-      title: "AI-Powered Tools",
-      description: "Cutting-edge AI tools to accelerate your implementation journey",
-      details: [
-        "Agentic assessment systems",
-        "Personalized recommendation engine",
-        "ROI calculators and planning tools",
-        "Custom analysis and reporting"
+        "Right-sized for small teams and budgets",
+        "Industry-specific examples and case studies",
+        "Affordable implementation strategies",
+        "Community of like-minded business owners"
       ]
     },
     {
       icon: <Shield className="w-8 h-8" />,
-      title: "Data Security",
-      description: "Enterprise-grade security and privacy for all your AI project data",
+      title: "Simple & Secure",
+      description: "Easy-to-use platform with enterprise-grade security that doesn't require technical expertise",
       details: [
-        "End-to-end encryption",
-        "SOC 2 compliance",
-        "Data export capabilities",
-        "Privacy-first approach"
+        "No technical background required",
+        "Secure data handling and privacy",
+        "Export your data anytime",
+        "Mobile-friendly tools and assessments"
       ]
     }
   ];
 
   const testimonials = [
     {
-      name: "Sarah Johnson",
-      role: "CTO, TechCorp",
-      company: "TechCorp",
-      image: "/images/testimonials/sarah-johnson.jpg",
-      quote: "The Change Readiness Assessment gave us incredible insights into our organization's AI readiness. The multi-agent approach provided perspectives we never considered.",
+      name: "Maria Santos",
+      role: "Executive Director",
+      company: "Community Food Bank",
+      image: "/images/testimonials/maria-santos.jpg",
+      quote: "The AI Assessment showed us exactly where to start with our limited resources. We've doubled our volunteer coordination efficiency without adding staff.",
       rating: 5
     },
     {
-      name: "Michael Chen",
-      role: "AI Strategy Lead",
-      company: "InnovateCo",
-      image: "/images/testimonials/michael-chen.jpg",
-      quote: "EvolvIQ's implementation guides saved us months of planning. The step-by-step approach made our AI rollout smooth and successful. I am truly grateful for the support.",
+      name: "David Kim",
+      role: "Owner",
+      company: "Kim's Hardware Store",
+      image: "/images/testimonials/david-kim.jpg",
+      quote: "As a small business owner, I thought AI was too complex for us. EvolvIQ's tools made it simple and affordable. Our inventory management is now automated and our sales have increased 25%.",
       rating: 5
     },
     {
-      name: "Lisa Rodriguez",
-      role: "Operations Director",
-      company: "ServicePro",
-      image: "/images/testimonials/lisa-rodriguez.jpg",
-      quote: "The project management features helped us track multiple AI initiatives simultaneously. The insights from assessments directly fed into our action plans.",
+      name: "Jennifer Walsh",
+      role: "Practice Manager",
+      company: "Riverside Family Medicine",
+      image: "/images/testimonials/jennifer-walsh.jpg",
+      quote: "The step-by-step approach helped our small medical practice implement AI scheduling and documentation. Our doctors now spend 2 more hours per day with patients.",
       rating: 5
     }
   ];
@@ -191,55 +191,55 @@ const MembersPage = () => {
       name: "Free",
       price: "$0",
       period: "forever",
-      description: "Perfect for exploring AI basics",
+      description: "Perfect for exploring AI basics and getting started",
       features: [
-        "AI Knowledge Navigator (basic)",
-        "1 project",
-        "Basic guides access",
-        "Community support"
+        "AI Knowledge Navigator assessment",
+        "5 Interactive ML tool explorations per month",
+        "Basic implementation guides",
+        "Community support and resources"
       ],
       limitations: [
         "No Change Readiness Assessment",
-        "Limited guide features",
-        "No priority support",
-        "No team features"
+        "Limited interactive tool usage",
+        "No action item generation",
+        "No progress tracking"
       ],
-      cta: "Get Started Free",
+      cta: "Start Free Today",
       popular: false
     },
     {
       name: "Premium",
-      price: "$97",
+      price: "$47",
       period: "month",
-      description: "Complete AI implementation toolkit",
+      description: "Complete AI transformation toolkit for small businesses",
       features: [
-        "All assessments including Change Readiness",
-        "Unlimited projects",
-        "Complete implementation guides",
-        "Multi-agent assessment system",
-        "Action item management",
+        "All intelligent assessments with AI agents",
+        "Unlimited interactive ML tool access",
+        "Complete implementation guides and playbooks",
+        "Automatic action item generation",
         "Progress tracking and analytics",
-        "Priority support",
-        "Team collaboration features"
+        "Priority email support",
+        "Sector-specific recommendations",
+        "Export all your data and insights"
       ],
       limitations: [],
-      cta: "Start Premium Trial",
+      cta: "Start 3-Day Free Trial",
       popular: true
     },
     {
-      name: "Enterprise",
-      price: "Custom",
-      period: "contact us",
-      description: "Tailored solutions for large organizations",
+      name: "Business",
+      price: "$147",
+      period: "month",
+      description: "Everything for growing teams and multiple locations",
       features: [
         "Everything in Premium",
-        "Custom assessments",
-        "Dedicated success manager",
-        "White-label options",
-        "Advanced analytics",
-        "API access",
-        "Custom integrations",
-        "On-premise deployment"
+        "Team collaboration features",
+        "Multiple user accounts (up to 10)",
+        "Advanced analytics dashboard",
+        "Priority phone support",
+        "Custom assessment schedules",
+        "Team progress reporting",
+        "Dedicated success manager"
       ],
       limitations: [],
       cta: "Contact Sales",
@@ -248,10 +248,10 @@ const MembersPage = () => {
   ];
 
   const stats = [
-    { number: "10,000+", label: "AI Projects Launched" },
-    { number: "95%", label: "Success Rate" },
-    { number: "50+", label: "Industry Experts" },
-    { number: "24/7", label: "Support Available" }
+    { number: "2,500+", label: "Small Businesses Served" },
+    { number: "87%", label: "See ROI Within 6 Months" },
+    { number: "45%", label: "Average Cost Reduction" },
+    { number: "2.5x", label: "Productivity Increase" }
   ];
 
   const renderHeroSection = () => (
@@ -264,14 +264,14 @@ const MembersPage = () => {
           </span>
         </div>
         <h1 className="text-5xl font-bold mb-6" style={{ color: colors.charcoal }}>
-          Master AI Implementation with
+          AI Tools & Resources for
           <span className="block" style={{ color: colors.chestnut }}>
-            Expert Guidance & Tools
+            Small Business Success
           </span>
         </h1>
         <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-          Join thousands of organizations successfully implementing AI with our comprehensive 
-          assessment tools, implementation guides, and expert support system.
+          Everything you need to transform your business with AI - from intelligent assessments 
+          to step-by-step guides, designed specifically for small businesses and nonprofits.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button
@@ -352,10 +352,10 @@ const MembersPage = () => {
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-4" style={{ color: colors.charcoal }}>
-            Trusted by AI Leaders
+            Trusted by Small Business Leaders
           </h2>
           <p className="text-xl text-gray-600">
-            See how organizations like yours are succeeding with EvolvIQ
+            See how small businesses, nonprofits, and service organizations are succeeding with AI
           </p>
         </div>
         
@@ -456,7 +456,7 @@ const MembersPage = () => {
               
               <button
                 onClick={() => {
-                  if (plan.name === 'Enterprise') {
+                  if (plan.name === 'Business') {
                     window.location.href = 'mailto:loren@evolviq.org';
                   } else {
                     handleGetStarted();
@@ -486,10 +486,10 @@ const MembersPage = () => {
     <div className="py-20 text-white" style={{ background: `linear-gradient(to right, ${colors.chestnut}, ${colors.khaki})` }}>
       <div className="max-w-4xl mx-auto px-4 text-center">
         <h2 className="text-4xl font-bold mb-4">
-          Ready to Transform Your Organization?
+          Ready to Transform Your Business with AI?
         </h2>
         <p className="text-xl mb-8 opacity-90">
-          Join thousands of organizations successfully implementing AI with our expert guidance
+          Join thousands of small businesses already using AI to work smarter, not harder
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button

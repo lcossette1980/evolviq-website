@@ -134,13 +134,13 @@ const HomePage = () => {
                         onClick={() => navigate('/tools/ai-knowledge-navigator')}
                         className="flex-1 bg-khaki text-white py-3 px-6 rounded-lg hover:bg-khaki/90 transition-colors font-medium text-center"
                       >
-                        🧠 Start with AI Assessment
+                        Start with AI Assessment
                       </button>
                       <button 
                         onClick={() => navigate('/services')}
                         className="flex-1 border-2 border-chestnut text-chestnut py-3 px-6 rounded-lg hover:bg-chestnut hover:text-white transition-colors font-medium text-center"
                       >
-                        📞 Get Expert Guidance
+                        Get Expert Guidance
                       </button>
                     </div>
                     <div className="text-center">
@@ -220,7 +220,7 @@ const HomePage = () => {
                     onClick={() => navigate('/tools/ai-knowledge-navigator')}
                     className="bg-gradient-to-r from-chestnut to-khaki text-white px-8 py-4 rounded-lg font-medium hover:shadow-lg transform hover:scale-105 transition-all duration-200"
                   >
-                    🚀 Discover Your AI Readiness - Free Assessment
+                    Discover Your AI Readiness - Free Assessment
                   </button>
                 </div>
               </div>
@@ -382,7 +382,7 @@ const HomePage = () => {
                 </li>
                 <li className="flex items-center text-charcoal/80">
                   <CheckCircle className="w-5 h-5 text-khaki mr-3 flex-shrink-0" />
-                  <span>🤖 <strong>Intelligent AI readiness assessments</strong></span>
+                  <span><strong>Intelligent AI readiness assessments</strong></span>
                 </li>
                 <li className="flex items-center text-charcoal/80">
                   <CheckCircle className="w-5 h-5 text-khaki mr-3 flex-shrink-0" />
@@ -398,7 +398,7 @@ const HomePage = () => {
                   onClick={() => navigate('/tools/ai-knowledge-navigator')}
                   className="w-full bg-gradient-to-r from-khaki to-khaki/80 text-white py-3 rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 font-medium"
                 >
-                  🚀 Start Free AI Assessment
+                  Start Free AI Assessment
                 </button>
                 <button 
                   onClick={() => navigate('/membership')}
@@ -440,7 +440,7 @@ const HomePage = () => {
                 onClick={() => navigate('/tools/ai-knowledge-navigator')}
                 className="bg-gradient-to-r from-chestnut to-khaki text-white px-8 py-4 rounded-lg font-medium hover:shadow-lg transform hover:scale-105 transition-all duration-200"
               >
-                🚀 Start Your AI Journey - Free Assessment
+                Start Your AI Journey - Free Assessment
               </button>
             </div>
           </div>
@@ -561,7 +561,7 @@ const HomePage = () => {
                   </div>
                 </div>
               </div>
-              <h3 className="font-medium text-xl text-charcoal mb-4">🤖 AI Readiness Assessment</h3>
+              <h3 className="font-medium text-xl text-charcoal mb-4">AI Readiness Assessment</h3>
               <p className="text-charcoal/70 mb-6">
                 <strong>Intelligent multi-agent evaluation</strong> of your AI knowledge with personalized recommendations, actionable insights, and custom learning paths.
               </p>
@@ -574,7 +574,7 @@ const HomePage = () => {
                 onClick={() => navigate('/tools/ai-knowledge-navigator')}
                 className="w-full bg-gradient-to-r from-khaki to-khaki/80 text-white py-4 sm:py-3 rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 touch-manipulation min-h-[44px] font-medium"
               >
-                🚀 Take Smart Assessment
+                Take Smart Assessment
               </button>
             </div>
             <div className="bg-white p-8 rounded-xl shadow-sm text-center">

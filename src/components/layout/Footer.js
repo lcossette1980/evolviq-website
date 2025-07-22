@@ -1,5 +1,5 @@
 import React from 'react';
-import { Linkedin, Twitter, Mail, Calendar, MapPin, Brain, Target, Users, BookOpen, Shield } from 'lucide-react';
+import { Linkedin, Facebook, Mail, Calendar, MapPin, Brain, Target, Users, BookOpen, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Footer = () => {
@@ -23,29 +23,42 @@ const Footer = () => {
               Empowering small businesses, nonprofits, and service organizations with practical AI transformation guidance and assessment tools.
             </p>
             <div className="flex space-x-4">
-              <button className="text-white/60 hover:text-chestnut transition-colors touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center">
+              <a 
+                href="https://www.linkedin.com/company/evolviqsatx/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-white/60 hover:text-chestnut transition-colors touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
+              >
                 <Linkedin className="w-5 h-5" />
-              </button>
-              <button className="text-white/60 hover:text-chestnut transition-colors touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center">
-                <Twitter className="w-5 h-5" />
-              </button>
-              <button className="text-white/60 hover:text-chestnut transition-colors touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center">
+              </a>
+              <a 
+                href="https://www.facebook.com/profile.php?id=61578007494214" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-white/60 hover:text-chestnut transition-colors touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
+              >
+                <Facebook className="w-5 h-5" />
+              </a>
+              <a 
+                href="mailto:loren@evolviq.org"
+                className="text-white/60 hover:text-chestnut transition-colors touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
+              >
                 <Mail className="w-5 h-5" />
-              </button>
+              </a>
             </div>
           </div>
 
-          {/* Assessment Tools */}
+          {/* AI Tools & Assessments */}
           <div>
             <h3 className="font-medium text-lg mb-4 flex items-center">
               <Brain className="w-5 h-5 mr-2 text-chestnut" />
-              Assessment Tools
+              AI Tools & Assessments
             </h3>
-            <ul className="space-y-2 text-sm text-white/80">
+            <ul className="space-y-1 text-sm text-white/80">
               <li>
                 <button 
                   onClick={() => navigate('/tools/ai-knowledge-navigator')}
-                  className="hover:text-chestnut transition-colors text-left py-2 touch-manipulation min-h-[44px] w-full flex items-center"
+                  className="hover:text-chestnut transition-colors text-left py-1 touch-manipulation min-h-[36px] w-full flex items-center"
                 >
                   AI Knowledge Navigator
                 </button>
@@ -53,15 +66,41 @@ const Footer = () => {
               <li>
                 <button 
                   onClick={() => navigate('/tools/change-readiness-assessment')}
-                  className="hover:text-chestnut transition-colors text-left py-2 touch-manipulation min-h-[44px] w-full flex items-center"
+                  className="hover:text-chestnut transition-colors text-left py-1 touch-manipulation min-h-[36px] w-full flex items-center"
                 >
                   Change Readiness Assessment
                 </button>
               </li>
               <li>
                 <button 
+                  onClick={() => navigate('/tools/linear-regression')}
+                  className="hover:text-chestnut transition-colors text-left py-1 touch-manipulation min-h-[36px] w-full flex items-center"
+                >
+                  Interactive ML Tools
+                </button>
+              </li>
+              <li>
+                <button 
+                  onClick={() => navigate('/why-ai-now')}
+                  className="hover:text-chestnut transition-colors text-left py-1 touch-manipulation min-h-[36px] w-full flex items-center"
+                >
+                  Why AI Now
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          {/* Services & Resources */}
+          <div>
+            <h3 className="font-medium text-lg mb-4 flex items-center">
+              <BookOpen className="w-5 h-5 mr-2 text-chestnut" />
+              Services & Resources
+            </h3>
+            <ul className="space-y-1 text-sm text-white/80">
+              <li>
+                <button 
                   onClick={() => navigate('/services')}
-                  className="hover:text-chestnut transition-colors text-left py-2 touch-manipulation min-h-[44px] w-full flex items-center"
+                  className="hover:text-chestnut transition-colors text-left py-1 touch-manipulation min-h-[36px] w-full flex items-center"
                 >
                   Consulting Services
                 </button>
@@ -69,59 +108,33 @@ const Footer = () => {
               <li>
                 <button 
                   onClick={() => navigate('/membership')}
-                  className="hover:text-chestnut transition-colors text-left py-2 touch-manipulation min-h-[44px] w-full flex items-center"
+                  className="hover:text-chestnut transition-colors text-left py-1 touch-manipulation min-h-[36px] w-full flex items-center"
                 >
-                  Membership
+                  Premium Membership
                 </button>
               </li>
-            </ul>
-          </div>
-
-          {/* Implementation Guides */}
-          <div>
-            <h3 className="font-medium text-lg mb-4 flex items-center">
-              <BookOpen className="w-5 h-5 mr-2 text-chestnut" />
-              Implementation Guides
-            </h3>
-            <ul className="space-y-2 text-sm text-white/80">
               <li>
                 <button 
                   onClick={() => navigate('/guides/AIImplementationPlaybook')}
-                  className="hover:text-chestnut transition-colors text-left py-2 touch-manipulation min-h-[44px] w-full flex items-center"
+                  className="hover:text-chestnut transition-colors text-left py-1 touch-manipulation min-h-[36px] w-full flex items-center"
                 >
-                  AI Implementation Playbook
-                </button>
-              </li>
-              <li>
-                <button 
-                  onClick={() => navigate('/guides/AIReadinessAssessment')}
-                  className="hover:text-chestnut transition-colors text-left py-2 touch-manipulation min-h-[44px] w-full flex items-center"
-                >
-                  AI Readiness Assessment
-                </button>
-              </li>
-              <li>
-                <button 
-                  onClick={() => navigate('/guides/AIUseCaseROIToolkit')}
-                  className="hover:text-chestnut transition-colors text-left py-2 touch-manipulation min-h-[44px] w-full flex items-center"
-                >
-                  AI Use Case ROI Toolkit
-                </button>
-              </li>
-              <li>
-                <button 
-                  onClick={() => navigate('/guides/AIStrategyStarterKit')}
-                  className="hover:text-chestnut transition-colors text-left py-2 touch-manipulation min-h-[44px] w-full flex items-center"
-                >
-                  AI Strategy Starter Kit
+                  Implementation Guides
                 </button>
               </li>
               <li>
                 <button 
                   onClick={() => navigate('/blog')}
-                  className="hover:text-chestnut transition-colors text-left py-2 touch-manipulation min-h-[44px] w-full flex items-center"
+                  className="hover:text-chestnut transition-colors text-left py-1 touch-manipulation min-h-[36px] w-full flex items-center"
                 >
                   Blog & Articles
+                </button>
+              </li>
+              <li>
+                <button 
+                  onClick={() => navigate('/service-intake')}
+                  className="hover:text-chestnut transition-colors text-left py-1 touch-manipulation min-h-[36px] w-full flex items-center"
+                >
+                  Get Started
                 </button>
               </li>
             </ul>
