@@ -165,7 +165,7 @@ const AIKnowledgeNavigator = () => {
           // Use the analysis data directly since it has the correct scores
           overallScore: analysis.overall_score_percentage || Math.round(overallScore * 20),
           maturityScores: analysis.maturity_scores || maturityScores,
-          maturityLevel: analysis.maturity_level || Math.ceil(overallScore),
+          maturityLevel: analysis.maturity_level || Math.round(Object.values(analysis.maturity_scores || maturityScores).reduce((a, b) => a + b, 0) / Object.keys(analysis.maturity_scores || maturityScores).length),
           overallReadinessLevel: analysis.overall_readiness_level,
           
           // Extract basicInsights properly for frontend display
@@ -539,7 +539,7 @@ const AIKnowledgeNavigator = () => {
             Your AI Knowledge Level
           </h2>
           <p className="text-base sm:text-lg" style={{ color: colors.khaki }}>
-            {getMaturityLevelText(results?.overallMaturityLevel || 1)}
+            {getMaturityLevelText(results?.maturityLevel || 1)}
           </p>
         </div>
 
