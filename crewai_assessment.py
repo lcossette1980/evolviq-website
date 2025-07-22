@@ -13,6 +13,10 @@ from datetime import datetime
 # Disable LiteLLM cost calculation to prevent infinite loops
 os.environ['LITELLM_LOG_LEVEL'] = 'ERROR'  # Only show errors, no cost calculation logs
 os.environ['LITELLM_DISABLE_TELEMETRY'] = 'true'  # Disable telemetry completely
+os.environ['LITELLM_SUCCESS_CALLBACK'] = ''  # Disable success callbacks that trigger cost calculation
+os.environ['LITELLM_FAILURE_CALLBACK'] = ''  # Disable failure callbacks
+os.environ['LITELLM_DISABLE_COST'] = 'true'  # Disable cost calculation entirely
+os.environ['OPENAI_LOG'] = 'debug'  # Use OpenAI's native logging instead of LiteLLM
 
 # CrewAI imports
 from crewai import Agent, Task, Crew, Process
@@ -809,13 +813,16 @@ class AIReadinessCrewAI:
         # Initialize LLM with timeout and disable cost tracking to prevent loops
         self.llm = ChatOpenAI(
             openai_api_key=openai_api_key,
-            model_name="gpt-4o-mini",
+            model="gpt-4o-mini",  # Use 'model' instead of 'model_name' to avoid LiteLLM issues
             temperature=0.7,
-            request_timeout=30,  # 30 second timeout for LLM calls
+            timeout=30,  # 30 second timeout for LLM calls  
             max_retries=1,  # Limit retries to prevent loops
             # Disable LiteLLM cost tracking that causes infinite loops
             streaming=False,
-            callbacks=[]  # Remove any callback handlers that might cause cost calculation loops
+            client_kwargs={
+                "timeout": 30,
+                "max_retries": 1
+            }
         )
         
         # Initialize analysis agents
@@ -1658,13 +1665,16 @@ class ChangeReadinessCrewAI:
         # Initialize LLM with timeout and disable cost tracking to prevent loops
         self.llm = ChatOpenAI(
             openai_api_key=openai_api_key,
-            model_name="gpt-4o-mini",
+            model="gpt-4o-mini",  # Use 'model' instead of 'model_name' to avoid LiteLLM issues
             temperature=0.7,
-            request_timeout=30,  # 30 second timeout for LLM calls
+            timeout=30,  # 30 second timeout for LLM calls  
             max_retries=1,  # Limit retries to prevent loops
             # Disable LiteLLM cost tracking that causes infinite loops
             streaming=False,
-            callbacks=[]  # Remove any callback handlers that might cause cost calculation loops
+            client_kwargs={
+                "timeout": 30,
+                "max_retries": 1
+            }
         )
         
         # Initialize change readiness agents
@@ -1740,10 +1750,11 @@ class ChangeReadinessCrewAI:
             except TimeoutError:
                 signal.alarm(0)  # Cancel timeout
                 print(f"⏰ Change assessment timed out, using fallback")
+                # Return error to trigger main.py function-based fallback
                 return {
-                    "error": "Change assessment timed out after 2 minutes",
-                    "fallback_analysis": "Timeout protection activated",
-                    "assessment_timestamp": datetime.now().isoformat()
+                    "error": "CrewAI agents timed out after 2 minutes",
+                    "fallback_needed": True,
+                    "timeout_reason": "LiteLLM cost calculation causing delays"
                 }
             
             print("✅ Change Readiness CrewAI Assessment completed!")
