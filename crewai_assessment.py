@@ -526,8 +526,10 @@ def create_maturity_scoring_agent(llm):
         practical application, confidence levels, and learning potential.""",
         verbose=False,  # Reduce verbosity
         allow_delegation=False,
+        max_execution_time=30,  # 30 second max per agent
+        max_iter=1,  # ONLY 1 iteration per agent - no loops
         llm=llm,
-        tools=[AssessmentDataTool()]  # Simple, reliable tools for analysis
+        tools=[]  # REMOVE ALL TOOLS temporarily to test
     )
 
 def create_learning_path_agent(llm):
@@ -543,7 +545,7 @@ def create_learning_path_agent(llm):
         verbose=False,  # Reduce verbosity to prevent noise
         allow_delegation=False,  # Disable delegation to prevent loops
         llm=llm,
-        tools=[AssessmentDataTool()]  # Simple, reliable tools for analysis
+        tools=[]  # REMOVE ALL TOOLS temporarily to test
     )
 
 def create_business_application_agent(llm):
@@ -558,8 +560,10 @@ def create_business_application_agent(llm):
         that can be achieved with existing resources and skills.""",
         verbose=False,  # Reduce verbosity
         allow_delegation=False,
+        max_execution_time=30,  # 30 second max per agent
+        max_iter=1,  # ONLY 1 iteration per agent - no loops
         llm=llm,
-        tools=[AssessmentDataTool()]  # Simple, reliable tools for analysis
+        tools=[]  # REMOVE ALL TOOLS temporarily to test
     )
 
 def create_confidence_risk_agent(llm):
@@ -574,8 +578,10 @@ def create_confidence_risk_agent(llm):
         aspects of learning new technologies and can provide supportive, realistic guidance.""",
         verbose=False,  # Reduce verbosity
         allow_delegation=False,
+        max_execution_time=30,  # 30 second max per agent
+        max_iter=1,  # ONLY 1 iteration per agent - no loops
         llm=llm,
-        tools=[AssessmentDataTool()]  # Simple, reliable tools for analysis
+        tools=[]  # REMOVE ALL TOOLS temporarily to test
     )
 
 # =============================================================================
@@ -824,21 +830,22 @@ class AIReadinessCrewAI:
     def __init__(self, openai_api_key: str):
         self.openai_api_key = openai_api_key
         
-        # Initialize LLM with timeout and disable cost tracking to prevent loops
+        # Initialize LLM with STRICT limits to prevent loops
         self.llm = ChatOpenAI(
             openai_api_key=openai_api_key,
-            model="gpt-4o-mini",  # Use 'model' instead of 'model_name' to avoid LiteLLM issues
-            temperature=0.7,
-            timeout=30,  # 30 second timeout for LLM calls  
-            max_retries=1,  # Limit retries to prevent loops
-            # Disable LiteLLM cost tracking that causes infinite loops
+            model="gpt-4o-mini",  
+            temperature=0.3,  # Lower temperature for more deterministic responses
+            timeout=15,       # Shorter timeout - 15 seconds max
+            max_retries=0,    # NO RETRIES - fail fast
             streaming=False,
-            # ADD THESE TO DISABLE CALLBACKS:
+            max_tokens=500,   # Limit response length to prevent runaway generations
+            request_timeout=15,  # Additional timeout
+            # Disable LiteLLM cost tracking that causes infinite loops
             callbacks=[],  # Empty callbacks list
             metadata={},   # Empty metadata
             client_kwargs={
-                "timeout": 30,
-                "max_retries": 1
+                "timeout": 15,
+                "max_retries": 0
             }
         )
         
@@ -1456,10 +1463,10 @@ def create_change_assessment_agent(llm):
         responses to understand true organizational culture, leadership effectiveness, and employee sentiment.""",
         verbose=False,  # Reduce verbosity to prevent noise
         allow_delegation=False,  # Disable delegation to prevent loops
-        max_execution_time=60,  # 1 minute max per agent
-        max_iter=3,  # Maximum 3 iterations per agent
+        max_execution_time=30,  # 30 second max per agent
+        max_iter=1,  # ONLY 1 iteration per agent - no loops
         llm=llm,
-        tools=[AssessmentDataTool()]  # Simple, reliable tools for analysis
+        tools=[]  # REMOVE ALL TOOLS temporarily to test
     )
 
 def create_change_scoring_agent(llm):
@@ -1473,8 +1480,10 @@ def create_change_scoring_agent(llm):
         detailed, evidence-based scoring with clear justification for each assessment dimension.""",
         verbose=False,  # Reduce verbosity
         allow_delegation=False,
+        max_execution_time=30,  # 30 second max per agent
+        max_iter=1,  # ONLY 1 iteration per agent - no loops
         llm=llm,
-        tools=[AssessmentDataTool()]  # Simple, reliable tools for analysis
+        tools=[]  # REMOVE ALL TOOLS temporarily to test
     )
 
 def create_change_strategy_agent(llm):
@@ -1489,7 +1498,7 @@ def create_change_strategy_agent(llm):
         verbose=False,  # Reduce verbosity to prevent noise
         allow_delegation=False,  # Disable delegation to prevent loops
         llm=llm,
-        tools=[AssessmentDataTool()]  # Simple, reliable tools for analysis
+        tools=[]  # REMOVE ALL TOOLS temporarily to test
     )
 
 def create_change_risk_agent(llm):
@@ -1503,8 +1512,10 @@ def create_change_risk_agent(llm):
         change-related risks, from technical challenges to cultural resistance.""",
         verbose=False,  # Reduce verbosity
         allow_delegation=False,
+        max_execution_time=30,  # 30 second max per agent
+        max_iter=1,  # ONLY 1 iteration per agent - no loops
         llm=llm,
-        tools=[AssessmentDataTool()]  # Simple, reliable tools for analysis
+        tools=[]  # REMOVE ALL TOOLS temporarily to test
     )
 
 def create_portfolio_management_agent(llm):
@@ -1518,8 +1529,10 @@ def create_portfolio_management_agent(llm):
         creating realistic implementation timelines that respect organizational constraints.""",
         verbose=False,  # Reduce verbosity
         allow_delegation=False,
+        max_execution_time=30,  # 30 second max per agent
+        max_iter=1,  # ONLY 1 iteration per agent - no loops
         llm=llm,
-        tools=[AssessmentDataTool()]  # Simple, reliable tools for analysis
+        tools=[]  # REMOVE ALL TOOLS temporarily to test
     )
 
 # =============================================================================
@@ -1684,21 +1697,22 @@ class ChangeReadinessCrewAI:
         print(f"🔧 LITELLM_DISABLE_COST: {os.getenv('LITELLM_DISABLE_COST')}")
         print(f"🔧 LITELLM_LOG_LEVEL: {os.getenv('LITELLM_LOG_LEVEL')}")
         
-        # Initialize LLM with timeout and disable cost tracking to prevent loops
+        # Initialize LLM with STRICT limits to prevent loops
         self.llm = ChatOpenAI(
             openai_api_key=openai_api_key,
-            model="gpt-4o-mini",  # Use 'model' instead of 'model_name' to avoid LiteLLM issues
-            temperature=0.7,
-            timeout=30,  # 30 second timeout for LLM calls  
-            max_retries=1,  # Limit retries to prevent loops
-            # Disable LiteLLM cost tracking that causes infinite loops
+            model="gpt-4o-mini",  
+            temperature=0.3,  # Lower temperature for more deterministic responses
+            timeout=15,       # Shorter timeout - 15 seconds max
+            max_retries=0,    # NO RETRIES - fail fast
             streaming=False,
-            # ADD THESE TO DISABLE CALLBACKS:
+            max_tokens=500,   # Limit response length to prevent runaway generations
+            request_timeout=15,  # Additional timeout
+            # Disable LiteLLM cost tracking that causes infinite loops
             callbacks=[],  # Empty callbacks list
             metadata={},   # Empty metadata
             client_kwargs={
-                "timeout": 30,
-                "max_retries": 1
+                "timeout": 15,
+                "max_retries": 0
             }
         )
         
@@ -1750,11 +1764,11 @@ class ChangeReadinessCrewAI:
                 ],
                 process=Process.sequential,
                 verbose=False,  # Completely disable verbosity
-                max_iter=2,  # Allow up to 2 iterations for quality results
+                max_iter=1,  # SINGLE iteration only - no loops
                 memory=False,  # Disable memory to prevent context accumulation
                 embedder=None,  # Disable embedder
-                max_rpm=10,  # Rate limit requests per minute
-                max_execution_time=180,  # 3 minute absolute maximum execution time
+                max_rpm=5,  # Lower rate limit
+                max_execution_time=60  # 1 minute absolute maximum execution time
                 # Disable cost tracking and callbacks that cause loops
                 manager_callbacks=None,
                 step_callback=None,
@@ -1769,7 +1783,7 @@ class ChangeReadinessCrewAI:
             
             try:
                 signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(120)  # 2 minute timeout
+                signal.alarm(45)  # 45 second timeout - very aggressive
                 results = change_crew.kickoff()
                 signal.alarm(0)  # Cancel timeout
             except TimeoutError:
