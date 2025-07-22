@@ -1,6 +1,6 @@
 # AI Readiness Assessment System - True CrewAI Implementation
 # This implements the sophisticated agentic framework using real CrewAI agents
-# Railway deployment fix - force file update
+# Railway deployment fix - FORCE UPDATE 2025-07-22T16:05:00Z - LiteLLM DISABLED
 
 import json
 import os
@@ -10,13 +10,27 @@ from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from datetime import datetime
 
-# Disable LiteLLM cost calculation to prevent infinite loops
-os.environ['LITELLM_LOG_LEVEL'] = 'ERROR'  # Only show errors, no cost calculation logs
-os.environ['LITELLM_DISABLE_TELEMETRY'] = 'true'  # Disable telemetry completely
-os.environ['LITELLM_SUCCESS_CALLBACK'] = ''  # Disable success callbacks that trigger cost calculation
-os.environ['LITELLM_FAILURE_CALLBACK'] = ''  # Disable failure callbacks
-os.environ['LITELLM_DISABLE_COST'] = 'true'  # Disable cost calculation entirely
-os.environ['OPENAI_LOG'] = 'debug'  # Use OpenAI's native logging instead of LiteLLM
+# AGGRESSIVE: Disable LiteLLM completely - must be set BEFORE any imports
+os.environ['LITELLM_LOG_LEVEL'] = 'CRITICAL'  # Highest level to suppress all logs
+os.environ['LITELLM_DISABLE_TELEMETRY'] = 'True'  
+os.environ['LITELLM_SUCCESS_CALLBACK'] = ''  
+os.environ['LITELLM_FAILURE_CALLBACK'] = ''  
+os.environ['LITELLM_DISABLE_COST'] = 'True'  
+os.environ['LITELLM_LOCAL_MODEL_COST_MAP'] = '{}'  # Empty cost map
+os.environ['LITELLM_DROP_PARAMS'] = 'True'  # Drop unsupported params
+
+# Try to disable LiteLLM completely by monkey patching
+try:
+    import litellm
+    litellm.drop_params = True
+    litellm.disable_telemetry = True
+    litellm.set_verbose = False
+    # Override cost calculation function to do nothing
+    def disabled_cost_calculator(*args, **kwargs):
+        return {"cost": 0, "prompt_tokens": 0, "completion_tokens": 0}
+    litellm.cost_calculator = disabled_cost_calculator
+except ImportError:
+    pass  # LiteLLM not available, which is fine
 
 # CrewAI imports
 from crewai import Agent, Task, Crew, Process
@@ -1661,6 +1675,11 @@ class ChangeReadinessCrewAI:
     
     def __init__(self, openai_api_key: str):
         self.openai_api_key = openai_api_key
+        
+        # DEPLOYMENT VERIFICATION: Log that our fixes are active
+        print("🔧 DEPLOYMENT VERIFICATION: LiteLLM disabling active - 2025-07-22T16:05:00Z")
+        print(f"🔧 LITELLM_DISABLE_COST: {os.getenv('LITELLM_DISABLE_COST')}")
+        print(f"🔧 LITELLM_LOG_LEVEL: {os.getenv('LITELLM_LOG_LEVEL')}")
         
         # Initialize LLM with timeout and disable cost tracking to prevent loops
         self.llm = ChatOpenAI(
