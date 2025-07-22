@@ -254,9 +254,32 @@ const ChangeReadinessAssessment = () => {
       setAssessment(updatedAssessment);
       setUserResponse('');
 
-      if (response.isComplete || response.data?.is_complete || response.is_complete) {
-        // Assessment is complete
-        const results = response.results || response.data?.analysis || response.analysis;
+      if (response.completed || response.isComplete || response.data?.is_complete || response.is_complete) {
+        // Assessment is complete  
+        let results = response.results || response.data?.analysis || response.analysis;
+        console.log('Assessment results received:', results);
+        
+        // Map backend field names to frontend expectations
+        if (results) {
+          const mappedResults = {
+            ...results,
+            readinessScore: results.scoring_breakdown?.overall_score || results.visual_analytics?.readiness_score || 0,
+            scores: {
+              strategic: results.scoring_breakdown?.dimension_scores?.leadership_support || results.scoring_breakdown?.leadership_readiness || 0,
+              organizational: results.scoring_breakdown?.dimension_scores?.team_capability || results.scoring_breakdown?.culture_readiness || 0,
+              technical: results.scoring_breakdown?.dimension_scores?.resource_allocation || results.scoring_breakdown?.technology_readiness || 0
+            },
+            nextSteps: results.next_steps ? results.next_steps.map((step, index) => ({
+              title: `Step ${index + 1}`,
+              description: step,
+              timeline: results.timeline_estimate || "2-6 weeks"
+            })) : [],
+            // Map general recommendations to display in the results section
+            displayRecommendations: results.recommendations || []
+          };
+          results = mappedResults;
+        }
+        
         setResults(results);
         setCurrentStep('results');
         updatedAssessment.isComplete = true;
@@ -330,6 +353,9 @@ const ChangeReadinessAssessment = () => {
       }
     } catch (error) {
       console.error('Error submitting response:', error);
+      // Don't reset the current agent or step on error
+      // This prevents the screen from reverting to the first question
+      alert('There was an error processing your response. The AI agents are taking longer than expected. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -883,17 +909,19 @@ const ChangeReadinessAssessment = () => {
         </div>
       </div>
 
-      {/* Agent Recommendations */}
+      {/* Recommendations */}
       <div className="space-y-6">
         <h2 className="text-2xl font-bold" style={{ color: colors.charcoal, fontFamily: 'Playfair Display' }}>
           Expert Recommendations
         </h2>
         
-        {agents.map((agent, index) => {
-          const analysis = assessment.agentAnalysis[agent.id];
-          const Icon = agent.icon;
-          
-          if (!analysis) return null;
+        {/* Show agent-specific recommendations if available */}
+        {agents.some(agent => assessment.agentAnalysis[agent.id]) ? 
+          agents.map((agent, index) => {
+            const analysis = assessment.agentAnalysis[agent.id];
+            const Icon = agent.icon;
+            
+            if (!analysis) return null;
           
           return (
             <div key={agent.id} className="bg-white rounded-xl p-6 shadow-sm">
@@ -938,7 +966,26 @@ const ChangeReadinessAssessment = () => {
               </div>
             </div>
           );
-        })}
+        }) : 
+        /* Show general recommendations when agent-specific ones aren't available */
+        (
+          <div className="bg-white rounded-xl p-6 shadow-sm">
+            <h3 className="font-bold text-lg mb-4" style={{ color: colors.charcoal }}>
+              Assessment Recommendations
+            </h3>
+            <div className="space-y-3">
+              {results?.displayRecommendations?.map((rec, index) => (
+                <div key={index} className="flex items-start space-x-3">
+                  <Lightbulb className="w-5 h-5 text-yellow-600 mt-1 flex-shrink-0" />
+                  <p className="text-sm">{typeof rec === 'string' ? rec : rec.description || rec.title}</p>
+                </div>
+              ))}
+              {(!results?.displayRecommendations || results.displayRecommendations.length === 0) && (
+                <p className="text-sm text-gray-600">No specific recommendations available at this time.</p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Next Steps */}
