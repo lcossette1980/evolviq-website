@@ -1425,6 +1425,8 @@ def create_change_assessment_agent(llm):
         responses to understand true organizational culture, leadership effectiveness, and employee sentiment.""",
         verbose=False,  # Reduce verbosity to prevent noise
         allow_delegation=False,  # Disable delegation to prevent loops
+        max_execution_time=60,  # 1 minute max per agent
+        max_iter=3,  # Maximum 3 iterations per agent
         llm=llm,
         tools=[AssessmentDataTool()]  # Simple, reliable tools for analysis
     )
@@ -1516,7 +1518,14 @@ def create_change_assessment_task(org_data: Dict, question_history: List[Dict]):
         - Employee engagement and change appetite
         - Historical change performance patterns
         """,
-        expected_output="Detailed organizational readiness analysis with evidence-based insights and change capacity assessment",
+        expected_output="""JSON format organizational readiness analysis:
+        {
+            "culture_readiness": {"score": 0-100, "evidence": [], "concerns": []},
+            "leadership_readiness": {"score": 0-100, "evidence": [], "concerns": []},
+            "process_readiness": {"score": 0-100, "evidence": [], "concerns": []},
+            "change_history": {"score": 0-100, "evidence": [], "concerns": []},
+            "overall_assessment": "detailed summary"
+        }""",
         agent=None
     )
 
@@ -1539,7 +1548,21 @@ def create_change_scoring_task():
         - Overall readiness level and recommendations
         - Critical success factors and risk indicators
         """,
-        expected_output="Comprehensive scoring report with dimensional analysis and overall readiness assessment",
+        expected_output="""JSON format scoring analysis:
+        {
+            "scores": {
+                "culture_readiness": 0-100,
+                "leadership_readiness": 0-100, 
+                "process_readiness": 0-100,
+                "technology_readiness": 0-100,
+                "overall_score": 0-100
+            },
+            "readiness_level": "ready_to_implement|prepare_first|get_help",
+            "confidence_level": 0.0-1.0,
+            "justifications": {"dimension": "reasoning"},
+            "critical_factors": [],
+            "risk_indicators": []
+        }""",
         agent=None
     )
 
@@ -1682,9 +1705,11 @@ class ChangeReadinessCrewAI:
                 ],
                 process=Process.sequential,
                 verbose=False,  # Completely disable verbosity
-                max_iter=1,  # Force single iteration only
-                memory=False,  # Disable memory
-                embedder=None  # Disable embedder
+                max_iter=2,  # Allow up to 2 iterations for quality results
+                memory=False,  # Disable memory to prevent context accumulation
+                embedder=None,  # Disable embedder
+                max_rpm=10,  # Rate limit requests per minute
+                max_execution_time=180  # 3 minute absolute maximum execution time
             )
             
             # Execute assessment with timeout
