@@ -302,51 +302,34 @@ const ChangeReadinessAssessment = () => {
       }
 
       // Save progress - only save essential data to prevent Firestore errors
-      await assessmentAPI.saveAssessmentProgress(
-        user.uid, 
-        'change_readiness', 
-        {
-          isStarted: updatedAssessment.isStarted,
-          isComplete: updatedAssessment.isComplete,
-          currentAgentIndex: updatedAssessment.currentAgentIndex,
-          responses: updatedAssessment.responses?.map(r => ({
-            agentId: r.agent?.id || 'unknown',
-            agentName: r.agent?.name || 'unknown',
-            response: r.response,
-            timestamp: r.timestamp
-          })) || [],
-          agentAnalysis: updatedAssessment.agentAnalysis || {},
-          sessionData: updatedAssessment.sessionData || {},
-          organizationData,
-          projectData,
-          results: updatedAssessment.results || null
-        }
-      );
+      try {
+        await assessmentAPI.saveAssessmentProgress(
+          user.uid, 
+          'change_readiness', 
+          {
+            isStarted: updatedAssessment.isStarted,
+            isComplete: updatedAssessment.isComplete,
+            currentAgentIndex: updatedAssessment.currentAgentIndex,
+            responses: updatedAssessment.responses?.map(r => ({
+              agentId: r.agent?.id || 'unknown',
+              agentName: r.agent?.name || 'unknown',
+              response: r.response,
+              timestamp: r.timestamp
+            })) || [],
+            agentAnalysis: updatedAssessment.agentAnalysis || {},
+            sessionData: updatedAssessment.sessionData || {},
+            organizationData,
+            projectData,
+            results: updatedAssessment.results || null
+          }
+        );
+      } catch (saveError) {
+        console.error('Error saving assessment progress:', saveError);
+        console.error('Continuing assessment despite save error...');
+        // Continue with the assessment even if save fails
+      }
     } catch (error) {
       console.error('Error submitting response:', error);
-      console.error('Error details:', error.message);
-      // Still update the frontend state even if save fails
-      setAssessment(updatedAssessment);
-      setUserResponse('');
-      
-      // Continue with next question or completion even if save fails
-      if (response.isComplete || response.data?.is_complete || response.is_complete) {
-        const results = response.results || response.data?.analysis || response.analysis;
-        setResults(results);
-        setCurrentStep('results');
-      } else {
-        const responseData = response.data || response;
-        const nextAgent = {
-          id: responseData.section || 'leadership_support',
-          name: getSectionName(responseData.section || 'leadership_support'),
-          role: getSectionRole(responseData.section || 'leadership_support'),
-          question: responseData.question,
-          context: responseData.rationale,
-          sessionId: responseData.session_id,
-          questionId: responseData.question_id
-        };
-        setCurrentAgent(nextAgent);
-      }
     } finally {
       setIsLoading(false);
     }
