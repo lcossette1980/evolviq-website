@@ -1133,22 +1133,8 @@ const MemberDashboard = () => {
                     )}
                   </div>
                   
-                  {/* Assessment-specific details */}
-                  {assessment.assessmentType === 'ai_knowledge_navigator' && assessment.results?.maturityScores && (
-                    <div className="mt-3 text-xs text-gray-500">
-                      Top areas: {Object.entries(assessment.results.maturityScores)
-                        .sort(([,a], [,b]) => b - a)
-                        .slice(0, 2)
-                        .map(([area]) => area.replace('_', ' '))
-                        .join(', ')}
-                    </div>
-                  )}
-                  
-                  {assessment.assessmentType === 'change_readiness' && assessment.results?.recommendations?.length > 0 && (
-                    <div className="mt-3 text-xs text-gray-500">
-                      {assessment.results.recommendations.length} recommendations generated
-                    </div>
-                  )}
+                  {/* Enhanced CrewAI Analysis Display */}
+                  {renderCrewAIAnalysis(assessment)}
                 </div>
               ))}
           </div>
@@ -1204,6 +1190,171 @@ const MemberDashboard = () => {
       </div>
     </div>
   );
+
+  // Enhanced CrewAI Analysis Display Component
+  const renderCrewAIAnalysis = (assessment) => {
+    if (!assessment.results) return null;
+
+    const results = assessment.results;
+    const isAIKnowledge = assessment.assessmentType === 'ai_knowledge_navigator';
+    const isChangeReadiness = assessment.assessmentType === 'change_readiness';
+
+    return (
+      <div className="mt-4 space-y-4">
+        {/* Strategic Insights */}
+        {results.business_recommendations && results.business_recommendations.length > 0 && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border">
+            <div className="flex items-center mb-2">
+              <Brain className="w-4 h-4 mr-2" style={{ color: colors.chestnut }} />
+              <h4 className="font-semibold text-sm" style={{ color: colors.charcoal }}>
+                Strategic Insights from AI Analysis
+              </h4>
+            </div>
+            <div className="space-y-2">
+              {results.business_recommendations.slice(0, 2).map((rec, index) => (
+                <div key={index} className="bg-white p-3 rounded border-l-4 border-blue-400">
+                  <div className="text-sm font-medium" style={{ color: colors.charcoal }}>
+                    {rec.title || `Strategic Initiative ${index + 1}`}
+                  </div>
+                  <div className="text-xs text-gray-600 mt-1">
+                    {rec.description || rec}
+                  </div>
+                  {rec.roi_timeline && (
+                    <div className="text-xs text-blue-600 mt-1 font-medium">
+                      Expected ROI: {rec.roi_timeline}
+                    </div>
+                  )}
+                </div>
+              ))}
+              {results.business_recommendations.length > 2 && (
+                <div className="text-xs text-blue-600 font-medium">
+                  +{results.business_recommendations.length - 2} more recommendations available
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Learning Path Insights */}
+        {results.learning_path && (
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border">
+            <div className="flex items-center mb-2">
+              <Target className="w-4 h-4 mr-2" style={{ color: colors.khaki }} />
+              <h4 className="font-semibold text-sm" style={{ color: colors.charcoal }}>
+                Personalized Learning Path
+              </h4>
+            </div>
+            
+            {results.learning_path.priority_areas && (
+              <div className="mb-3">
+                <div className="text-xs text-gray-600 mb-1">Priority Focus Areas:</div>
+                <div className="flex flex-wrap gap-1">
+                  {results.learning_path.priority_areas.slice(0, 3).map((area, index) => (
+                    <span 
+                      key={index}
+                      className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700"
+                    >
+                      {area.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {results.learning_path.estimated_timeline && (
+              <div className="text-xs text-green-600 font-medium">
+                Estimated Timeline: {results.learning_path.estimated_timeline}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Confidence Assessment for AI Knowledge */}
+        {isAIKnowledge && results.confidence_assessment && (
+          <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-4 rounded-lg border">
+            <div className="flex items-center mb-2">
+              <Shield className="w-4 h-4 mr-2" style={{ color: colors.chestnut }} />
+              <h4 className="font-semibold text-sm" style={{ color: colors.charcoal }}>
+                Readiness Assessment
+              </h4>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <div className="text-gray-600">Confidence Level</div>
+                <div className="font-semibold" style={{ color: colors.chestnut }}>
+                  {Math.round((results.confidence_assessment.overall_confidence || 0.7) * 100)}%
+                </div>
+              </div>
+              <div>
+                <div className="text-gray-600">Implementation Readiness</div>
+                <div className="font-semibold capitalize" style={{ color: colors.khaki }}>
+                  {results.overall_readiness_level?.replace(/_/g, ' ') || 'Ready to Learn'}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Change Readiness Breakdown */}
+        {isChangeReadiness && results.scoring_breakdown && (
+          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-4 rounded-lg border">
+            <div className="flex items-center mb-2">
+              <BarChart3 className="w-4 h-4 mr-2" style={{ color: colors.chestnut }} />
+              <h4 className="font-semibold text-sm" style={{ color: colors.charcoal }}>
+                Organizational Readiness Breakdown
+              </h4>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {Object.entries(results.scoring_breakdown)
+                .filter(([key]) => key !== 'overall_score')
+                .slice(0, 4)
+                .map(([area, score]) => (
+                <div key={area}>
+                  <div className="text-gray-600 capitalize">
+                    {area.replace(/_/g, ' ').replace('readiness', '')}
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-16 bg-gray-200 rounded-full h-1.5 mr-2">
+                      <div 
+                        className="h-1.5 rounded-full" 
+                        style={{ 
+                          backgroundColor: score >= 70 ? colors.khaki : score >= 50 ? '#FBD38D' : '#FEB2B2',
+                          width: `${Math.min(score, 100)}%` 
+                        }}
+                      />
+                    </div>
+                    <span className="font-semibold text-xs">{score}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Next Steps */}
+        {results.next_steps && results.next_steps.length > 0 && (
+          <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-4 rounded-lg border">
+            <div className="flex items-center mb-2">
+              <Zap className="w-4 h-4 mr-2" style={{ color: colors.chestnut }} />
+              <h4 className="font-semibold text-sm" style={{ color: colors.charcoal }}>
+                Recommended Next Steps
+              </h4>
+            </div>
+            <div className="space-y-1">
+              {results.next_steps.slice(0, 3).map((step, index) => (
+                <div key={index} className="text-xs text-gray-700 flex items-start">
+                  <span className="w-4 h-4 rounded-full bg-teal-100 text-teal-700 text-center text-xs mr-2 mt-0.5 flex-shrink-0">
+                    {index + 1}
+                  </span>
+                  <span>{step}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderProjectsAndGuides = () => {
     const guides = [
@@ -1537,16 +1688,71 @@ const MemberDashboard = () => {
                               </p>
                             )}
                             
-                            {/* Metadata */}
+                            {/* Enhanced Metadata with CrewAI Intelligence */}
+                            {item.generatedBy === 'crewai_agent' && (
+                              <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-400 rounded-r">
+                                <div className="flex items-center mb-2">
+                                  <Brain className="w-4 h-4 mr-2 text-blue-600" />
+                                  <span className="text-xs font-semibold text-blue-700">AI-Generated Strategic Initiative</span>
+                                </div>
+                                
+                                {item.metadata && (
+                                  <div className="grid grid-cols-2 gap-2 text-xs">
+                                    {item.metadata.phase && (
+                                      <div>
+                                        <span className="text-gray-600">Phase:</span>
+                                        <span className="ml-1 font-medium text-blue-700">{item.metadata.phase}</span>
+                                      </div>
+                                    )}
+                                    {item.metadata.timeline && (
+                                      <div>
+                                        <span className="text-gray-600">Timeline:</span>
+                                        <span className="ml-1 font-medium text-purple-700">{item.metadata.timeline}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                
+                                {item.tags && item.tags.includes('strategic-initiative') && (
+                                  <div className="mt-2">
+                                    <span className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
+                                      Strategic Initiative
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Standard Metadata */}
                             <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
                               {item.estimatedHours && (
-                                <span>⏱️ {item.estimatedHours}h</span>
+                                <span className="flex items-center">
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  {item.estimatedHours}h
+                                </span>
                               )}
                               {item.source && (
-                                <span>📋 {item.source.replace('_', ' ')}</span>
+                                <span className="flex items-center">
+                                  <FileText className="w-3 h-3 mr-1" />
+                                  {item.source.replace('_', ' ')}
+                                </span>
                               )}
-                              {item.tags && item.tags.length > 0 && (
-                                <span>🏷️ {item.tags.slice(0, 2).join(', ')}</span>
+                              {item.generatedBy && item.generatedBy !== 'crewai_agent' && (
+                                <span className="flex items-center">
+                                  <Activity className="w-3 h-3 mr-1" />
+                                  {item.generatedBy.replace('_', ' ')}
+                                </span>
+                              )}
+                              {item.tags && item.tags.length > 0 && !item.tags.includes('strategic-initiative') && (
+                                <span className="flex items-center">
+                                  <div className="flex flex-wrap gap-1">
+                                    {item.tags.slice(0, 2).map((tag, index) => (
+                                      <span key={index} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">
+                                        {tag.replace(/-/g, ' ')}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </span>
                               )}
                             </div>
                           </div>

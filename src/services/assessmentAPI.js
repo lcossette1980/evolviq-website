@@ -757,6 +757,242 @@ class AssessmentAPI {
   }
 
   // =============================================================================
+  // ENHANCED CREWAI PARSING LOGIC
+  // =============================================================================
+
+  /**
+   * Enhanced parsing logic for CrewAI recommendations - extracts strategic initiatives
+   * from rich agent outputs instead of using placeholder data
+   */
+  parseCrewAIRecommendations(results) {
+    const strategicInitiatives = [];
+    const governanceActions = [];
+    const learningRecommendations = [];
+    
+    try {
+      // Parse raw CrewAI output if available
+      const rawOutput = results.raw_crewai_output || results.crewai_results || '';
+      console.log('🔍 Parsing CrewAI raw output length:', rawOutput.length);
+      
+      if (typeof rawOutput === 'string' && rawOutput.length > 100) {
+        // Extract strategic initiatives using pattern matching
+        const initiativeMatches = rawOutput.match(/\*\*Initiative:\*\*([^\n]+)[\s\S]*?\*\*Objective:\*\*([^\n]+)[\s\S]*?\*\*Timeline:\*\*([^\n]+)/gi);
+        
+        if (initiativeMatches) {
+          console.log(`🎯 Found ${initiativeMatches.length} strategic initiatives`);
+          
+          initiativeMatches.forEach((match, index) => {
+            const titleMatch = match.match(/\*\*Initiative:\*\*\s*(.+?)\n/i);
+            const objectiveMatch = match.match(/\*\*Objective:\*\*\s*(.+?)\n/i);
+            const timelineMatch = match.match(/\*\*Timeline:\*\*\s*(.+?)\n/i);
+            
+            if (titleMatch && objectiveMatch) {
+              strategicInitiatives.push({
+                title: titleMatch[1].trim(),
+                description: objectiveMatch[1].trim(),
+                timeline: timelineMatch ? timelineMatch[1].trim() : 'TBD',
+                category: this.categorizeInitiative(titleMatch[1]),
+                priority: index < 2 ? 'high' : 'medium',
+                estimatedHours: this.estimateHoursFromDescription(objectiveMatch[1]),
+                phase: this.extractPhase(match)
+              });
+            }
+          });
+        }
+        
+        // Extract governance and process recommendations
+        const governanceMatches = rawOutput.match(/(governance|oversight|committee|framework)[\s\S]*?(?=\n\n|$)/gi);
+        
+        if (governanceMatches) {
+          console.log(`🏛️ Found ${governanceMatches.length} governance recommendations`);
+          
+          governanceMatches.slice(0, 3).forEach((match, index) => {
+            governanceActions.push({
+              title: this.extractGovernanceTitle(match),
+              description: this.cleanDescription(match.substring(0, 200)),
+              type: 'governance',
+              estimatedHours: 8
+            });
+          });
+        }
+
+        // Extract capability building actions
+        const capabilityMatches = rawOutput.match(/(capability building|training|skills development)[\s\S]*?(?=\n\n|$)/gi);
+        
+        if (capabilityMatches) {
+          console.log(`📚 Found ${capabilityMatches.length} learning recommendations`);
+          
+          capabilityMatches.slice(0, 3).forEach((match, index) => {
+            learningRecommendations.push({
+              title: this.extractLearningTitle(match),
+              description: this.cleanDescription(match.substring(0, 150)),
+              estimatedHours: 12
+            });
+          });
+        }
+      }
+      
+      // Fallback: Use existing business_recommendations if no raw output parsed
+      if (strategicInitiatives.length === 0 && results.business_recommendations) {
+        console.log('📋 Using fallback business_recommendations');
+        
+        results.business_recommendations.forEach((rec, index) => {
+          strategicInitiatives.push({
+            title: rec.title || `Strategic Initiative ${index + 1}`,
+            description: rec.description || rec,
+            category: 'organizational',
+            priority: index < 2 ? 'high' : 'medium',
+            estimatedHours: 10,
+            phase: 'Phase 1'
+          });
+        });
+      }
+      
+      console.log(`✅ Parsed: ${strategicInitiatives.length} initiatives, ${governanceActions.length} governance, ${learningRecommendations.length} learning`);
+      
+    } catch (error) {
+      console.warn('❌ Error parsing CrewAI recommendations:', error);
+      // Return safe fallback
+    }
+    
+    return {
+      strategicInitiatives,
+      governanceActions,
+      learningRecommendations
+    };
+  }
+
+  /**
+   * Generate enhanced action items that leverage full CrewAI analysis
+   */
+  async generateEnhancedActionItems(userId, projectId, assessmentData, assessmentType) {
+    try {
+      const actionItems = [];
+      
+      if (assessmentType === 'ai_knowledge_navigator' || assessmentType === 'change_readiness') {
+        const { results } = assessmentData;
+        
+        // Extract detailed recommendations from raw CrewAI output
+        const enhancedRecommendations = this.parseCrewAIRecommendations(results);
+        
+        // Create action items from parsed strategic initiatives
+        enhancedRecommendations.strategicInitiatives.forEach((initiative, index) => {
+          const actionItem = {
+            title: initiative.title,
+            description: initiative.description,
+            category: initiative.category || 'organizational',
+            priority: initiative.priority || (index < 2 ? 'high' : 'medium'),
+            source: assessmentType,
+            sourceAssessmentId: assessmentData.assessmentId,
+            generatedBy: 'crewai_agent',
+            estimatedHours: initiative.estimatedHours || 12,
+            tags: ['strategic-initiative', 'crewai-generated'],
+            metadata: {
+              phase: initiative.phase,
+              timeline: initiative.timeline,
+              objective: initiative.description,
+              crewAIGenerated: true
+            }
+          };
+          actionItems.push(actionItem);
+        });
+
+        // Create action items from governance recommendations
+        enhancedRecommendations.governanceActions.forEach((action, index) => {
+          const actionItem = {
+            title: action.title,
+            description: action.description,
+            category: 'process',
+            priority: 'medium',
+            source: assessmentType,
+            sourceAssessmentId: assessmentData.assessmentId,
+            generatedBy: 'crewai_agent',
+            estimatedHours: action.estimatedHours || 6,
+            tags: ['governance', 'process-improvement', 'crewai-generated'],
+            metadata: {
+              governanceType: action.type,
+              crewAIGenerated: true
+            }
+          };
+          actionItems.push(actionItem);
+        });
+
+        // Create action items from learning recommendations
+        enhancedRecommendations.learningRecommendations.forEach((learning, index) => {
+          const actionItem = {
+            title: learning.title,
+            description: learning.description,
+            category: 'learning',
+            priority: 'medium',
+            source: assessmentType,
+            sourceAssessmentId: assessmentData.assessmentId,
+            generatedBy: 'crewai_agent',
+            estimatedHours: learning.estimatedHours || 8,
+            tags: ['learning', 'capability-building', 'crewai-generated'],
+            metadata: {
+              learningType: 'capability-building',
+              crewAIGenerated: true
+            }
+          };
+          actionItems.push(actionItem);
+        });
+      }
+
+      // Create all action items in database
+      const createdActionItems = [];
+      for (const actionItemData of actionItems) {
+        const createdItem = await this.createActionItem(userId, projectId, actionItemData);
+        createdActionItems.push(createdItem);
+      }
+
+      console.log(`✅ Created ${createdActionItems.length} enhanced action items from CrewAI analysis`);
+      return createdActionItems;
+
+    } catch (error) {
+      console.error('❌ Error generating enhanced action items:', error);
+      throw error;
+    }
+  }
+  
+  // Helper methods for parsing
+  categorizeInitiative(title) {
+    const titleLower = title.toLowerCase();
+    if (titleLower.includes('automation') || titleLower.includes('process')) return 'process';
+    if (titleLower.includes('marketing') || titleLower.includes('analytics')) return 'technical';
+    if (titleLower.includes('training') || titleLower.includes('learning')) return 'learning';
+    return 'organizational';
+  }
+  
+  estimateHoursFromDescription(description) {
+    const descLower = description.toLowerCase();
+    if (descLower.includes('pilot') || descLower.includes('experiment')) return 20;
+    if (descLower.includes('implement') || descLower.includes('deploy')) return 40;
+    if (descLower.includes('plan') || descLower.includes('assess')) return 8;
+    return 15; // default
+  }
+  
+  extractPhase(text) {
+    const phaseMatch = text.match(/phase\s+(\d+)|month\s+(\d+)/i);
+    return phaseMatch ? `Phase ${phaseMatch[1] || phaseMatch[2]}` : 'Phase 1';
+  }
+  
+  extractGovernanceTitle(text) {
+    const sentences = text.split('.');
+    const firstSentence = sentences[0].substring(0, 60).replace(/[^a-zA-Z0-9\s]/g, '').trim();
+    return firstSentence || 'Governance Action';
+  }
+  
+  extractLearningTitle(text) {
+    const sentences = text.split('.');
+    const firstSentence = sentences[0].substring(0, 60).replace(/[^a-zA-Z0-9\s]/g, '').trim();
+    return firstSentence || 'Learning Initiative';
+  }
+  
+  cleanDescription(text) {
+    return text.replace(/\*\*/g, '').replace(/\n+/g, ' ').trim();
+  }
+
+  // =============================================================================
   // UTILITY METHODS
   // =============================================================================
 
@@ -802,6 +1038,357 @@ class AssessmentAPI {
       console.error('Error importing assessment data:', error);
       throw error;
     }
+  }
+
+  // =============================================================================
+  // ENHANCED LEARNING PLAN GENERATION FROM CREWAI ANALYSIS
+  // =============================================================================
+
+  /**
+   * Generate intelligent learning plans from CrewAI assessment analysis
+   */
+  async generateEnhancedLearningPlan(userId, assessmentData, assessmentType) {
+    try {
+      const learningPlan = {
+        userId,
+        assessmentType,
+        generatedAt: new Date().toISOString(),
+        source: 'crewai_enhanced',
+        learningPaths: [],
+        adaptiveRecommendations: [],
+        progressTracking: {
+          phases: [],
+          milestones: [],
+          estimatedCompletion: null
+        }
+      };
+
+      if (assessmentType === 'ai_knowledge_navigator') {
+        learningPlan.learningPaths = this.generateAIKnowledgeLearningPaths(assessmentData);
+      } else if (assessmentType === 'change_readiness') {
+        learningPlan.learningPaths = this.generateChangeReadinessLearningPaths(assessmentData);
+      }
+
+      // Extract learning recommendations from CrewAI raw output
+      const enhancedRecommendations = this.parseCrewAILearningRecommendations(assessmentData.results);
+      learningPlan.adaptiveRecommendations = enhancedRecommendations;
+
+      // Generate progress tracking phases
+      learningPlan.progressTracking = this.generateProgressTrackingPlan(learningPlan.learningPaths);
+
+      // Save enhanced learning plan
+      await this.saveLearningProgress(userId, assessmentType, learningPlan);
+
+      console.log(`✅ Generated enhanced learning plan with ${learningPlan.learningPaths.length} paths and ${enhancedRecommendations.length} recommendations`);
+      return learningPlan;
+
+    } catch (error) {
+      console.error('❌ Error generating enhanced learning plan:', error);
+      // Fallback to basic learning plan
+      return this.generateBasicLearningPlan(userId, assessmentData, assessmentType);
+    }
+  }
+
+  /**
+   * Generate AI Knowledge specific learning paths
+   */
+  generateAIKnowledgeLearningPaths(assessmentData) {
+    const paths = [];
+    const results = assessmentData.results || assessmentData;
+    const maturityScores = results.maturity_scores || results.maturityScores || {};
+    const overallScore = results.overall_score || results.overallScore || 3;
+
+    // Foundation Path - for scores < 3
+    if (overallScore < 3) {
+      paths.push({
+        id: 'ai-foundation',
+        title: 'AI Fundamentals Foundation',
+        description: 'Build core understanding of AI concepts and applications',
+        priority: 'high',
+        estimatedDuration: '6-8 weeks',
+        difficulty: 'beginner',
+        modules: [
+          { title: 'AI Concepts & Terminology', duration: '1 week', type: 'theory' },
+          { title: 'Business Applications of AI', duration: '2 weeks', type: 'practical' },
+          { title: 'AI Tools Overview', duration: '1 week', type: 'hands-on' },
+          { title: 'Basic Prompt Engineering', duration: '2 weeks', type: 'practical' }
+        ],
+        prerequisites: [],
+        outcomes: ['Understanding AI terminology', 'Recognizing AI use cases', 'Basic tool proficiency']
+      });
+    }
+
+    // Implementation Path - for scores 3-4
+    if (overallScore >= 3 && overallScore < 4) {
+      paths.push({
+        id: 'ai-implementation',
+        title: 'AI Implementation Skills',
+        description: 'Develop practical skills for implementing AI in business contexts',
+        priority: 'high',
+        estimatedDuration: '8-12 weeks',
+        difficulty: 'intermediate',
+        modules: [
+          { title: 'Advanced Prompt Engineering', duration: '3 weeks', type: 'hands-on' },
+          { title: 'AI Project Management', duration: '2 weeks', type: 'practical' },
+          { title: 'ROI Measurement & Analytics', duration: '2 weeks', type: 'analytical' },
+          { title: 'Change Management for AI', duration: '3 weeks', type: 'strategic' }
+        ],
+        prerequisites: ['Basic AI knowledge'],
+        outcomes: ['AI project leadership', 'Implementation planning', 'Performance measurement']
+      });
+    }
+
+    // Leadership Path - for scores >= 4
+    if (overallScore >= 4) {
+      paths.push({
+        id: 'ai-leadership',
+        title: 'AI Strategic Leadership',
+        description: 'Lead AI transformation and strategic initiatives',
+        priority: 'medium',
+        estimatedDuration: '10-16 weeks',
+        difficulty: 'advanced',
+        modules: [
+          { title: 'AI Strategy Development', duration: '4 weeks', type: 'strategic' },
+          { title: 'Organizational AI Transformation', duration: '4 weeks', type: 'leadership' },
+          { title: 'AI Ethics & Governance', duration: '3 weeks', type: 'governance' },
+          { title: 'AI Innovation Management', duration: '3 weeks', type: 'innovation' }
+        ],
+        prerequisites: ['Intermediate AI skills', 'Leadership experience'],
+        outcomes: ['Strategic AI vision', 'Transformation leadership', 'Innovation management']
+      });
+    }
+
+    // Specialized paths based on maturity scores
+    const businessScore = maturityScores['F1.2'] || maturityScores['business_application'] || 3;
+    if (businessScore < 3) {
+      paths.push({
+        id: 'business-ai-applications',
+        title: 'Business AI Applications',
+        description: 'Focus on practical business applications of AI',
+        priority: 'medium',
+        estimatedDuration: '4-6 weeks',
+        difficulty: 'intermediate',
+        modules: [
+          { title: 'AI in Marketing & Sales', duration: '1.5 weeks', type: 'practical' },
+          { title: 'AI in Operations & Supply Chain', duration: '1.5 weeks', type: 'practical' },
+          { title: 'AI in Finance & Analytics', duration: '1.5 weeks', type: 'practical' },
+          { title: 'AI ROI & Business Cases', duration: '1.5 weeks', type: 'analytical' }
+        ],
+        prerequisites: ['Basic AI knowledge'],
+        outcomes: ['Business use case identification', 'ROI calculation', 'Implementation planning']
+      });
+    }
+
+    return paths;
+  }
+
+  /**
+   * Generate Change Readiness specific learning paths
+   */
+  generateChangeReadinessLearningPaths(assessmentData) {
+    const paths = [];
+    const results = assessmentData.results || assessmentData;
+    const readinessLevel = results.readiness_level || results.readinessLevel || 'prepare_first';
+    const scoringBreakdown = results.scoring_breakdown || {};
+
+    // Preparation Path - for 'prepare_first' or low scores
+    if (readinessLevel === 'prepare_first' || (scoringBreakdown.overall_score || 0) < 60) {
+      paths.push({
+        id: 'change-preparation',
+        title: 'Change Readiness Preparation',
+        description: 'Build organizational foundation for AI implementation',
+        priority: 'high',
+        estimatedDuration: '8-12 weeks',
+        difficulty: 'intermediate',
+        modules: [
+          { title: 'Change Management Fundamentals', duration: '3 weeks', type: 'theory' },
+          { title: 'Stakeholder Engagement & Communication', duration: '2 weeks', type: 'practical' },
+          { title: 'Process Assessment & Optimization', duration: '3 weeks', type: 'analytical' },
+          { title: 'Technology Readiness Evaluation', duration: '2 weeks', type: 'technical' }
+        ],
+        prerequisites: [],
+        outcomes: ['Change readiness', 'Stakeholder buy-in', 'Process optimization']
+      });
+    }
+
+    // Implementation Path - for 'ready_to_implement'
+    if (readinessLevel === 'ready_to_implement' || (scoringBreakdown.overall_score || 0) >= 60) {
+      paths.push({
+        id: 'change-implementation',
+        title: 'AI Change Implementation',
+        description: 'Execute AI transformation with effective change management',
+        priority: 'high',
+        estimatedDuration: '10-16 weeks',
+        difficulty: 'advanced',
+        modules: [
+          { title: 'AI Implementation Strategy', duration: '4 weeks', type: 'strategic' },
+          { title: 'Team Training & Development', duration: '3 weeks', type: 'development' },
+          { title: 'Process Integration & Automation', duration: '4 weeks', type: 'technical' },
+          { title: 'Performance Monitoring & Optimization', duration: '3 weeks', type: 'analytical' }
+        ],
+        prerequisites: ['Change management basics', 'AI knowledge'],
+        outcomes: ['Successful AI implementation', 'Team capability', 'Process optimization']
+      });
+    }
+
+    // Leadership Path - based on leadership readiness
+    const leadershipReadiness = scoringBreakdown.leadership_readiness || 0;
+    if (leadershipReadiness < 60) {
+      paths.push({
+        id: 'change-leadership',
+        title: 'AI Change Leadership',
+        description: 'Develop leadership capabilities for AI transformation',
+        priority: 'medium',
+        estimatedDuration: '6-10 weeks',
+        difficulty: 'intermediate',
+        modules: [
+          { title: 'Transformational Leadership for AI', duration: '3 weeks', type: 'leadership' },
+          { title: 'Vision Communication & Alignment', duration: '2 weeks', type: 'communication' },
+          { title: 'Resistance Management', duration: '2 weeks', type: 'practical' },
+          { title: 'Continuous Improvement Culture', duration: '3 weeks', type: 'cultural' }
+        ],
+        prerequisites: ['Leadership experience'],
+        outcomes: ['Transformation leadership', 'Vision alignment', 'Culture change']
+      });
+    }
+
+    return paths;
+  }
+
+  /**
+   * Parse learning recommendations from CrewAI raw output
+   */
+  parseCrewAILearningRecommendations(results) {
+    const recommendations = [];
+    
+    try {
+      const rawOutput = results.raw_crewai_output || results.crewai_results || '';
+      const existingLearningPath = results.learning_path || {};
+      
+      // Extract specific learning recommendations from raw output
+      if (rawOutput && typeof rawOutput === 'string') {
+        // Look for capability building recommendations
+        const capabilityMatches = rawOutput.match(/(capability|training|learning|skill)[^.]*[.]/gi);
+        
+        if (capabilityMatches) {
+          capabilityMatches.slice(0, 5).forEach((match, index) => {
+            recommendations.push({
+              id: `crewai-rec-${index}`,
+              title: this.extractRecommendationTitle(match),
+              description: match.substring(0, 150),
+              type: 'capability-building',
+              priority: index < 2 ? 'high' : 'medium',
+              estimatedDuration: '2-4 weeks',
+              source: 'crewai_analysis'
+            });
+          });
+        }
+      }
+      
+      // Use existing learning path priority areas
+      if (existingLearningPath.priority_areas) {
+        existingLearningPath.priority_areas.forEach((area, index) => {
+          recommendations.push({
+            id: `priority-area-${index}`,
+            title: `Focus on ${area.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`,
+            description: `Prioritized learning area identified from your assessment responses`,
+            type: 'priority-focus',
+            priority: index < 2 ? 'high' : 'medium',
+            estimatedDuration: existingLearningPath.estimated_timeline || '4-6 weeks',
+            source: 'assessment_analysis'
+          });
+        });
+      }
+      
+    } catch (error) {
+      console.warn('Error parsing CrewAI learning recommendations:', error);
+    }
+    
+    return recommendations;
+  }
+
+  /**
+   * Generate progress tracking plan
+   */
+  generateProgressTrackingPlan(learningPaths) {
+    const phases = [];
+    const milestones = [];
+    let totalWeeks = 0;
+    
+    learningPaths.forEach((path, pathIndex) => {
+      const phase = {
+        id: `phase-${pathIndex + 1}`,
+        title: `Phase ${pathIndex + 1}: ${path.title}`,
+        description: path.description,
+        estimatedDuration: path.estimatedDuration,
+        modules: path.modules.map(module => ({
+          ...module,
+          completed: false,
+          startDate: null,
+          completedDate: null
+        }))
+      };
+      phases.push(phase);
+      
+      // Extract weeks from duration string
+      const weeksMatch = path.estimatedDuration.match(/(\d+)-?(\d+)?.*weeks?/i);
+      if (weeksMatch) {
+        const minWeeks = parseInt(weeksMatch[1]);
+        const maxWeeks = parseInt(weeksMatch[2]) || minWeeks;
+        totalWeeks += Math.ceil((minWeeks + maxWeeks) / 2);
+      }
+      
+      // Create milestone for each path completion
+      milestones.push({
+        id: `milestone-${pathIndex + 1}`,
+        title: `Complete ${path.title}`,
+        description: `Successfully complete all modules in ${path.title}`,
+        pathId: path.id,
+        targetWeek: totalWeeks,
+        achieved: false,
+        achievedDate: null
+      });
+    });
+    
+    return {
+      phases,
+      milestones,
+      estimatedCompletion: `${totalWeeks} weeks`
+    };
+  }
+
+  /**
+   * Basic learning plan fallback
+   */
+  generateBasicLearningPlan(userId, assessmentData, assessmentType) {
+    return {
+      userId,
+      assessmentType,
+      generatedAt: new Date().toISOString(),
+      source: 'basic_fallback',
+      learningPaths: [{
+        id: 'basic-path',
+        title: 'AI Learning Foundation',
+        description: 'Basic AI learning path',
+        priority: 'medium',
+        estimatedDuration: '8 weeks',
+        modules: [
+          { title: 'AI Fundamentals', duration: '4 weeks', type: 'theory' },
+          { title: 'Practical Applications', duration: '4 weeks', type: 'practical' }
+        ]
+      }],
+      adaptiveRecommendations: [],
+      progressTracking: {
+        phases: [],
+        milestones: [],
+        estimatedCompletion: '8 weeks'
+      }
+    };
+  }
+
+  extractRecommendationTitle(text) {
+    const words = text.split(' ').slice(0, 8);
+    return words.join(' ').replace(/[^a-zA-Z0-9\s]/g, '') || 'Learning Recommendation';
   }
 
   // =============================================================================

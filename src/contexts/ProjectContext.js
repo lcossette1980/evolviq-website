@@ -189,10 +189,50 @@ export const ProjectProvider = ({ children }) => {
       }
     };
     
-    await updateProject(projectId, { 
-      assessments,
-      timeline: [...(currentProject.timeline || []), timelineEvent]
-    });
+    // Generate intelligent guide recommendations based on assessment results
+    try {
+      const guidesAPI = (await import('../services/guidesAPI')).default;
+      const guideRecommendations = await guidesAPI.generateGuideRecommendations(
+        user.uid, 
+        assessmentData, 
+        assessmentType
+      );
+      
+      // Store guide recommendations with the project
+      const existingGuideRecs = currentProject.guideRecommendations || [];
+      const newGuideRecommendations = [...existingGuideRecs, ...guideRecommendations];
+      
+      // Generate enhanced learning plan based on assessment results
+      const assessmentAPI = (await import('../services/assessmentAPI')).default;
+      const enhancedLearningPlan = await assessmentAPI.generateEnhancedLearningPlan(
+        user.uid,
+        assessmentData,
+        assessmentType
+      );
+
+      console.log(`🎯 Generated ${guideRecommendations.length} guide recommendations and enhanced learning plan for ${assessmentType}`);
+      
+      await updateProject(projectId, { 
+        assessments,
+        timeline: [...(currentProject.timeline || []), timelineEvent],
+        guideRecommendations: newGuideRecommendations,
+        lastGuideRecommendationUpdate: new Date().toISOString(),
+        enhancedLearningPlan: {
+          ...enhancedLearningPlan,
+          assessmentId,
+          assessmentType
+        },
+        lastLearningPlanUpdate: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error('❌ Error generating guide recommendations:', error);
+      // Continue with basic project update if guide recommendations fail
+      await updateProject(projectId, { 
+        assessments,
+        timeline: [...(currentProject.timeline || []), timelineEvent]
+      });
+    }
   };
 
   const trackActionItemCompletion = async (projectId, actionItemId, status) => {
@@ -282,13 +322,25 @@ export const ProjectProvider = ({ children }) => {
       const assessmentAPI = (await import('../services/assessmentAPI')).default;
       const aiAgentsAPI = (await import('../services/aiAgentsAPI')).default;
       
-      // Generate basic action items from assessment
-      const basicActionItems = await assessmentAPI.generateActionItemsFromAssessment(
+      // Generate enhanced action items from CrewAI assessment analysis
+      const enhancedActionItems = await assessmentAPI.generateEnhancedActionItems(
         user.uid,
         projectId,
-        assessmentType,
-        assessmentData
+        assessmentData,
+        assessmentType
       );
+      
+      // Fallback: Generate basic action items if enhanced parsing didn't work
+      let basicActionItems = [];
+      if (!enhancedActionItems || enhancedActionItems.length === 0) {
+        console.log('🔄 Enhanced parsing yielded no results, falling back to basic action items');
+        basicActionItems = await assessmentAPI.generateActionItemsFromAssessment(
+          user.uid,
+          projectId,
+          assessmentType,
+          assessmentData
+        );
+      }
       
       // Check if we have multiple assessments to generate intelligent cross-assessment actions
       const allAssessments = await assessmentAPI.getUserAssessments(user.uid);
@@ -310,7 +362,11 @@ export const ProjectProvider = ({ children }) => {
         }
       }
       
-      const allActionItems = [...basicActionItems, ...intelligentActions];
+      // Combine enhanced actions (or fallback basic actions) with intelligent actions
+      const primaryActionItems = enhancedActionItems?.length > 0 ? enhancedActionItems : basicActionItems;
+      const allActionItems = [...primaryActionItems, ...intelligentActions];
+      
+      console.log(`✅ Total action items generated: ${allActionItems.length} (Enhanced: ${enhancedActionItems?.length || 0}, Basic: ${basicActionItems.length}, Intelligent: ${intelligentActions.length})`);
       
       // Update project with action item count (for dashboard stats)
       const currentActionItems = currentProject?.actionItems || [];
