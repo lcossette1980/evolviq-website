@@ -21,7 +21,8 @@ import {
   Zap,
   Eye,
   FileText,
-  Home
+  Home,
+  Brain
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
