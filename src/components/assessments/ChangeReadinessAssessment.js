@@ -227,11 +227,13 @@ const ChangeReadinessAssessment = () => {
       const response = await assessmentAPI.submitChangeReadinessResponse(
         user.uid,
         {
-          agent: currentAgent,
-          response: userResponse,
-          organizationData,
-          projectData,
-          session_id: assessment.sessionData?.session_id || currentAgent.sessionId
+          questionId: currentAgent.questionId,
+          answer: userResponse,
+          sessionData: { 
+            session_id: assessment.sessionData?.session_id || currentAgent.sessionId,
+            organizationData,
+            projectData
+          }
         }
       );
 
