@@ -170,14 +170,15 @@ const ChangeReadinessAssessment = () => {
       );
       
       // Transform the backend response to match frontend expectations
+      const responseData = response.data || response;
       const mockAgent = {
-        id: response.section || 'leadership_support',
-        name: getSectionName(response.section || 'leadership_support'),
-        role: getSectionRole(response.section || 'leadership_support'),
-        question: response.question,
-        context: response.rationale,
-        sessionId: response.session_id,
-        questionId: response.question_id
+        id: responseData.section || 'leadership_support',
+        name: getSectionName(responseData.section || 'leadership_support'),
+        role: getSectionRole(responseData.section || 'leadership_support'),
+        question: responseData.question,
+        context: responseData.rationale,
+        sessionId: responseData.session_id,
+        questionId: responseData.question_id
       };
       
       setCurrentAgent(mockAgent);
@@ -187,7 +188,7 @@ const ChangeReadinessAssessment = () => {
         responses: [],
         agentAnalysis: {},
         currentAgentIndex: 0,
-        sessionData: { session_id: response.session_id }
+        sessionData: { session_id: responseData.session_id }
       }));
     } catch (error) {
       console.error('Error starting assessment:', error);
@@ -253,12 +254,13 @@ const ChangeReadinessAssessment = () => {
       setAssessment(updatedAssessment);
       setUserResponse('');
 
-      if (response.isComplete) {
+      if (response.isComplete || response.data?.is_complete || response.is_complete) {
         // Assessment is complete
-        setResults(response.results);
+        const results = response.results || response.data?.analysis || response.analysis;
+        setResults(results);
         setCurrentStep('results');
         updatedAssessment.isComplete = true;
-        updatedAssessment.results = response.results;
+        updatedAssessment.results = results;
         
         // Track assessment completion in project
         if (currentProject) {
@@ -286,14 +288,15 @@ const ChangeReadinessAssessment = () => {
         }
       } else {
         // Continue with next agent - transform backend response like in startAssessment
+        const responseData = response.data || response;
         const nextAgent = {
-          id: response.section || 'leadership_support',
-          name: getSectionName(response.section || 'leadership_support'),
-          role: getSectionRole(response.section || 'leadership_support'),
-          question: response.question,
-          context: response.rationale,
-          sessionId: response.session_id,
-          questionId: response.question_id
+          id: responseData.section || 'leadership_support',
+          name: getSectionName(responseData.section || 'leadership_support'),
+          role: getSectionRole(responseData.section || 'leadership_support'),
+          question: responseData.question,
+          context: responseData.rationale,
+          sessionId: responseData.session_id,
+          questionId: responseData.question_id
         };
         setCurrentAgent(nextAgent);
       }
