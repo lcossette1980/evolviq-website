@@ -248,14 +248,19 @@ class AssessmentAPI {
 
   async submitChangeReadinessResponse(userId, responseData) {
     try {
-      // Call backend to process response using centralized config
-      const response = await this.makeAPICall(API_CONFIG.ENDPOINTS.ASSESSMENTS.CHANGE_READINESS_RESPOND, 'POST', {
+      const payload = {
         user_id: userId,
         assessment_type: "change_readiness",
         question_id: responseData.questionId,
         answer: responseData.answer,
         session_data: responseData.sessionData || {}
-      });
+      };
+      
+      console.log('🌐 Sending assessment response payload:', payload);
+      console.log('🔑 Session data being sent:', payload.session_data);
+      
+      // Call backend to process response using centralized config
+      const response = await this.makeAPICall(API_CONFIG.ENDPOINTS.ASSESSMENTS.CHANGE_READINESS_RESPOND, 'POST', payload);
 
       return response.data || response;
     } catch (error) {

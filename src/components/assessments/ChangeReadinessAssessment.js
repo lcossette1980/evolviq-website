@@ -175,6 +175,9 @@ const ChangeReadinessAssessment = () => {
       
       // Transform the backend response to match frontend expectations
       const responseData = response.data || response;
+      console.log('🚀 Assessment started with response:', responseData);
+      console.log('🔑 Session ID received:', responseData.session_id);
+      
       const mockAgent = {
         id: responseData.section || 'leadership_support',
         name: getSectionName(responseData.section || 'leadership_support'),
@@ -194,6 +197,9 @@ const ChangeReadinessAssessment = () => {
         currentAgentIndex: 0,
         sessionData: { session_id: responseData.session_id }
       }));
+      
+      console.log('✅ Assessment initialized with agent:', mockAgent);
+      console.log('✅ Session data set:', { session_id: responseData.session_id });
     } catch (error) {
       console.error('Error starting assessment:', error);
     } finally {
@@ -229,13 +235,23 @@ const ChangeReadinessAssessment = () => {
 
     setIsLoading(true);
     try {
+      const sessionId = assessment.sessionData?.session_id || currentAgent.sessionId;
+      console.log('📝 Submitting response with session ID:', sessionId);
+      console.log('🔍 Assessment sessionData:', assessment.sessionData);
+      console.log('🔍 Current agent sessionId:', currentAgent.sessionId);
+      console.log('🔍 Question ID:', currentAgent.questionId);
+      
+      if (!sessionId) {
+        throw new Error('No session ID available. Assessment session may have been lost.');
+      }
+
       const response = await assessmentAPI.submitChangeReadinessResponse(
         user.uid,
         {
           questionId: currentAgent.questionId,
           answer: userResponse,
           sessionData: { 
-            session_id: assessment.sessionData?.session_id || currentAgent.sessionId,
+            session_id: sessionId,
             organizationData,
             projectData
           }
