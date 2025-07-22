@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { scrollToTop } from '../../utils/scrollUtils';
 import { 
   Users, 
   Target, 
@@ -153,6 +154,8 @@ const ChangeReadinessAssessment = () => {
         if (previousAssessment.isComplete) {
           setCurrentStep('results');
           setResults(previousAssessment.results);
+          // Scroll to top when showing cached results
+          setTimeout(() => scrollToTop('smooth'), 100);
         }
       }
     } catch (error) {
@@ -282,6 +285,8 @@ const ChangeReadinessAssessment = () => {
         
         setResults(results);
         setCurrentStep('results');
+        // Scroll to top to show results clearly
+        setTimeout(() => scrollToTop('smooth'), 100);
         updatedAssessment.isComplete = true;
         updatedAssessment.results = results;
         
@@ -978,8 +983,8 @@ const ChangeReadinessAssessment = () => {
             </div>
           );
         }) : 
-        /* Show general recommendations when agent-specific ones aren't available */
-        (
+        /* Enhanced CrewAI Analysis Display */
+        results ? renderEnhancedCrewAIResults(results) : (
           <div className="bg-white rounded-xl p-6 shadow-sm">
             <h3 className="font-bold text-lg mb-4" style={{ color: colors.charcoal }}>
               Assessment Recommendations

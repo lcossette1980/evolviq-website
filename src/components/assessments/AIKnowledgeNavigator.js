@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { scrollToTop } from '../../utils/scrollUtils';
 import { 
   Brain, 
   Target, 
@@ -85,6 +86,8 @@ const AIKnowledgeNavigator = () => {
           setCurrentStep('results');
           setResults(previousAssessment.results);
           setLearningPlan(previousAssessment.learningPlan);
+          // Scroll to top when showing cached results
+          setTimeout(() => scrollToTop('smooth'), 100);
         }
       }
     } catch (error) {
@@ -150,6 +153,8 @@ const AIKnowledgeNavigator = () => {
       if (response.completed) {
         // Assessment is complete with sophisticated agentic analysis
         setCurrentStep('results');
+        // Scroll to top to show results clearly
+        setTimeout(() => scrollToTop('smooth'), 100);
         updatedAssessment.isComplete = true;
         
         // Use the sophisticated analysis from the backend
