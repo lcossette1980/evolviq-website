@@ -1786,7 +1786,7 @@ const MemberDashboard = () => {
                               {item.title}
                             </span>
                             {item.description && (
-                              {typeof item.description === 'string' ? (
+                              typeof item.description === 'string' ? (
                                 <p className="text-sm text-gray-600 mt-1">{item.description}</p>
                               ) : typeof item.description === 'object' && item.description.title ? (
                                 <p className="text-sm text-gray-600 mt-1">
@@ -1805,7 +1805,7 @@ const MemberDashboard = () => {
                                     )
                                   }}
                                 />
-                              )}
+                              )
                             )}
                             
                             {/* Enhanced Metadata with CrewAI Intelligence */}
