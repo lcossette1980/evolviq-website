@@ -770,6 +770,12 @@ class AssessmentAPI {
     const learningRecommendations = [];
     
     try {
+      // Handle case where results might be undefined or null
+      if (!results) {
+        console.warn('⚠️ No results provided for CrewAI recommendations parsing');
+        return { strategicInitiatives, governanceActions, learningRecommendations };
+      }
+      
       // Parse raw CrewAI output if available
       const rawOutput = results.raw_crewai_output || results.crewai_results || '';
       console.log('🔍 Parsing CrewAI raw output length:', rawOutput.length);
@@ -871,6 +877,12 @@ class AssessmentAPI {
       
       if (assessmentType === 'ai_knowledge_navigator' || assessmentType === 'change_readiness') {
         const { results } = assessmentData;
+        
+        console.log('🎯 Enhanced Action Items - data structure:', {
+          hasResults: !!results,
+          resultsKeys: results ? Object.keys(results) : 'No results',
+          assessmentType
+        });
         
         // Extract detailed recommendations from raw CrewAI output
         const enhancedRecommendations = this.parseCrewAIRecommendations(results);
@@ -1049,6 +1061,12 @@ class AssessmentAPI {
    */
   async generateEnhancedLearningPlan(userId, assessmentData, assessmentType) {
     try {
+      console.log('📊 Enhanced Learning Plan - assessmentData structure:', {
+        hasResults: !!assessmentData.results,
+        resultsKeys: assessmentData.results ? Object.keys(assessmentData.results) : 'No results',
+        assessmentType
+      });
+
       const learningPlan = {
         userId,
         assessmentType,
@@ -1262,6 +1280,12 @@ class AssessmentAPI {
     const recommendations = [];
     
     try {
+      // Handle case where results might be undefined or null
+      if (!results) {
+        console.warn('⚠️ No results provided for CrewAI learning recommendations parsing');
+        return recommendations;
+      }
+      
       const rawOutput = results.raw_crewai_output || results.crewai_results || '';
       const existingLearningPath = results.learning_path || {};
       
