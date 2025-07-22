@@ -1104,6 +1104,135 @@ const ChangeReadinessAssessment = () => {
     </div>
   );
 
+  // Enhanced CrewAI Results Display Component
+  const renderEnhancedCrewAIResults = (results) => {
+    if (!results) return null;
+
+    return (
+      <div className="space-y-6">
+        {/* Strategic Insights */}
+        {results.business_recommendations && results.business_recommendations.length > 0 && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border">
+            <div className="flex items-center mb-4">
+              <Brain className="w-5 h-5 mr-3" style={{ color: colors.chestnut }} />
+              <h4 className="font-bold text-lg" style={{ color: colors.charcoal }}>
+                Strategic Insights from AI Analysis
+              </h4>
+            </div>
+            <div className="space-y-4">
+              {results.business_recommendations.map((rec, index) => (
+                <div key={index} className="bg-white p-4 rounded-lg border-l-4 border-blue-400">
+                  <div className="font-semibold mb-2" style={{ color: colors.charcoal }}>
+                    {rec.title || `Strategic Initiative ${index + 1}`}
+                  </div>
+                  <div className="text-gray-700 mb-2">
+                    {rec.description || rec}
+                  </div>
+                  {rec.roi_timeline && (
+                    <div className="text-blue-600 font-medium">
+                      Expected ROI: {rec.roi_timeline}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Learning Path Insights */}
+        {results.learning_path && (
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border">
+            <div className="flex items-center mb-4">
+              <Target className="w-5 h-5 mr-3" style={{ color: colors.khaki }} />
+              <h4 className="font-bold text-lg" style={{ color: colors.charcoal }}>
+                Personalized Learning Path
+              </h4>
+            </div>
+            
+            {results.learning_path.priority_areas && (
+              <div className="mb-4">
+                <div className="text-gray-600 mb-2">Priority Focus Areas:</div>
+                <div className="flex flex-wrap gap-2">
+                  {results.learning_path.priority_areas.map((area, index) => (
+                    <span 
+                      key={index}
+                      className="px-3 py-1 text-sm rounded-full bg-green-100 text-green-700"
+                    >
+                      {area.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {results.learning_path.estimated_timeline && (
+              <div className="text-green-600 font-medium">
+                Estimated Timeline: {results.learning_path.estimated_timeline}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Change Readiness Breakdown */}
+        {results.scoring_breakdown && (
+          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-xl border">
+            <div className="flex items-center mb-4">
+              <BarChart3 className="w-5 h-5 mr-3" style={{ color: colors.chestnut }} />
+              <h4 className="font-bold text-lg" style={{ color: colors.charcoal }}>
+                Organizational Readiness Breakdown
+              </h4>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Object.entries(results.scoring_breakdown)
+                .filter(([key]) => key !== 'overall_score')
+                .map(([area, score]) => (
+                <div key={area}>
+                  <div className="text-gray-600 capitalize mb-1">
+                    {area.replace(/_/g, ' ').replace('readiness', '')}
+                  </div>
+                  <div className="flex items-center">
+                    <div className="flex-1 bg-gray-200 rounded-full h-2 mr-3">
+                      <div 
+                        className="h-2 rounded-full transition-all duration-300" 
+                        style={{ 
+                          backgroundColor: score >= 70 ? colors.khaki : score >= 50 ? '#FBD38D' : '#FEB2B2',
+                          width: `${Math.min(score, 100)}%` 
+                        }}
+                      />
+                    </div>
+                    <span className="font-semibold text-sm w-10">{score}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Next Steps */}
+        {results.next_steps && results.next_steps.length > 0 && (
+          <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-6 rounded-xl border">
+            <div className="flex items-center mb-4">
+              <Zap className="w-5 h-5 mr-3" style={{ color: colors.chestnut }} />
+              <h4 className="font-bold text-lg" style={{ color: colors.charcoal }}>
+                Recommended Next Steps
+              </h4>
+            </div>
+            <div className="space-y-3">
+              {results.next_steps.map((step, index) => (
+                <div key={index} className="flex items-start">
+                  <span className="w-6 h-6 rounded-full bg-teal-100 text-teal-700 text-center text-sm mr-3 mt-0.5 flex-shrink-0 flex items-center justify-center font-semibold">
+                    {index + 1}
+                  </span>
+                  <span className="text-gray-700">{step}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: colors.bone }}>
       <div className="max-w-7xl mx-auto px-4 py-8">
