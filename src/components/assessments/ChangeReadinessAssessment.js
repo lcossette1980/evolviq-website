@@ -246,7 +246,7 @@ const ChangeReadinessAssessment = () => {
         }],
         agentAnalysis: {
           ...assessment.agentAnalysis,
-          [currentAgent.id]: response.analysis?.[currentAgent.id] || response.analysis
+          [currentAgent.id]: response.analysis?.[currentAgent.id] || response.analysis || null
         }
       };
 

@@ -45,14 +45,37 @@ class AssessmentAPI {
     }
   }
 
+  // Helper function to remove undefined values for Firestore
+  cleanDataForFirestore(obj) {
+    if (obj === null || typeof obj !== 'object') {
+      return obj === undefined ? null : obj;
+    }
+    
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.cleanDataForFirestore(item));
+    }
+    
+    const cleaned = {};
+    for (const [key, value] of Object.entries(obj)) {
+      const cleanedValue = this.cleanDataForFirestore(value);
+      if (cleanedValue !== undefined) {
+        cleaned[key] = cleanedValue;
+      }
+    }
+    return cleaned;
+  }
+
   async saveAssessmentProgress(userId, assessmentType, progressData) {
     try {
       const assessmentRef = doc(db, 'assessments', `${userId}_${assessmentType}`);
       
+      // Clean the data to remove undefined values
+      const cleanedProgressData = this.cleanDataForFirestore(progressData);
+      
       await setDoc(assessmentRef, {
         userId,
         assessmentType,
-        ...progressData,
+        ...cleanedProgressData,
         lastUpdated: serverTimestamp(),
         updatedAt: new Date().toISOString()
       }, { merge: true });
