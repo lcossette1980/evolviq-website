@@ -1768,7 +1768,7 @@ class ChangeReadinessCrewAI:
                 memory=False,  # Disable memory to prevent context accumulation
                 embedder=None,  # Disable embedder
                 max_rpm=5,  # Lower rate limit
-                max_execution_time=60  # 1 minute absolute maximum execution time
+                max_execution_time=60,  # 1 minute absolute maximum execution time
                 # Disable cost tracking and callbacks that cause loops
                 manager_callbacks=None,
                 step_callback=None,
