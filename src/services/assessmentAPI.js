@@ -776,9 +776,17 @@ class AssessmentAPI {
         return { strategicInitiatives, governanceActions, learningRecommendations };
       }
       
-      // Parse raw CrewAI output if available
-      const rawOutput = results.raw_crewai_output || results.crewai_results || '';
+      // Parse raw CrewAI output if available - handle nested structure
+      let rawOutput = '';
+      if (results.raw_crewai_output && results.raw_crewai_output.crewai_results) {
+        rawOutput = typeof results.raw_crewai_output.crewai_results === 'string' 
+          ? results.raw_crewai_output.crewai_results 
+          : JSON.stringify(results.raw_crewai_output.crewai_results);
+      } else {
+        rawOutput = results.raw_crewai_output || results.crewai_results || '';
+      }
       console.log('🔍 Parsing CrewAI raw output length:', rawOutput.length);
+      console.log('🔍 Raw output preview:', rawOutput.substring(0, 200));
       
       if (typeof rawOutput === 'string' && rawOutput.length > 100) {
         // Extract strategic initiatives using pattern matching
@@ -876,11 +884,13 @@ class AssessmentAPI {
       const actionItems = [];
       
       if (assessmentType === 'ai_knowledge_navigator' || assessmentType === 'change_readiness') {
-        const { results } = assessmentData;
+        // Fix: Look for results in multiple locations - assessmentData.results OR assessmentData itself
+        const results = assessmentData.results || assessmentData;
         
         console.log('🎯 Enhanced Action Items - data structure:', {
           hasResults: !!results,
-          resultsKeys: results ? Object.keys(results) : 'No results',
+          hasRawCrewAI: !!(results.raw_crewai_output || results.crewai_results),
+          resultsKeys: results ? Object.keys(results).slice(0, 10) : 'No results',
           assessmentType
         });
         
@@ -1061,9 +1071,13 @@ class AssessmentAPI {
    */
   async generateEnhancedLearningPlan(userId, assessmentData, assessmentType) {
     try {
+      // Fix: Look for results in multiple locations - assessmentData.results OR assessmentData itself
+      const results = assessmentData.results || assessmentData;
+      
       console.log('📊 Enhanced Learning Plan - assessmentData structure:', {
-        hasResults: !!assessmentData.results,
-        resultsKeys: assessmentData.results ? Object.keys(assessmentData.results) : 'No results',
+        hasResults: !!results,
+        hasRawCrewAI: !!(results.raw_crewai_output || results.crewai_results),
+        resultsKeys: results ? Object.keys(results).slice(0, 10) : 'No results',
         assessmentType
       });
 
@@ -1088,7 +1102,7 @@ class AssessmentAPI {
       }
 
       // Extract learning recommendations from CrewAI raw output
-      const enhancedRecommendations = this.parseCrewAILearningRecommendations(assessmentData.results);
+      const enhancedRecommendations = this.parseCrewAILearningRecommendations(results);
       learningPlan.adaptiveRecommendations = enhancedRecommendations;
 
       // Generate progress tracking phases
@@ -1286,7 +1300,16 @@ class AssessmentAPI {
         return recommendations;
       }
       
-      const rawOutput = results.raw_crewai_output || results.crewai_results || '';
+      // Parse raw CrewAI output if available - handle nested structure
+      let rawOutput = '';
+      if (results.raw_crewai_output && results.raw_crewai_output.crewai_results) {
+        rawOutput = typeof results.raw_crewai_output.crewai_results === 'string' 
+          ? results.raw_crewai_output.crewai_results 
+          : JSON.stringify(results.raw_crewai_output.crewai_results);
+      } else {
+        rawOutput = results.raw_crewai_output || results.crewai_results || '';
+      }
+      
       const existingLearningPath = results.learning_path || {};
       
       // Extract specific learning recommendations from raw output
