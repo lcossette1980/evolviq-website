@@ -287,6 +287,9 @@ const ChangeReadinessAssessment = () => {
         
         // Track assessment completion in project
         if (currentProject) {
+          // ENHANCED: Preserve full CrewAI results data for intelligent parsing
+          const originalResults = response.results || response.data?.analysis || response.analysis;
+          
           const assessmentData = {
             readinessLevel: response.results?.readinessLevel || 'get_help',
             overallScore: response.results?.overallScore || 0,
@@ -295,8 +298,16 @@ const ChangeReadinessAssessment = () => {
             organizationData,
             projectData,
             completedAt: new Date().toISOString(),
-            assessmentId: `change_readiness_${user.uid}_${Date.now()}`
+            assessmentId: `change_readiness_${user.uid}_${Date.now()}`,
+            // CRITICAL: Include full original results with raw CrewAI output
+            results: originalResults
           };
+          
+          console.log('🚀 ENHANCED: AssessmentData with full results:', {
+            hasResults: !!assessmentData.results,
+            hasRawCrewAI: !!(assessmentData.results?.raw_crewai_output),
+            resultKeys: assessmentData.results ? Object.keys(assessmentData.results) : 'none'
+          });
           
           await addAssessmentToProject(currentProject.id, 'change_readiness', assessmentData);
           

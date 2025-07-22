@@ -891,7 +891,9 @@ class AssessmentAPI {
           hasResults: !!results,
           hasRawCrewAI: !!(results.raw_crewai_output || results.crewai_results),
           resultsKeys: results ? Object.keys(results).slice(0, 10) : 'No results',
-          assessmentType
+          assessmentType,
+          rawCrewAIStructure: results.raw_crewai_output ? Object.keys(results.raw_crewai_output) : 'No raw_crewai_output',
+          crewaiResultsType: results.raw_crewai_output?.crewai_results ? typeof results.raw_crewai_output.crewai_results : 'No crewai_results'
         });
         
         // Extract detailed recommendations from raw CrewAI output
