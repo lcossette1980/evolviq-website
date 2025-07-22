@@ -10,6 +10,10 @@ from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from datetime import datetime
 
+# Disable LiteLLM cost calculation to prevent infinite loops
+os.environ['LITELLM_LOG_LEVEL'] = 'ERROR'  # Only show errors, no cost calculation logs
+os.environ['LITELLM_DISABLE_TELEMETRY'] = 'true'  # Disable telemetry completely
+
 # CrewAI imports
 from crewai import Agent, Task, Crew, Process
 from crewai.tools import BaseTool
@@ -802,13 +806,16 @@ class AIReadinessCrewAI:
     def __init__(self, openai_api_key: str):
         self.openai_api_key = openai_api_key
         
-        # Initialize LLM with timeout
+        # Initialize LLM with timeout and disable cost tracking to prevent loops
         self.llm = ChatOpenAI(
             openai_api_key=openai_api_key,
             model_name="gpt-4o-mini",
             temperature=0.7,
             request_timeout=30,  # 30 second timeout for LLM calls
-            max_retries=1  # Limit retries to prevent loops
+            max_retries=1,  # Limit retries to prevent loops
+            # Disable LiteLLM cost tracking that causes infinite loops
+            streaming=False,
+            callbacks=[]  # Remove any callback handlers that might cause cost calculation loops
         )
         
         # Initialize analysis agents
@@ -1648,13 +1655,16 @@ class ChangeReadinessCrewAI:
     def __init__(self, openai_api_key: str):
         self.openai_api_key = openai_api_key
         
-        # Initialize LLM with timeout
+        # Initialize LLM with timeout and disable cost tracking to prevent loops
         self.llm = ChatOpenAI(
             openai_api_key=openai_api_key,
             model_name="gpt-4o-mini",
             temperature=0.7,
             request_timeout=30,  # 30 second timeout for LLM calls
-            max_retries=1  # Limit retries to prevent loops
+            max_retries=1,  # Limit retries to prevent loops
+            # Disable LiteLLM cost tracking that causes infinite loops
+            streaming=False,
+            callbacks=[]  # Remove any callback handlers that might cause cost calculation loops
         )
         
         # Initialize change readiness agents
@@ -1709,7 +1719,11 @@ class ChangeReadinessCrewAI:
                 memory=False,  # Disable memory to prevent context accumulation
                 embedder=None,  # Disable embedder
                 max_rpm=10,  # Rate limit requests per minute
-                max_execution_time=180  # 3 minute absolute maximum execution time
+                max_execution_time=180,  # 3 minute absolute maximum execution time
+                # Disable cost tracking and callbacks that cause loops
+                manager_callbacks=None,
+                step_callback=None,
+                task_callback=None
             )
             
             # Execute assessment with timeout
