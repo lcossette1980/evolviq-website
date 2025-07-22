@@ -23,7 +23,8 @@ import {
   FileText,
   Home,
   Brain,
-  Layers
+  Layers,
+  PieChart
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
@@ -296,65 +297,92 @@ const ChangeReadinessAssessment = () => {
           rawResultsSample: results ? JSON.stringify(results).substring(0, 500) + '...' : 'null'
         });
         
-        // ENHANCED: Preserve ALL CrewAI data while mapping display fields
+        // FIXED: Map actual CrewAI field names to display components
         if (results) {
           const mappedResults = {
             // Preserve original CrewAI data structure
             ...results,
             
             // Map display fields for UI compatibility
-            readinessScore: results.scoring_breakdown?.overall_score || 
+            readinessScore: Math.round((results.scoring_breakdown?.overall_score || 
                            results.visual_analytics?.readiness_score || 
-                           results.overall_score || 0,
+                           results.overall_score || 0) * 10),
             
             scores: {
-              strategic: results.scoring_breakdown?.dimension_scores?.leadership_support || 
-                        results.scoring_breakdown?.leadership_readiness || 
-                        results.leadership_support || 0,
-              organizational: results.scoring_breakdown?.dimension_scores?.team_capability || 
-                             results.scoring_breakdown?.culture_readiness || 
-                             results.team_capability || 0,
-              technical: results.scoring_breakdown?.dimension_scores?.resource_allocation || 
-                        results.scoring_breakdown?.technology_readiness || 
-                        results.resource_allocation || 0
+              strategic: results.scoring_breakdown?.leadership_readiness || 0,
+              organizational: results.scoring_breakdown?.culture_readiness || 0,
+              technical: results.scoring_breakdown?.technology_readiness || 0
             },
+            
+            // Map CrewAI 'recommendations' to 'business_recommendations' for display
+            business_recommendations: results.recommendations ? results.recommendations.map((rec, index) => ({
+              title: `Strategic Recommendation ${index + 1}`,
+              description: rec,
+              expected_impact: "Organizational transformation",
+              implementation_timeline: "2-6 months"
+            })) : [],
+            
+            // Map 'portfolio_guidance' to 'learning_path' for display
+            learning_path: results.portfolio_guidance ? {
+              priority_areas: ['change_management', 'ai_implementation', 'organizational_readiness'],
+              recommended_courses: results.portfolio_guidance.priority_initiatives ? 
+                results.portfolio_guidance.priority_initiatives.map(initiative => ({
+                  title: initiative,
+                  estimated_duration: "4-6 weeks"
+                })) : 
+                [{ title: typeof results.portfolio_guidance === 'object' ? JSON.stringify(results.portfolio_guidance) : results.portfolio_guidance, estimated_duration: "4-6 weeks" }],
+              estimated_timeline: results.timeline_estimate || "3-6 months"
+            } : null,
+            
+            // Map 'risk_assessment' to 'implementation_roadmap' for display
+            implementation_roadmap: results.risk_assessment ? {
+              phases: [
+                {
+                  name: "Risk Mitigation Phase",
+                  description: "Address identified risks and prepare for implementation",
+                  duration: "4-6 weeks",
+                  key_activities: results.risk_assessment.high_risks || []
+                },
+                {
+                  name: "Implementation Phase", 
+                  description: "Begin AI implementation with identified strategies",
+                  duration: "8-12 weeks",
+                  key_activities: results.recommendations || []
+                }
+              ]
+            } : null,
             
             // Enhanced next steps with CrewAI intelligence
             nextSteps: results.next_steps ? results.next_steps.map((step, index) => ({
-              title: typeof step === 'object' ? step.title || `Step ${index + 1}` : `Step ${index + 1}`,
-              description: typeof step === 'object' ? step.description || step.details || step : step,
-              timeline: typeof step === 'object' ? step.timeline : results.timeline_estimate || "2-6 weeks",
-              priority: typeof step === 'object' ? step.priority : index < 2 ? 'high' : 'medium',
-              category: typeof step === 'object' ? step.category : 'organizational'
+              title: `Action ${index + 1}`,
+              description: step,
+              timeline: "2-4 weeks",
+              priority: index < 2 ? 'high' : 'medium',
+              category: 'organizational'
             })) : [],
             
             // Enhanced recommendations with CrewAI structure
-            displayRecommendations: results.business_recommendations || 
-                                   results.recommendations || 
-                                   results.strategic_recommendations || [],
-            
-            // Preserve CrewAI-specific fields
-            business_recommendations: results.business_recommendations,
-            learning_path: results.learning_path,
-            scoring_breakdown: results.scoring_breakdown,
-            confidence_assessment: results.confidence_assessment,
-            implementation_roadmap: results.implementation_roadmap,
+            displayRecommendations: results.recommendations || [],
             
             // Map readiness level
             readinessLevel: results.readiness_level || 
                            results.overall_readiness_level || 
-                           (results.scoring_breakdown?.overall_score > 70 ? 'start_now' : 
-                            results.scoring_breakdown?.overall_score > 50 ? 'prepare_first' : 'get_help')
+                           (results.scoring_breakdown?.overall_score > 3.5 ? 'start_now' : 
+                            results.scoring_breakdown?.overall_score > 2.5 ? 'prepare_first' : 'get_help')
           };
           
-          console.log('🎯 ENHANCED MAPPING: Mapped results structure:', {
+          console.log('🎯 FIXED MAPPING: Mapped results structure:', {
             hasOriginalData: !!results,
-            hasBusinessRecs: !!(mappedResults.business_recommendations),
-            hasLearningPath: !!(mappedResults.learning_path),
-            hasScoringBreakdown: !!(mappedResults.scoring_breakdown),
+            originalRecommendations: results.recommendations?.length || 0,
+            mappedBusinessRecs: mappedResults.business_recommendations?.length || 0,
+            hasPortfolioGuidance: !!results.portfolio_guidance,
+            mappedLearningPath: !!mappedResults.learning_path,
+            hasRiskAssessment: !!results.risk_assessment,
+            mappedImplementationRoadmap: !!mappedResults.implementation_roadmap,
             readinessScore: mappedResults.readinessScore,
             nextStepsCount: mappedResults.nextSteps?.length || 0,
-            recommendationsCount: mappedResults.displayRecommendations?.length || 0
+            originalKeys: Object.keys(results),
+            mappedKeys: Object.keys(mappedResults)
           });
           
           results = mappedResults;
@@ -470,6 +498,54 @@ const ChangeReadinessAssessment = () => {
       case 'get_help': return 'Get Professional Help';
       default: return 'Unknown';
     }
+  };
+
+  const convertMarkdownToHTML = (markdown) => {
+    if (!markdown || typeof markdown !== 'string') return '';
+    
+    let html = markdown
+      // Headers
+      .replace(/^\*\*([^*]+)\*\*$/gim, '<h3 class="text-lg font-bold mb-3 text-gray-800 border-b border-gray-200 pb-2">$1</h3>')
+      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold mb-3 text-gray-800">$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mb-4 text-gray-900">$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mb-4 text-gray-900">$1</h1>')
+      
+      // Bold text
+      .replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold text-gray-800">$1</strong>')
+      
+      // Phase headers (special case for implementation phases)
+      .replace(/^- \*\*(Phase \d+:[^*]+)\*\*/gim, '<div class="bg-blue-50 p-3 rounded-lg mt-4 mb-2"><h4 class="font-bold text-blue-800">$1</h4></div>')
+      
+      // Bullet points with sub-items
+      .replace(/^  - (.*)$/gim, '<li class="ml-6 mb-1 text-gray-600 list-disc">$1</li>')
+      .replace(/^- (.*)$/gim, '<li class="mb-2 text-gray-700 list-disc ml-4">$1</li>')
+      
+      // Tables (basic support)
+      .replace(/\|(.+)\|/g, (match, content) => {
+        const cells = content.split('|').map(cell => cell.trim());
+        if (cells.every(cell => cell.includes('-'))) {
+          return ''; // Skip separator rows
+        }
+        const cellHtml = cells.map(cell => `<td class="px-3 py-2 border border-gray-200 bg-white">${cell}</td>`).join('');
+        return `<tr>${cellHtml}</tr>`;
+      })
+      
+      // Line breaks and paragraphs
+      .replace(/\n\n/g, '</div><div class="mb-4">')
+      .replace(/\n/g, '<br/>');
+      
+    // Wrap in sections
+    html = '<div class="space-y-4">' + 
+           '<div class="mb-4">' + html + '</div>' +
+           '</div>';
+           
+    // Fix table wrapping
+    html = html.replace(/(<tr>.*?<\/tr>)+/gs, (match) => `<table class="w-full mb-4 border-collapse shadow-sm rounded-lg overflow-hidden">${match}</table>`);
+    
+    // Wrap lists
+    html = html.replace(/(<li.*?<\/li>)+/gs, (match) => `<ul class="space-y-1 mb-4">${match}</ul>`);
+    
+    return html;
   };
 
   const renderIntroduction = () => (
@@ -1026,28 +1102,6 @@ const ChangeReadinessAssessment = () => {
         )}
       </div>
 
-      {/* Next Steps */}
-      <div className="bg-white rounded-xl p-8 shadow-sm">
-        <h3 className="text-2xl font-bold mb-6" style={{ color: colors.charcoal, fontFamily: 'Playfair Display' }}>
-          Recommended Next Steps
-        </h3>
-        <div className="space-y-4">
-          {results?.nextSteps?.map((step, index) => (
-            <div key={index} className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-chestnut rounded-full flex items-center justify-center text-white text-sm font-bold mt-1">
-                {index + 1}
-              </div>
-              <div>
-                <h4 className="font-medium mb-1">{step.title}</h4>
-                <p className="text-sm text-gray-600">{step.description}</p>
-                {step.timeline && (
-                  <p className="text-xs text-gray-500 mt-1">Timeline: {step.timeline}</p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
@@ -1134,33 +1188,49 @@ const ChangeReadinessAssessment = () => {
     }
 
     console.log('🎯 DISPLAY: Rendering results with structure:', {
+      // Check for mapped fields
       hasBusinessRecs: !!(results.business_recommendations),
       hasLearningPath: !!(results.learning_path),
+      hasImplementationRoadmap: !!(results.implementation_roadmap),
+      
+      // Check for original CrewAI fields
+      hasRecommendations: !!(results.recommendations),
+      hasPortfolioGuidance: !!(results.portfolio_guidance),
+      hasRiskAssessment: !!(results.risk_assessment),
       hasScoringBreakdown: !!(results.scoring_breakdown),
       hasNextSteps: !!(results.next_steps),
-      hasImplementationRoadmap: !!(results.implementation_roadmap),
+      
       allKeys: Object.keys(results)
     });
 
     return (
       <div className="space-y-6">
-        {/* Strategic Business Recommendations */}
-        {results.business_recommendations && results.business_recommendations.length > 0 && (
+        {/* Strategic Recommendations - Check both mapped and original fields */}
+        {((results.business_recommendations && results.business_recommendations.length > 0) || 
+          (results.recommendations && results.recommendations.length > 0)) && (
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border">
             <div className="flex items-center mb-4">
               <Brain className="w-5 h-5 mr-3" style={{ color: colors.chestnut }} />
               <h4 className="font-bold text-lg" style={{ color: colors.charcoal }}>
-                Strategic Business Recommendations
+                Strategic AI Implementation Recommendations
               </h4>
             </div>
             <div className="space-y-4">
-              {results.business_recommendations.map((rec, index) => (
+              {/* Use mapped business_recommendations if available, otherwise use original recommendations */}
+              {(results.business_recommendations || 
+                (results.recommendations && results.recommendations.map((rec, index) => ({
+                  title: `Strategic Recommendation ${index + 1}`,
+                  description: rec,
+                  expected_impact: "Organizational improvement",
+                  implementation_timeline: "2-6 months"
+                })))
+              ).map((rec, index) => (
                 <div key={index} className="bg-white p-4 rounded-lg border-l-4 border-blue-400">
                   <div className="font-semibold mb-2" style={{ color: colors.charcoal }}>
-                    {rec.title || rec.recommendation || `Strategic Initiative ${index + 1}`}
+                    {rec.title || `Strategic Initiative ${index + 1}`}
                   </div>
                   <div className="text-gray-700 mb-2">
-                    {rec.description || rec.details || rec.rationale || rec}
+                    {rec.description || rec}
                   </div>
                   {rec.expected_impact && (
                     <div className="text-blue-600 font-medium text-sm">
@@ -1172,28 +1242,51 @@ const ChangeReadinessAssessment = () => {
                       Timeline: {rec.implementation_timeline}
                     </div>
                   )}
-                  {rec.roi_timeline && (
-                    <div className="text-blue-600 font-medium text-sm">
-                      ROI Timeline: {rec.roi_timeline}
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* Learning Path with Enhanced Details */}
-        {results.learning_path && (
+        {/* Portfolio Guidance as Learning Path */}
+        {(results.learning_path || results.portfolio_guidance) && (
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border">
             <div className="flex items-center mb-4">
               <Target className="w-5 h-5 mr-3" style={{ color: colors.khaki }} />
               <h4 className="font-bold text-lg" style={{ color: colors.charcoal }}>
-                Personalized Learning & Development Path
+                Portfolio & Implementation Guidance
               </h4>
             </div>
             
-            {results.learning_path.priority_areas && (
+            {/* Display portfolio guidance */}
+            {results.portfolio_guidance && (
+              <div className="mb-4">
+                <div className="text-gray-600 mb-2 font-medium">Expert Portfolio Guidance:</div>
+                <div className="space-y-2">
+                  {results.portfolio_guidance.priority_initiatives ? 
+                    results.portfolio_guidance.priority_initiatives.map((initiative, index) => (
+                      <div key={index} className="bg-white p-3 rounded border-l-4 border-green-400">
+                        <div className="text-sm font-medium text-gray-900">{initiative}</div>
+                      </div>
+                    )) : 
+                    typeof results.portfolio_guidance === 'object' ? (
+                      <div className="bg-white p-3 rounded border-l-4 border-green-400">
+                        <div className="text-sm font-medium text-gray-900">
+                          Timeline: {results.portfolio_guidance.timeline || 'Strategic implementation plan available'}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-white p-3 rounded border-l-4 border-green-400">
+                        <div className="text-sm font-medium text-gray-900">{results.portfolio_guidance}</div>
+                      </div>
+                    )
+                  }
+                </div>
+              </div>
+            )}
+            
+            {/* Display mapped learning path if available */}
+            {results.learning_path && results.learning_path.priority_areas && (
               <div className="mb-4">
                 <div className="text-gray-600 mb-2 font-medium">Priority Focus Areas:</div>
                 <div className="flex flex-wrap gap-2">
@@ -1209,68 +1302,69 @@ const ChangeReadinessAssessment = () => {
               </div>
             )}
             
-            {results.learning_path.recommended_courses && (
-              <div className="mb-4">
-                <div className="text-gray-600 mb-2 font-medium">Recommended Learning Resources:</div>
-                <div className="space-y-2">
-                  {results.learning_path.recommended_courses.slice(0, 3).map((course, index) => (
-                    <div key={index} className="bg-white p-3 rounded border">
-                      <div className="font-medium text-sm">{course.title || course}</div>
-                      {course.description && (
-                        <div className="text-xs text-gray-600 mt-1">{course.description}</div>
-                      )}
-                      {course.estimated_duration && (
-                        <div className="text-xs text-green-600 mt-1">Duration: {course.estimated_duration}</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {results.learning_path.estimated_timeline && (
+            {results.timeline_estimate && (
               <div className="text-green-600 font-medium">
-                Estimated Learning Timeline: {results.learning_path.estimated_timeline}
+                Estimated Timeline: {results.timeline_estimate}
               </div>
             )}
           </div>
         )}
 
-        {/* Implementation Roadmap */}
-        {results.implementation_roadmap && (
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border">
+        {/* Risk Assessment as Implementation Roadmap */}
+        {(results.implementation_roadmap || results.risk_assessment) && (
+          <div className="bg-gradient-to-r from-red-50 to-pink-50 p-6 rounded-xl border">
             <div className="flex items-center mb-4">
-              <Layers className="w-5 h-5 mr-3" style={{ color: colors.chestnut }} />
+              <Shield className="w-5 h-5 mr-3" style={{ color: colors.chestnut }} />
               <h4 className="font-bold text-lg" style={{ color: colors.charcoal }}>
-                Implementation Roadmap
+                Risk Assessment & Mitigation Strategy
               </h4>
             </div>
             
-            {results.implementation_roadmap.phases && (
+            {/* Display risk assessment */}
+            {results.risk_assessment && (
+              <div className="space-y-3">
+                {results.risk_assessment.high_risks && (
+                  <div>
+                    <div className="font-semibold mb-2 text-red-800">High Priority Risks:</div>
+                    <div className="space-y-2">
+                      {results.risk_assessment.high_risks.map((risk, index) => (
+                        <div key={index} className="bg-white p-3 rounded border-l-4 border-red-400">
+                          <div className="text-sm font-medium text-gray-900">{risk}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {results.risk_assessment.mitigation_strategies && (
+                  <div>
+                    <div className="font-semibold mb-2 text-green-800">Mitigation Strategies:</div>
+                    <div className="space-y-2">
+                      {results.risk_assessment.mitigation_strategies.map((strategy, index) => (
+                        <div key={index} className="bg-white p-3 rounded border-l-4 border-green-400">
+                          <div className="text-sm font-medium text-gray-900">{strategy}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Display mapped implementation roadmap if available */}
+            {results.implementation_roadmap && results.implementation_roadmap.phases && (
               <div className="space-y-3">
                 {results.implementation_roadmap.phases.map((phase, index) => (
                   <div key={index} className="bg-white p-4 rounded-lg border-l-4 border-purple-400">
                     <div className="font-semibold mb-1" style={{ color: colors.charcoal }}>
-                      Phase {index + 1}: {phase.name || phase.title || `Implementation Phase ${index + 1}`}
+                      {phase.name || `Phase ${index + 1}`}
                     </div>
                     <div className="text-gray-700 text-sm mb-2">
-                      {phase.description || phase.details}
+                      {phase.description}
                     </div>
                     {phase.duration && (
                       <div className="text-purple-600 text-xs font-medium">
                         Duration: {phase.duration}
-                      </div>
-                    )}
-                    {phase.key_activities && (
-                      <div className="mt-2">
-                        <div className="text-xs text-gray-600 mb-1">Key Activities:</div>
-                        <div className="flex flex-wrap gap-1">
-                          {phase.key_activities.slice(0, 3).map((activity, actIndex) => (
-                            <span key={actIndex} className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">
-                              {activity}
-                            </span>
-                          ))}
-                        </div>
                       </div>
                     )}
                   </div>
@@ -1280,19 +1374,44 @@ const ChangeReadinessAssessment = () => {
           </div>
         )}
 
+        {/* Visual Analytics */}
+        {results.visual_analytics && (
+          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-xl border">
+            <div className="flex items-center mb-4">
+              <BarChart3 className="w-5 h-5 mr-3" style={{ color: colors.chestnut }} />
+              <h4 className="font-bold text-lg" style={{ color: colors.charcoal }}>
+                Assessment Analytics
+              </h4>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Object.entries(results.visual_analytics).map(([key, value]) => (
+                <div key={key} className="bg-white p-3 rounded-lg">
+                  <div className="text-gray-600 capitalize mb-1 font-medium">
+                    {key.replace(/_/g, ' ')}
+                  </div>
+                  <div className="text-lg font-semibold" style={{ color: colors.chestnut }}>
+                    {typeof value === 'number' ? `${Math.round(value * 10)}%` : value}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Enhanced Scoring Breakdown */}
         {results.scoring_breakdown && (
           <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-6 rounded-xl border">
             <div className="flex items-center mb-4">
-              <BarChart3 className="w-5 h-5 mr-3" style={{ color: colors.chestnut }} />
+              <PieChart className="w-5 h-5 mr-3" style={{ color: colors.chestnut }} />
               <h4 className="font-bold text-lg" style={{ color: colors.charcoal }}>
-                Detailed Readiness Analysis
+                Detailed Readiness Scoring
               </h4>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {Object.entries(results.scoring_breakdown)
-                .filter(([key]) => key !== 'overall_score' && key !== 'dimension_scores')
+                .filter(([key]) => key !== 'overall_score')
                 .map(([area, score]) => (
                   <div key={area} className="bg-white p-3 rounded-lg">
                     <div className="text-gray-600 capitalize mb-2 font-medium">
@@ -1303,35 +1422,16 @@ const ChangeReadinessAssessment = () => {
                         <div 
                           className="h-3 rounded-full transition-all duration-300" 
                           style={{ 
-                            backgroundColor: score >= 70 ? colors.khaki : score >= 50 ? '#FBD38D' : '#FEB2B2',
-                            width: `${Math.min(score, 100)}%` 
+                            backgroundColor: score >= 3.5 ? colors.khaki : score >= 2.5 ? '#FBD38D' : '#FEB2B2',
+                            width: `${Math.min((score / 5) * 100, 100)}%` 
                           }}
                         />
                       </div>
-                      <span className="font-semibold w-12">{score}%</span>
+                      <span className="font-semibold w-12">{score}/5</span>
                     </div>
                   </div>
                 ))}
             </div>
-            
-            {/* Dimension Scores if available */}
-            {results.scoring_breakdown.dimension_scores && (
-              <div className="mt-4 pt-4 border-t">
-                <div className="text-gray-600 mb-3 font-medium">Organizational Dimensions:</div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {Object.entries(results.scoring_breakdown.dimension_scores).map(([dimension, score]) => (
-                    <div key={dimension} className="text-center p-2 bg-white rounded">
-                      <div className="font-semibold" style={{ color: colors.chestnut }}>
-                        {score}%
-                      </div>
-                      <div className="text-xs text-gray-500 capitalize">
-                        {dimension.replace(/_/g, ' ')}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -1351,27 +1451,11 @@ const ChangeReadinessAssessment = () => {
                     {index + 1}
                   </span>
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900 mb-1">
-                      {typeof step === 'object' ? step.title || step.action : step}
+                    <div className="font-medium text-gray-900">
+                      {typeof step === 'object' ? (step.title || step.action || step.description || step) : step}
                     </div>
-                    {typeof step === 'object' && step.description && (
-                      <div className="text-sm text-gray-600 mb-2">{step.description}</div>
-                    )}
-                    {typeof step === 'object' && (step.timeline || step.priority) && (
-                      <div className="flex items-center space-x-3 text-xs">
-                        {step.timeline && (
-                          <span className="text-teal-600 font-medium">⏱️ {step.timeline}</span>
-                        )}
-                        {step.priority && (
-                          <span className={`px-2 py-1 rounded ${
-                            step.priority === 'high' ? 'bg-red-100 text-red-700' :
-                            step.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-green-100 text-green-700'
-                          }`}>
-                            {step.priority} priority
-                          </span>
-                        )}
-                      </div>
+                    {typeof step === 'object' && step.timeline && (
+                      <div className="text-xs text-teal-600 mt-1 font-medium">⏱️ {step.timeline}</div>
                     )}
                   </div>
                 </div>
@@ -1380,26 +1464,33 @@ const ChangeReadinessAssessment = () => {
           </div>
         )}
 
-        {/* Fallback: Display any additional CrewAI data */}
-        {results.additional_insights && (
+        {/* Enhanced CrewAI Agent Analysis */}
+        {results.raw_crewai_output && (
           <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-6 rounded-xl border">
             <div className="flex items-center mb-4">
-              <Eye className="w-5 h-5 mr-3" style={{ color: colors.chestnut }} />
+              <Brain className="w-5 h-5 mr-3" style={{ color: colors.chestnut }} />
               <h4 className="font-bold text-lg" style={{ color: colors.charcoal }}>
-                Additional AI Insights
+                Strategic AI Implementation Analysis
               </h4>
             </div>
-            <div className="text-gray-700">
-              {typeof results.additional_insights === 'string' 
-                ? results.additional_insights 
-                : JSON.stringify(results.additional_insights, null, 2)}
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div 
+                className="text-sm leading-relaxed"
+                dangerouslySetInnerHTML={{
+                  __html: convertMarkdownToHTML(
+                    typeof results.raw_crewai_output === 'string' 
+                      ? results.raw_crewai_output
+                      : results.raw_crewai_output.crewai_results?.raw || 
+                        JSON.stringify(results.raw_crewai_output, null, 2)
+                  )
+                }}
+              />
             </div>
           </div>
         )}
       </div>
     );
   };
-
   return (
     <div className="min-h-screen" style={{ backgroundColor: colors.bone }}>
       <div className="max-w-7xl mx-auto px-4 py-8">

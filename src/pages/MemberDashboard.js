@@ -226,6 +226,41 @@ const MemberDashboard = () => {
     }
   };
 
+  const convertMarkdownToHTML = (markdown) => {
+    if (!markdown || typeof markdown !== 'string') return '';
+    
+    let html = markdown
+      // Headers
+      .replace(/^\*\*([^*]+)\*\*$/gim, '<h3 class="text-lg font-bold mb-3 text-gray-800 border-b border-gray-200 pb-2">$1</h3>')
+      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold mb-3 text-gray-800">$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mb-4 text-gray-900">$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mb-4 text-gray-900">$1</h1>')
+      
+      // Bold text
+      .replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold text-gray-800">$1</strong>')
+      
+      // Phase headers (special case for implementation phases)
+      .replace(/^- \*\*(Phase \d+:[^*]+)\*\*/gim, '<div class="bg-blue-50 p-3 rounded-lg mt-4 mb-2"><h4 class="font-bold text-blue-800">$1</h4></div>')
+      
+      // Bullet points with sub-items
+      .replace(/^  - (.*)$/gim, '<li class="ml-6 mb-1 text-gray-600 list-disc">$1</li>')
+      .replace(/^- (.*)$/gim, '<li class="mb-2 text-gray-700 list-disc ml-4">$1</li>')
+      
+      // Line breaks and paragraphs
+      .replace(/\n\n/g, '</div><div class="mb-4">')
+      .replace(/\n/g, '<br/>');
+      
+    // Wrap in sections
+    html = '<div class="space-y-4">' + 
+           '<div class="mb-4">' + html + '</div>' +
+           '</div>';
+           
+    // Wrap lists
+    html = html.replace(/(<li.*?<\/li>)+/gs, (match) => `<ul class="space-y-1 mb-4">${match}</ul>`);
+    
+    return html;
+  };
+
   const renderProjectSelector = () => (
     <div className="relative">
       <button
@@ -1751,14 +1786,26 @@ const MemberDashboard = () => {
                               {item.title}
                             </span>
                             {item.description && (
-                              <p className="text-sm text-gray-600 mt-1">
-                                {typeof item.description === 'string' 
-                                  ? item.description 
-                                  : typeof item.description === 'object' && item.description.title
-                                    ? `${item.description.title}${item.description.cost ? ` (${item.description.cost})` : ''}${item.description.duration ? ` - ${item.description.duration}` : ''}`
-                                    : JSON.stringify(item.description)
-                                }
-                              </p>
+                              {typeof item.description === 'string' ? (
+                                <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                              ) : typeof item.description === 'object' && item.description.title ? (
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {item.description.title}
+                                  {item.description.cost && ` (${item.description.cost})`}
+                                  {item.description.duration && ` - ${item.description.duration}`}
+                                </p>
+                              ) : (
+                                <div 
+                                  className="text-sm text-gray-600 mt-1"
+                                  dangerouslySetInnerHTML={{
+                                    __html: convertMarkdownToHTML(
+                                      typeof item.description === 'object' 
+                                        ? JSON.stringify(item.description, null, 2)
+                                        : String(item.description)
+                                    )
+                                  }}
+                                />
+                              )}
                             )}
                             
                             {/* Enhanced Metadata with CrewAI Intelligence */}
