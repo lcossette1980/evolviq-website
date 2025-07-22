@@ -128,6 +128,26 @@ const HomePage = () => {
                     <p className="text-xl text-charcoal/80 mb-8 leading-relaxed">
                       {slide.description}
                     </p>
+                    {/* Two Ways to Transform - Hero CTA */}
+                    <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                      <button 
+                        onClick={() => navigate('/tools/ai-knowledge-navigator')}
+                        className="flex-1 bg-khaki text-white py-3 px-6 rounded-lg hover:bg-khaki/90 transition-colors font-medium text-center"
+                      >
+                        🧠 Start with AI Assessment
+                      </button>
+                      <button 
+                        onClick={() => navigate('/services')}
+                        className="flex-1 border-2 border-chestnut text-chestnut py-3 px-6 rounded-lg hover:bg-chestnut hover:text-white transition-colors font-medium text-center"
+                      >
+                        📞 Get Expert Guidance
+                      </button>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-charcoal/60">
+                        ✨ <strong>Two ways to transform:</strong> Self-paced learning or guided consulting
+                      </p>
+                    </div>
                   </div>
                   <div className="relative">
                     <div className="rounded-2xl h-64 sm:h-80 lg:h-96 overflow-hidden">
@@ -180,20 +200,29 @@ const HomePage = () => {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="font-serif font-bold text-3xl md:text-4xl text-charcoal mb-6">
-                Why Small Organizations Struggle with AI
+                The AI Gap for Small Organizations
               </h2>
               <div className="space-y-4 text-charcoal/80">
-                <p className="text-lg">
-                  Small businesses and nonprofits want to leverage AI but feel overwhelmed by enterprise-focused 
-                  solutions that don't fit their reality.
-                </p>
-                <p>
-                  You need practical, affordable AI that works with your existing team and processes—not against them.
-                </p>
-                <p>
-                  That's why we created an approach specifically designed for organizations like yours: 
-                  real impact without the complexity or enterprise price tag.
-                </p>
+                <div className="bg-pearl/20 rounded-lg p-4 border-l-4 border-chestnut">
+                  <p className="text-lg font-medium text-chestnut mb-2">The Challenge:</p>
+                  <p className="text-base">
+                    73% of small businesses want AI but feel overwhelmed by enterprise solutions that don't fit their budget, team size, or processes.
+                  </p>
+                </div>
+                <div className="bg-khaki/10 rounded-lg p-4 border-l-4 border-khaki">
+                  <p className="text-lg font-medium text-khaki mb-2">Our Solution:</p>
+                  <p className="text-base">
+                    Right-sized AI transformation that works with your existing team and delivers real results—without the complexity or enterprise price tag.
+                  </p>
+                </div>
+                <div className="flex items-center justify-center mt-6">
+                  <button 
+                    onClick={() => navigate('/tools/ai-knowledge-navigator')}
+                    className="bg-gradient-to-r from-chestnut to-khaki text-white px-8 py-4 rounded-lg font-medium hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+                  >
+                    🚀 Discover Your AI Readiness - Free Assessment
+                  </button>
+                </div>
               </div>
             </div>
             <div className="relative">
@@ -256,27 +285,43 @@ const HomePage = () => {
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
+            <div className="inline-flex items-center bg-gradient-to-r from-chestnut/10 to-khaki/10 px-4 py-2 rounded-full mb-4">
+              <span className="text-sm font-medium text-chestnut mr-2">✨</span>
+              <span className="text-sm font-medium text-charcoal">Choose Your Path</span>
+            </div>
             <h2 className="font-serif font-bold text-3xl md:text-4xl text-charcoal mb-4">
               Two Ways to Transform with AI
             </h2>
             <p className="text-xl text-charcoal/80 max-w-3xl mx-auto">
-              Whether you prefer guided consulting or hands-on exploration, we meet you where you are.
+              Start learning immediately or get expert guidance—both paths lead to AI transformation success.
             </p>
           </div>
           
           <div className="grid lg:grid-cols-2 gap-12">
             {/* Consulting Path */}
-            <div className="bg-pearl/20 rounded-xl p-8">
+            <div className="bg-pearl/20 rounded-xl p-8 hover:bg-pearl/30 transition-all duration-300 border-2 border-transparent hover:border-chestnut/20">
               <div className="flex items-center mb-6">
-                <div className="w-12 h-12 bg-chestnut text-white rounded-lg flex items-center justify-center mr-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-chestnut to-chestnut/80 text-white rounded-lg flex items-center justify-center mr-4 shadow-lg">
                   <Users className="w-6 h-6" />
                 </div>
-                <h3 className="font-serif font-bold text-2xl text-charcoal">Guided Consulting</h3>
+                <div>
+                  <h3 className="font-serif font-bold text-2xl text-charcoal">Guided Consulting</h3>
+                  <p className="text-sm text-chestnut font-medium">Expert-Led Transformation</p>
+                </div>
               </div>
-              <p className="text-charcoal/80 mb-6">
+              <p className="text-charcoal/80 mb-6 text-lg">
                 Work directly with our AI strategists to create a customized transformation roadmap, 
-                train your team, and implement solutions that deliver measurable results.
+                train your team, and implement solutions that deliver <strong>measurable results</strong>.
               </p>
+              <div className="bg-white/50 rounded-lg p-4 mb-6">
+                <div className="flex items-center text-chestnut font-medium text-sm mb-2">
+                  <span className="mr-2">🏆</span>
+                  Best for organizations that want:
+                </div>
+                <div className="text-sm text-charcoal/70">
+                  Customized strategy • Expert implementation • Team training • Ongoing support
+                </div>
+              </div>
               <ul className="space-y-3 mb-8">
                 <li className="flex items-center text-charcoal/80">
                   <CheckCircle className="w-5 h-5 text-chestnut mr-3 flex-shrink-0" />
@@ -304,17 +349,32 @@ const HomePage = () => {
             </div>
 
             {/* Webapp/Membership Path */}
-            <div className="bg-khaki/20 rounded-xl p-8 border-2 border-khaki/30">
+            <div className="bg-khaki/20 rounded-xl p-8 border-2 border-khaki/40 hover:bg-khaki/30 transition-all duration-300 hover:border-khaki/60 relative overflow-hidden">
+              <div className="absolute top-4 right-4">
+                <span className="bg-khaki text-white text-xs px-2 py-1 rounded-full font-medium">Popular</span>
+              </div>
               <div className="flex items-center mb-6">
-                <div className="w-12 h-12 bg-khaki text-white rounded-lg flex items-center justify-center mr-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-khaki to-khaki/80 text-white rounded-lg flex items-center justify-center mr-4 shadow-lg">
                   <Zap className="w-6 h-6" />
                 </div>
-                <h3 className="font-serif font-bold text-2xl text-charcoal">Interactive Learning</h3>
+                <div>
+                  <h3 className="font-serif font-bold text-2xl text-charcoal">Interactive Learning</h3>
+                  <p className="text-sm text-khaki font-medium">Self-Paced Discovery</p>
+                </div>
               </div>
-              <p className="text-charcoal/80 mb-6">
-                Learn through doing with our interactive AI tools, assessments, and premium resources. 
+              <p className="text-charcoal/80 mb-6 text-lg">
+                Learn through doing with our <strong>intelligent AI assessments</strong>, interactive tools, and premium resources. 
                 Perfect for self-directed learners and teams ready to experiment.
               </p>
+              <div className="bg-white/50 rounded-lg p-4 mb-6">
+                <div className="flex items-center text-khaki font-medium text-sm mb-2">
+                  <span className="mr-2">🚀</span>
+                  Best for teams that want to:
+                </div>
+                <div className="text-sm text-charcoal/70">
+                  Start immediately • Learn by doing • Control the pace • Access premium resources
+                </div>
+              </div>
               <ul className="space-y-3 mb-8">
                 <li className="flex items-center text-charcoal/80">
                   <CheckCircle className="w-5 h-5 text-khaki mr-3 flex-shrink-0" />
@@ -322,7 +382,7 @@ const HomePage = () => {
                 </li>
                 <li className="flex items-center text-charcoal/80">
                   <CheckCircle className="w-5 h-5 text-khaki mr-3 flex-shrink-0" />
-                  <span>AI readiness assessments</span>
+                  <span>🤖 <strong>Intelligent AI readiness assessments</strong></span>
                 </li>
                 <li className="flex items-center text-charcoal/80">
                   <CheckCircle className="w-5 h-5 text-khaki mr-3 flex-shrink-0" />
@@ -335,37 +395,53 @@ const HomePage = () => {
               </ul>
               <div className="space-y-3">
                 <button 
-                  onClick={() => navigate('/membership')}
-                  className="w-full bg-khaki text-white py-3 rounded-lg hover:bg-khaki/90 transition-colors"
+                  onClick={() => navigate('/tools/ai-knowledge-navigator')}
+                  className="w-full bg-gradient-to-r from-khaki to-khaki/80 text-white py-3 rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 font-medium"
                 >
-                  Join Premium Membership
+                  🚀 Start Free AI Assessment
                 </button>
                 <button 
-                  onClick={() => navigate('/tools/ai-knowledge-navigator')}
-                  className="w-full border-2 border-khaki text-khaki py-3 rounded-lg hover:bg-khaki/10 transition-colors"
+                  onClick={() => navigate('/membership')}
+                  className="w-full border-2 border-khaki text-khaki py-3 rounded-lg hover:bg-khaki hover:text-white transition-colors font-medium"
                 >
-                  Try Free Assessment
+                  Explore Premium Features
                 </button>
               </div>
             </div>
           </div>
 
           {/* Combined Value Proposition */}
-          <div className="mt-12 text-center bg-gradient-to-r from-chestnut/10 to-khaki/10 rounded-xl p-8">
-            <h3 className="font-serif font-bold text-2xl text-charcoal mb-4">
-              Best of Both Worlds
-            </h3>
-            <p className="text-lg text-charcoal/80 mb-6 max-w-3xl mx-auto">
-              Many of our clients start with our interactive tools to build AI literacy, 
-              then engage our consulting services for strategic implementation. 
-              Both paths include lifetime access to our growing library of resources.
-            </p>
-            <div className="flex justify-center">
-              <div className="bg-white px-6 py-3 rounded-lg shadow-sm">
-                <span className="text-sm text-charcoal/60">Premium Members Save</span>
-                <div className="text-2xl font-bold text-chestnut">10%</div>
-                <span className="text-sm text-charcoal/60">on all consulting services</span>
+          <div className="mt-12 text-center bg-gradient-to-r from-chestnut/10 to-khaki/10 rounded-xl p-8 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-chestnut/5 to-khaki/5"></div>
+            <div className="relative z-10">
+              <h3 className="font-serif font-bold text-2xl text-charcoal mb-4">
+                ✨ Best of Both Worlds
+              </h3>
+              <p className="text-lg text-charcoal/80 mb-6 max-w-3xl mx-auto">
+                <strong>Smart Path:</strong> Many clients start with our intelligent AI assessment to build literacy, 
+                then engage our consulting services for strategic implementation. 
+                Both paths include lifetime access to our growing resource library.
+              </p>
+              <div className="grid md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-white px-4 py-3 rounded-lg shadow-sm">
+                  <div className="text-lg font-bold text-chestnut">📊 73%</div>
+                  <div className="text-sm text-charcoal/60">Start with Assessment</div>
+                </div>
+                <div className="bg-white px-4 py-3 rounded-lg shadow-sm">
+                  <div className="text-lg font-bold text-khaki">📞 45%</div>
+                  <div className="text-sm text-charcoal/60">Add Consulting</div>
+                </div>
+                <div className="bg-white px-4 py-3 rounded-lg shadow-sm">
+                  <div className="text-lg font-bold text-chestnut">10%</div>
+                  <div className="text-sm text-charcoal/60">Member Discount</div>
+                </div>
               </div>
+              <button 
+                onClick={() => navigate('/tools/ai-knowledge-navigator')}
+                className="bg-gradient-to-r from-chestnut to-khaki text-white px-8 py-4 rounded-lg font-medium hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+              >
+                🚀 Start Your AI Journey - Free Assessment
+              </button>
             </div>
           </div>
         </div>
@@ -485,15 +561,20 @@ const HomePage = () => {
                   </div>
                 </div>
               </div>
-              <h3 className="font-medium text-xl text-charcoal mb-4">Quick Assessment</h3>
+              <h3 className="font-medium text-xl text-charcoal mb-4">🤖 AI Readiness Assessment</h3>
               <p className="text-charcoal/70 mb-6">
-                Rapid evaluation of your AI knowledge with practical recommendations and next steps.
+                <strong>Intelligent multi-agent evaluation</strong> of your AI knowledge with personalized recommendations, actionable insights, and custom learning paths.
               </p>
+              <div className="text-center mb-4">
+                <div className="inline-flex items-center bg-khaki/10 px-3 py-1 rounded-full text-sm">
+                  <span className="text-khaki font-medium">✨ Now with AI Agents</span>
+                </div>
+              </div>
               <button 
                 onClick={() => navigate('/tools/ai-knowledge-navigator')}
-                className="w-full bg-chestnut text-white py-4 sm:py-3 rounded-lg hover:bg-chestnut/90 transition-colors touch-manipulation min-h-[44px]"
+                className="w-full bg-gradient-to-r from-khaki to-khaki/80 text-white py-4 sm:py-3 rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 touch-manipulation min-h-[44px] font-medium"
               >
-                Get Assessment
+                🚀 Take Smart Assessment
               </button>
             </div>
             <div className="bg-white p-8 rounded-xl shadow-sm text-center">
