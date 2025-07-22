@@ -1,6 +1,35 @@
 # FastAPI Backend for ML Tools Integration
 # Optimized for React frontend and Firebase integration
 
+# COMPLETELY disable LiteLLM logging and callbacks BEFORE any CrewAI imports
+import os
+import logging
+
+os.environ['LITELLM_LOG'] = 'ERROR'
+os.environ['LITELLM_DROP_PARAMS'] = 'True' 
+os.environ['LITELLM_DISABLE_TELEMETRY'] = 'True'
+
+# Disable LiteLLM at the logging level
+logging.getLogger('LiteLLM').setLevel(logging.ERROR)
+logging.getLogger('litellm').setLevel(logging.ERROR)
+
+# Try to import and disable LiteLLM before CrewAI uses it
+try:
+    import litellm
+    # Clear all callbacks
+    litellm.success_callback = []
+    litellm.failure_callback = []
+    litellm._async_success_callback = []
+    litellm._async_failure_callback = []
+    # Disable cost tracking
+    litellm.suppress_debug_info = True
+    litellm.set_verbose = False
+    litellm.turn_off_message_logging = True
+    print("✅ LiteLLM successfully disabled in main.py")
+except ImportError:
+    print("⚠️ LiteLLM not found for disabling")
+    pass
+
 from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse

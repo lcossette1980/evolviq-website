@@ -833,6 +833,9 @@ class AIReadinessCrewAI:
             max_retries=1,  # Limit retries to prevent loops
             # Disable LiteLLM cost tracking that causes infinite loops
             streaming=False,
+            # ADD THESE TO DISABLE CALLBACKS:
+            callbacks=[],  # Empty callbacks list
+            metadata={},   # Empty metadata
             client_kwargs={
                 "timeout": 30,
                 "max_retries": 1
@@ -1690,6 +1693,9 @@ class ChangeReadinessCrewAI:
             max_retries=1,  # Limit retries to prevent loops
             # Disable LiteLLM cost tracking that causes infinite loops
             streaming=False,
+            # ADD THESE TO DISABLE CALLBACKS:
+            callbacks=[],  # Empty callbacks list
+            metadata={},   # Empty metadata
             client_kwargs={
                 "timeout": 30,
                 "max_retries": 1
