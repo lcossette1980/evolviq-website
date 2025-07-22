@@ -1193,42 +1193,60 @@ const MemberDashboard = () => {
 
   // Enhanced CrewAI Analysis Display Component
   const renderCrewAIAnalysis = (assessment) => {
-    if (!assessment.results) return null;
+    if (!assessment.results) {
+      console.log('❌ DASHBOARD: No assessment results available');
+      return null;
+    }
 
     const results = assessment.results;
     const isAIKnowledge = assessment.assessmentType === 'ai_knowledge_navigator';
     const isChangeReadiness = assessment.assessmentType === 'change_readiness';
 
+    console.log('🎯 DASHBOARD: Rendering assessment analysis:', {
+      assessmentType: assessment.assessmentType,
+      hasResults: !!results,
+      resultsKeys: results ? Object.keys(results) : 'none',
+      hasBusinessRecs: !!(results.business_recommendations),
+      businessRecsCount: results.business_recommendations?.length || 0,
+      hasLearningPath: !!(results.learning_path),
+      hasScoringBreakdown: !!(results.scoring_breakdown)
+    });
+
     return (
       <div className="mt-4 space-y-4">
-        {/* Strategic Insights */}
+        {/* Strategic Business Recommendations */}
         {results.business_recommendations && results.business_recommendations.length > 0 && (
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border">
             <div className="flex items-center mb-2">
               <Brain className="w-4 h-4 mr-2" style={{ color: colors.chestnut }} />
               <h4 className="font-semibold text-sm" style={{ color: colors.charcoal }}>
-                Strategic Insights from AI Analysis
+                AI-Generated Strategic Insights
               </h4>
             </div>
             <div className="space-y-2">
               {results.business_recommendations.slice(0, 2).map((rec, index) => (
                 <div key={index} className="bg-white p-3 rounded border-l-4 border-blue-400">
                   <div className="text-sm font-medium" style={{ color: colors.charcoal }}>
-                    {rec.title || `Strategic Initiative ${index + 1}`}
+                    {rec.title || rec.recommendation || `Strategic Initiative ${index + 1}`}
                   </div>
                   <div className="text-xs text-gray-600 mt-1">
-                    {rec.description || rec}
+                    {rec.description || rec.details || rec.rationale || (typeof rec === 'string' ? rec : 'Strategic recommendation')}
                   </div>
-                  {rec.roi_timeline && (
+                  {rec.expected_impact && (
                     <div className="text-xs text-blue-600 mt-1 font-medium">
-                      Expected ROI: {rec.roi_timeline}
+                      Impact: {rec.expected_impact}
+                    </div>
+                  )}
+                  {rec.implementation_timeline && (
+                    <div className="text-xs text-blue-600 mt-1 font-medium">
+                      Timeline: {rec.implementation_timeline}
                     </div>
                   )}
                 </div>
               ))}
               {results.business_recommendations.length > 2 && (
                 <div className="text-xs text-blue-600 font-medium">
-                  +{results.business_recommendations.length - 2} more recommendations available
+                  +{results.business_recommendations.length - 2} more strategic recommendations in full report
                 </div>
               )}
             </div>
@@ -1249,7 +1267,7 @@ const MemberDashboard = () => {
               <div className="mb-3">
                 <div className="text-xs text-gray-600 mb-1">Priority Focus Areas:</div>
                 <div className="flex flex-wrap gap-1">
-                  {results.learning_path.priority_areas.slice(0, 3).map((area, index) => (
+                  {results.learning_path.priority_areas.slice(0, 4).map((area, index) => (
                     <span 
                       key={index}
                       className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700"
@@ -1261,9 +1279,57 @@ const MemberDashboard = () => {
               </div>
             )}
             
+            {results.learning_path.recommended_courses && (
+              <div className="mb-3">
+                <div className="text-xs text-gray-600 mb-1">Recommended Learning:</div>
+                <div className="space-y-1">
+                  {results.learning_path.recommended_courses.slice(0, 2).map((course, index) => (
+                    <div key={index} className="bg-white p-2 rounded text-xs">
+                      <div className="font-medium">{course.title || course}</div>
+                      {course.estimated_duration && (
+                        <div className="text-green-600">Duration: {course.estimated_duration}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             {results.learning_path.estimated_timeline && (
               <div className="text-xs text-green-600 font-medium">
-                Estimated Timeline: {results.learning_path.estimated_timeline}
+                Learning Timeline: {results.learning_path.estimated_timeline}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Implementation Roadmap Preview */}
+        {results.implementation_roadmap && (
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border">
+            <div className="flex items-center mb-2">
+              <Layers className="w-4 h-4 mr-2" style={{ color: colors.chestnut }} />
+              <h4 className="font-semibold text-sm" style={{ color: colors.charcoal }}>
+                Implementation Roadmap
+              </h4>
+            </div>
+            
+            {results.implementation_roadmap.phases && (
+              <div className="space-y-2">
+                {results.implementation_roadmap.phases.slice(0, 2).map((phase, index) => (
+                  <div key={index} className="bg-white p-2 rounded border-l-2 border-purple-400">
+                    <div className="text-xs font-medium" style={{ color: colors.charcoal }}>
+                      Phase {index + 1}: {phase.name || phase.title || `Implementation Phase`}
+                    </div>
+                    {phase.duration && (
+                      <div className="text-xs text-purple-600">Duration: {phase.duration}</div>
+                    )}
+                  </div>
+                ))}
+                {results.implementation_roadmap.phases.length > 2 && (
+                  <div className="text-xs text-purple-600 font-medium">
+                    +{results.implementation_roadmap.phases.length - 2} more phases in detailed plan
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1275,7 +1341,7 @@ const MemberDashboard = () => {
             <div className="flex items-center mb-2">
               <Shield className="w-4 h-4 mr-2" style={{ color: colors.chestnut }} />
               <h4 className="font-semibold text-sm" style={{ color: colors.charcoal }}>
-                Readiness Assessment
+                AI Readiness Assessment
               </h4>
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
@@ -1301,12 +1367,12 @@ const MemberDashboard = () => {
             <div className="flex items-center mb-2">
               <BarChart3 className="w-4 h-4 mr-2" style={{ color: colors.chestnut }} />
               <h4 className="font-semibold text-sm" style={{ color: colors.charcoal }}>
-                Organizational Readiness Breakdown
+                Organizational Readiness Analysis
               </h4>
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               {Object.entries(results.scoring_breakdown)
-                .filter(([key]) => key !== 'overall_score')
+                .filter(([key]) => key !== 'overall_score' && key !== 'dimension_scores')
                 .slice(0, 4)
                 .map(([area, score]) => (
                 <div key={area}>
@@ -1331,24 +1397,31 @@ const MemberDashboard = () => {
           </div>
         )}
 
-        {/* Next Steps */}
+        {/* Next Steps Preview */}
         {results.next_steps && results.next_steps.length > 0 && (
           <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-4 rounded-lg border">
             <div className="flex items-center mb-2">
               <Zap className="w-4 h-4 mr-2" style={{ color: colors.chestnut }} />
               <h4 className="font-semibold text-sm" style={{ color: colors.charcoal }}>
-                Recommended Next Steps
+                Immediate Next Steps
               </h4>
             </div>
             <div className="space-y-1">
               {results.next_steps.slice(0, 3).map((step, index) => (
                 <div key={index} className="text-xs text-gray-700 flex items-start">
-                  <span className="w-4 h-4 rounded-full bg-teal-100 text-teal-700 text-center text-xs mr-2 mt-0.5 flex-shrink-0">
+                  <span className="w-4 h-4 rounded-full bg-teal-100 text-teal-700 text-center text-xs mr-2 mt-0.5 flex-shrink-0 flex items-center justify-center font-semibold">
                     {index + 1}
                   </span>
-                  <span>{step}</span>
+                  <span>
+                    {typeof step === 'object' ? (step.title || step.action || step.description || step) : step}
+                  </span>
                 </div>
               ))}
+              {results.next_steps.length > 3 && (
+                <div className="text-xs text-teal-600 font-medium">
+                  +{results.next_steps.length - 3} more steps in detailed plan
+                </div>
+              )}
             </div>
           </div>
         )}
