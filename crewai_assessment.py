@@ -524,12 +524,12 @@ def create_maturity_scoring_agent(llm):
         You're known for fair, consistent scoring that helps learners understand their current level 
         while providing clear pathways for improvement. You consider multiple factors: concept understanding, 
         practical application, confidence levels, and learning potential.""",
-        verbose=False,  # Reduce verbosity
-        allow_delegation=False,
-        max_execution_time=30,  # 30 second max per agent
-        max_iter=1,  # ONLY 1 iteration per agent - no loops
+        verbose=True,   # Enable verbosity to see what agents are doing
+        allow_delegation=False,  # Keep delegation disabled to prevent loops
+        max_execution_time=60,  # Give agents more time to work (60 seconds)
+        max_iter=3,  # Allow up to 3 iterations for better results
         llm=llm,
-        tools=[]  # REMOVE ALL TOOLS temporarily to test
+        tools=[]  # Keep tools empty for now to avoid tool-related issues
     )
 
 def create_learning_path_agent(llm):
@@ -558,12 +558,12 @@ def create_business_application_agent(llm):
         team readiness, technical limitations, and change management. You excel at recommending specific tools, 
         processes, and strategies that deliver measurable business value. You focus on realistic implementations 
         that can be achieved with existing resources and skills.""",
-        verbose=False,  # Reduce verbosity
-        allow_delegation=False,
-        max_execution_time=30,  # 30 second max per agent
-        max_iter=1,  # ONLY 1 iteration per agent - no loops
+        verbose=True,   # Enable verbosity to see what agents are doing
+        allow_delegation=False,  # Keep delegation disabled to prevent loops
+        max_execution_time=60,  # Give agents more time to work (60 seconds)
+        max_iter=3,  # Allow up to 3 iterations for better results
         llm=llm,
-        tools=[]  # REMOVE ALL TOOLS temporarily to test
+        tools=[]  # Keep tools empty for now to avoid tool-related issues
     )
 
 def create_confidence_risk_agent(llm):
@@ -576,12 +576,12 @@ def create_confidence_risk_agent(llm):
         underconfident, or missing critical foundations. You excel at spotting potential obstacles before they 
         become problems and designing mitigation strategies. You understand the emotional and psychological 
         aspects of learning new technologies and can provide supportive, realistic guidance.""",
-        verbose=False,  # Reduce verbosity
-        allow_delegation=False,
-        max_execution_time=30,  # 30 second max per agent
-        max_iter=1,  # ONLY 1 iteration per agent - no loops
+        verbose=True,   # Enable verbosity to see what agents are doing
+        allow_delegation=False,  # Keep delegation disabled to prevent loops
+        max_execution_time=60,  # Give agents more time to work (60 seconds)
+        max_iter=3,  # Allow up to 3 iterations for better results
         llm=llm,
-        tools=[]  # REMOVE ALL TOOLS temporarily to test
+        tools=[]  # Keep tools empty for now to avoid tool-related issues
     )
 
 # =============================================================================
@@ -830,22 +830,22 @@ class AIReadinessCrewAI:
     def __init__(self, openai_api_key: str):
         self.openai_api_key = openai_api_key
         
-        # Initialize LLM with STRICT limits to prevent loops
+        # Initialize LLM with reasonable settings for quality analysis
         self.llm = ChatOpenAI(
             openai_api_key=openai_api_key,
             model="gpt-4o-mini",  
-            temperature=0.3,  # Lower temperature for more deterministic responses
-            timeout=15,       # Shorter timeout - 15 seconds max
-            max_retries=0,    # NO RETRIES - fail fast
+            temperature=0.3,   # Keep temperature for deterministic responses
+            timeout=60,        # Increased timeout to allow for complex analysis
+            max_retries=1,     # Allow 1 retry for reliability
             streaming=False,
-            max_tokens=500,   # Limit response length to prevent runaway generations
-            request_timeout=15,  # Additional timeout
+            max_tokens=2000,   # Increased tokens for comprehensive analysis
+            request_timeout=60, # Match timeout
             # Disable LiteLLM cost tracking that causes infinite loops
             callbacks=[],  # Empty callbacks list
             metadata={},   # Empty metadata
             client_kwargs={
-                "timeout": 15,
-                "max_retries": 0
+                "timeout": 60,
+                "max_retries": 1
             }
         )
         
@@ -1461,12 +1461,12 @@ def create_change_assessment_agent(llm):
         change management and digital transformation. You specialize in assessing organizational readiness for 
         technology adoption, particularly AI implementations. You excel at reading between the lines of survey 
         responses to understand true organizational culture, leadership effectiveness, and employee sentiment.""",
-        verbose=False,  # Reduce verbosity to prevent noise
-        allow_delegation=False,  # Disable delegation to prevent loops
-        max_execution_time=30,  # 30 second max per agent
-        max_iter=1,  # ONLY 1 iteration per agent - no loops
+        verbose=True,   # Enable verbosity to see what agents are doing
+        allow_delegation=False,  # Keep delegation disabled to prevent loops
+        max_execution_time=60,  # Give agents more time to work (60 seconds)
+        max_iter=3,  # Allow up to 3 iterations for better results
         llm=llm,
-        tools=[]  # REMOVE ALL TOOLS temporarily to test
+        tools=[]  # Keep tools empty for now to avoid tool-related issues
     )
 
 def create_change_scoring_agent(llm):
@@ -1478,12 +1478,12 @@ def create_change_scoring_agent(llm):
         management metrics and scoring methodologies. You have developed proprietary frameworks for measuring 
         organizational readiness across culture, leadership, processes, and technology adoption. You provide 
         detailed, evidence-based scoring with clear justification for each assessment dimension.""",
-        verbose=False,  # Reduce verbosity
-        allow_delegation=False,
-        max_execution_time=30,  # 30 second max per agent
-        max_iter=1,  # ONLY 1 iteration per agent - no loops
+        verbose=True,   # Enable verbosity to see what agents are doing
+        allow_delegation=False,  # Keep delegation disabled to prevent loops
+        max_execution_time=60,  # Give agents more time to work (60 seconds)
+        max_iter=3,  # Allow up to 3 iterations for better results
         llm=llm,
-        tools=[]  # REMOVE ALL TOOLS temporarily to test
+        tools=[]  # Keep tools empty for now to avoid tool-related issues
     )
 
 def create_change_strategy_agent(llm):
@@ -1510,12 +1510,12 @@ def create_change_risk_agent(llm):
         initiatives. You have seen transformations fail and succeed, and can predict potential pitfalls before 
         they become problems. You excel at designing early warning systems and mitigation strategies for 
         change-related risks, from technical challenges to cultural resistance.""",
-        verbose=False,  # Reduce verbosity
-        allow_delegation=False,
-        max_execution_time=30,  # 30 second max per agent
-        max_iter=1,  # ONLY 1 iteration per agent - no loops
+        verbose=True,   # Enable verbosity to see what agents are doing
+        allow_delegation=False,  # Keep delegation disabled to prevent loops
+        max_execution_time=60,  # Give agents more time to work (60 seconds)
+        max_iter=3,  # Allow up to 3 iterations for better results
         llm=llm,
-        tools=[]  # REMOVE ALL TOOLS temporarily to test
+        tools=[]  # Keep tools empty for now to avoid tool-related issues
     )
 
 def create_portfolio_management_agent(llm):
@@ -1527,12 +1527,12 @@ def create_portfolio_management_agent(llm):
         transformation initiatives. You understand how to sequence AI projects for maximum learning and impact, 
         balance quick wins with long-term capabilities, and manage organizational change capacity. You excel at 
         creating realistic implementation timelines that respect organizational constraints.""",
-        verbose=False,  # Reduce verbosity
-        allow_delegation=False,
-        max_execution_time=30,  # 30 second max per agent
-        max_iter=1,  # ONLY 1 iteration per agent - no loops
+        verbose=True,   # Enable verbosity to see what agents are doing
+        allow_delegation=False,  # Keep delegation disabled to prevent loops
+        max_execution_time=60,  # Give agents more time to work (60 seconds)
+        max_iter=3,  # Allow up to 3 iterations for better results
         llm=llm,
-        tools=[]  # REMOVE ALL TOOLS temporarily to test
+        tools=[]  # Keep tools empty for now to avoid tool-related issues
     )
 
 # =============================================================================
@@ -1697,22 +1697,22 @@ class ChangeReadinessCrewAI:
         print(f"🔧 LITELLM_DISABLE_COST: {os.getenv('LITELLM_DISABLE_COST')}")
         print(f"🔧 LITELLM_LOG_LEVEL: {os.getenv('LITELLM_LOG_LEVEL')}")
         
-        # Initialize LLM with STRICT limits to prevent loops
+        # Initialize LLM with reasonable settings for quality analysis
         self.llm = ChatOpenAI(
             openai_api_key=openai_api_key,
             model="gpt-4o-mini",  
-            temperature=0.3,  # Lower temperature for more deterministic responses
-            timeout=15,       # Shorter timeout - 15 seconds max
-            max_retries=0,    # NO RETRIES - fail fast
+            temperature=0.3,   # Keep temperature for deterministic responses
+            timeout=60,        # Increased timeout to allow for complex analysis
+            max_retries=1,     # Allow 1 retry for reliability
             streaming=False,
-            max_tokens=500,   # Limit response length to prevent runaway generations
-            request_timeout=15,  # Additional timeout
+            max_tokens=2000,   # Increased tokens for comprehensive analysis
+            request_timeout=60, # Match timeout
             # Disable LiteLLM cost tracking that causes infinite loops
             callbacks=[],  # Empty callbacks list
             metadata={},   # Empty metadata
             client_kwargs={
-                "timeout": 15,
-                "max_retries": 0
+                "timeout": 60,
+                "max_retries": 1
             }
         )
         
@@ -1763,12 +1763,12 @@ class ChangeReadinessCrewAI:
                     portfolio_task
                 ],
                 process=Process.sequential,
-                verbose=False,  # Completely disable verbosity
-                max_iter=1,  # SINGLE iteration only - no loops
-                memory=False,  # Disable memory to prevent context accumulation
-                embedder=None,  # Disable embedder
-                max_rpm=5,  # Lower rate limit
-                max_execution_time=60,  # 1 minute absolute maximum execution time
+                verbose=True,   # Enable verbosity to see what crew is doing
+                max_iter=3,    # Allow up to 3 iterations per task
+                memory=False,  # Keep memory disabled to prevent context accumulation
+                embedder=None, # Keep embedder disabled
+                max_rpm=10,    # Increase rate limit slightly
+                max_execution_time=300, # 5 minutes total execution time
                 # Disable cost tracking and callbacks that cause loops
                 manager_callbacks=None,
                 step_callback=None,
@@ -1783,7 +1783,7 @@ class ChangeReadinessCrewAI:
             
             try:
                 signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(45)  # 45 second timeout - very aggressive
+                signal.alarm(300)  # 5 minute timeout to match crew execution time
                 results = change_crew.kickoff()
                 signal.alarm(0)  # Cancel timeout
             except TimeoutError:
@@ -1791,9 +1791,9 @@ class ChangeReadinessCrewAI:
                 print(f"⏰ Change assessment timed out, using fallback")
                 # Return error to trigger main.py function-based fallback
                 return {
-                    "error": "CrewAI agents timed out after 2 minutes",
+                    "error": "CrewAI agents timed out after 5 minutes",
                     "fallback_needed": True,
-                    "timeout_reason": "LiteLLM cost calculation causing delays"
+                    "timeout_reason": "Agent collaboration taking longer than expected"
                 }
             
             print("✅ Change Readiness CrewAI Assessment completed!")
