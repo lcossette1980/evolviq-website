@@ -37,27 +37,81 @@ class AssessmentResponse:
 
 class AssessmentDataTool(BaseTool):
     name: str = "assessment_data_tool"
-    description: str = "Get basic assessment framework - returns simple data structure"
+    description: str = "Access assessment data including questions, user responses, and scoring criteria"
     
-    def _run(self, query: str = "") -> str:
-        """Return basic assessment framework - always succeeds"""
-        try:
-            # Simple, always-available data structure
-            basic_framework = {
-                "sections": ["F1.1", "F1.2", "P2.1", "P2.2", "E3.1"],
-                "scale": "1-5 maturity levels",
-                "concepts": {
-                    "F1.1": "AI/ML/LLM understanding",
-                    "F1.2": "Business applications", 
-                    "P2.1": "Basic prompt engineering",
-                    "P2.2": "Advanced prompting",
-                    "E3.1": "AI tool ecosystem"
-                }
+    def _run(self, query: str) -> str:
+        """Access AI literacy assessment questions and criteria - simple and reliable"""
+        # Simple, reliable data structure based on working pattern
+        questions_data = {
+            'F1.1': {
+                'section': 'AI Fundamentals - Concepts',
+                'weight': 0.20,
+                'concepts': ['artificial intelligence', 'machine learning', 'automation', 'algorithms', 'data processing'],
+                'maturity_levels': [
+                    "Confused: Thinks AI, ML, and LLMs are the same thing",
+                    "Vague Awareness: Knows they're different but can't explain how", 
+                    "Basic Understanding: Can explain that LLMs are a type of AI focused on language",
+                    "Clear Distinction: Understands the hierarchy: AI > ML > specific models like LLMs",
+                    "Nuanced Knowledge: Can explain different AI types and when each is appropriate"
+                ]
+            },
+            'F1.2': {
+                'section': 'AI Fundamentals - Business Applications',
+                'weight': 0.20,
+                'concepts': ['business value', 'roi', 'process improvement', 'efficiency', 'implementation'],
+                'maturity_levels': [
+                    "No business context: Cannot connect AI to business outcomes",
+                    "Vague benefits: Knows AI helps but can't specify how",
+                    "Basic applications: Can identify simple AI business uses",
+                    "Strategic thinking: Understands AI's transformative potential",
+                    "Implementation ready: Can plan practical AI business implementations"
+                ]
+            },
+            'P2.1': {
+                'section': 'Prompt Engineering - Basics', 
+                'weight': 0.20,
+                'concepts': ['prompt engineering', 'language models', 'chatgpt', 'ai tools', 'prompt design'],
+                'maturity_levels': [
+                    "Casual Chat: Treats AI like Google search or casual conversation",
+                    "Basic Requests: Asks direct questions but gets inconsistent results",
+                    "Structured Prompts: Uses clear instructions and context",
+                    "Advanced Techniques: Uses examples, role-playing, and step-by-step instructions",
+                    "Prompt Mastery: Consistently gets desired outputs through sophisticated design"
+                ]
+            },
+            'P2.2': {
+                'section': 'Prompt Engineering - Advanced',
+                'weight': 0.20, 
+                'concepts': ['prompt optimization', 'iteration', 'testing', 'refinement', 'advanced techniques'],
+                'maturity_levels': [
+                    "No optimization: Uses first attempt, no improvement process",
+                    "Basic iteration: Tries different approaches randomly", 
+                    "Systematic testing: Tests variations methodically",
+                    "Advanced optimization: Uses sophisticated techniques like chain-of-thought",
+                    "Mastery level: Creates complex prompt workflows and systems"
+                ]
+            },
+            'E3.1': {
+                'section': 'AI Ecosystem - Tools and Vendors',
+                'weight': 0.20,
+                'concepts': ['ai ecosystem', 'vendors', 'platforms', 'tools', 'integration'],
+                'maturity_levels': [
+                    "Single tool: Only knows ChatGPT or one AI tool",
+                    "Basic awareness: Knows a few AI tools exist",
+                    "Tool knowledge: Familiar with major AI platforms and their uses", 
+                    "Ecosystem understanding: Knows how different AI tools work together",
+                    "Strategic selection: Can choose optimal AI tools for specific business needs"
+                ]
             }
-            return json.dumps(basic_framework)
-        except Exception as e:
-            # Fallback to prevent tool failure
-            return '{"status": "assessment framework available", "sections": 5}'   
+        }
+        
+        # Simple, reliable return pattern - never fails
+        if query in questions_data:
+            return json.dumps(questions_data[query], indent=2)
+        elif "all_questions" in query.lower():
+            return json.dumps(questions_data, indent=2)
+        else:
+            return f"Assessment framework for AI knowledge evaluation covering: {list(questions_data.keys())}"   
             
         # Detailed data kept for reference but not used to prevent complexity
         questions_data = {
@@ -128,36 +182,36 @@ class AssessmentDataTool(BaseTool):
 
 class ConceptExtractionTool(BaseTool):
     name: str = "concept_extraction_tool"
-    description: str = "Extract key concepts from user responses - simple and reliable"
+    description: str = "Extract AI literacy concepts from user responses and match them to assessment criteria"
     
-    def _run(self, response_text: str = "", question_section: str = "") -> str:
-        """Extract and score AI concepts - simplified to prevent failures"""
-        try:
-            # Simple keyword-based concept detection
-            ai_concepts = []
-            text_lower = response_text.lower() if response_text else ""
-            
-            # Basic concept detection
-            if any(word in text_lower for word in ['ai', 'artificial', 'intelligence']):
-                ai_concepts.append('artificial_intelligence')
-            if any(word in text_lower for word in ['machine learning', 'ml', 'learning']):
-                ai_concepts.append('machine_learning')
-            if any(word in text_lower for word in ['prompt', 'chatgpt', 'gpt']):
-                ai_concepts.append('prompt_engineering')
-            if any(word in text_lower for word in ['business', 'company', 'work']):
-                ai_concepts.append('business_application')
-            if any(word in text_lower for word in ['tool', 'platform', 'software']):
-                ai_concepts.append('ai_tools')
-                
-            result = {
-                "concepts_found": ai_concepts,
-                "response_length": len(response_text),
-                "section": question_section
-            }
-            return json.dumps(result)
-        except Exception as e:
-            # Always return valid JSON to prevent tool failure
-            return '{"concepts_found": [], "error": "extraction_failed"}'
+    def _run(self, response_text: str, question_section: str = "") -> str:
+        """Extract and score AI concepts from user responses - simple and reliable"""
+        # Simple concept mappings - avoid complex nested structures
+        basic_concepts = {
+            'ai_understanding': ['ai', 'artificial intelligence', 'ai is', 'artificial'],
+            'ml_understanding': ['machine learning', 'ml', 'learning', 'algorithms'],
+            'llm_understanding': ['llm', 'language model', 'chatgpt', 'gpt'],
+            'business_thinking': ['business', 'company', 'work', 'roi', 'value'],
+            'prompt_skills': ['prompt', 'instruction', 'ask', 'query'],
+            'tool_awareness': ['tool', 'platform', 'software', 'openai']
+        }
+        
+        found_concepts = []
+        response_lower = response_text.lower() if response_text else ""
+        
+        # Simple keyword matching - no complex confidence calculations
+        for concept, keywords in basic_concepts.items():
+            for keyword in keywords:
+                if keyword in response_lower:
+                    found_concepts.append({
+                        'concept': concept,
+                        'confidence': 0.8,  # Fixed confidence to avoid loops
+                        'evidence': keyword,
+                        'section': question_section
+                    })
+                    break  # Only match once per concept
+        
+        return json.dumps(found_concepts, indent=2)
         
         # Advanced concept mappings for each section
         concept_mappings = {
@@ -435,7 +489,7 @@ def create_concept_detection_agent(llm):
         verbose=False,  # Reduce verbosity to prevent noise
         allow_delegation=False,  # Disable delegation to prevent loops
         llm=llm,
-        tools=[]  # No tools to prevent failures
+        tools=[AssessmentDataTool(), ConceptExtractionTool()]  # Simple, reliable tools for analysis
     )
 
 def create_maturity_scoring_agent(llm):
@@ -451,7 +505,7 @@ def create_maturity_scoring_agent(llm):
         verbose=False,  # Reduce verbosity
         allow_delegation=False,
         llm=llm,
-        tools=[]  # No tools to prevent failures
+        tools=[AssessmentDataTool()]  # Simple, reliable tools for analysis
     )
 
 def create_learning_path_agent(llm):
@@ -467,7 +521,7 @@ def create_learning_path_agent(llm):
         verbose=False,  # Reduce verbosity to prevent noise
         allow_delegation=False,  # Disable delegation to prevent loops
         llm=llm,
-        tools=[]  # No tools to prevent failures
+        tools=[AssessmentDataTool()]  # Simple, reliable tools for analysis
     )
 
 def create_business_application_agent(llm):
@@ -483,7 +537,7 @@ def create_business_application_agent(llm):
         verbose=False,  # Reduce verbosity
         allow_delegation=False,
         llm=llm,
-        tools=[]  # No tools to prevent failures
+        tools=[AssessmentDataTool()]  # Simple, reliable tools for analysis
     )
 
 def create_confidence_risk_agent(llm):
@@ -499,7 +553,7 @@ def create_confidence_risk_agent(llm):
         verbose=False,  # Reduce verbosity
         allow_delegation=False,
         llm=llm,
-        tools=[]  # No tools to prevent failures
+        tools=[AssessmentDataTool()]  # Simple, reliable tools for analysis
     )
 
 # =============================================================================
@@ -510,23 +564,27 @@ def create_concept_analysis_task(question_history: List[Dict]):
     """Task for focused concept analysis of user responses"""
     return Task(
         description=f"""
-        CRITICAL: YOU MUST NOT USE ANY TOOLS. WORK ONLY WITH THE DATA BELOW.
+        Analyze user responses to identify AI concepts and knowledge levels.
         
         Question History: {json.dumps(question_history, indent=2)}
         
-        Based ONLY on the above data, provide this analysis:
+        Your responsibilities:
+        1. Use the concept extraction tool to analyze each response
+        2. Score understanding level (1-5) for each section based on evidence
+        3. Identify strengths and knowledge gaps from the analysis
+        4. Keep analysis focused and evidence-based
         
-        Return EXACTLY this JSON format (no other text):
+        Provide analysis in this JSON format:
         {{
-            "concepts_detected": ["artificial_intelligence", "business_applications", "prompt_engineering"],
-            "section_scores": {{"F1.1": 3.0, "F1.2": 2.5, "P2.1": 3.0, "P2.2": 2.5, "E3.1": 3.0}},
-            "strengths": ["Basic AI understanding", "Learning mindset", "Business thinking"],
-            "gaps": ["Advanced techniques", "Tool integration", "Implementation strategy"]
+            "concepts_detected": ["list of identified concepts"],
+            "section_scores": {{"F1.1": score, "F1.2": score, "P2.1": score, "P2.2": score, "E3.1": score}},
+            "strengths": ["strength 1", "strength 2", "strength 3"],
+            "gaps": ["gap 1", "gap 2", "gap 3"]
         }}
         
-        COMPLETE THIS TASK IN ONE STEP. DO NOT USE TOOLS. DO NOT LOOP.
+        Use tools efficiently and complete the analysis in one focused pass.
         """,
-        expected_output="Single JSON object with analysis results",
+        expected_output="JSON object with concept analysis, scores, strengths, and gaps",
         agent=None
     )
 
@@ -622,10 +680,10 @@ def create_question_generation_agent(llm, section: str, agent_persona: dict):
         role=agent_persona['role'],
         goal=agent_persona['goal'],
         backstory=agent_persona['backstory'],
-        verbose=False,  # Reduce verbosity
+        verbose=True,  # Enable verbosity for intelligent question generation
         allow_delegation=False,
         llm=llm,
-        tools=[]  # No tools to prevent failures
+        tools=[AssessmentDataTool(), ConceptExtractionTool()]  # Restore tools for intelligent questions
     )
 
 def get_agent_personas():
@@ -788,15 +846,14 @@ class AIReadinessCrewAI:
             question_task = create_question_generation_task(current_section, question_history, current_persona)
             question_task.agent = current_agent
             
-            # Create single-agent crew for question generation with strict limits
+            # Create single-agent crew for question generation
             question_crew = Crew(
                 agents=[current_agent],
                 tasks=[question_task],
                 process=Process.sequential,
-                verbose=False,  # Completely disable verbosity
-                max_iter=1,  # Force single iteration only
-                memory=False,  # Disable memory
-                embedder=None  # Disable embedder
+                verbose=True,  # Enable verbosity for intelligent questions
+                max_iter=3,  # Allow some iterations for intelligent questions
+                memory=False  # Disable memory
             )
             
             # Generate question with timeout
@@ -932,7 +989,7 @@ class AIReadinessCrewAI:
             risk_task = create_risk_assessment_task()
             risk_task.agent = self.risk_agent
             
-            # Create collaborative crew with strict limits to prevent loops
+            # Create collaborative crew with balanced limits
             assessment_crew = Crew(
                 agents=[
                     self.concept_agent,
@@ -949,10 +1006,9 @@ class AIReadinessCrewAI:
                     risk_task
                 ],
                 process=Process.sequential,
-                verbose=False,  # Completely disable verbosity
-                max_iter=1,  # Force single iteration only
-                memory=False,  # Disable memory to prevent context buildup
-                embedder=None  # Disable embedder to prevent tool access
+                verbose=False,  # Keep verbosity low for analysis
+                max_iter=2,  # Allow limited iterations for quality
+                memory=False  # Disable memory to prevent buildup
             )
             
             # Execute assessment with timeout
@@ -964,11 +1020,11 @@ class AIReadinessCrewAI:
             
             try:
                 signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(60)  # Reduced to 1 minute timeout for faster failure
-                print(f"⏳ Starting ultra-fast assessment with 1-minute timeout...")
+                signal.alarm(90)  # 90 second timeout for hybrid approach
+                print(f"⏳ Starting hybrid assessment (intelligent + reliable) with 90s timeout...")
                 results = assessment_crew.kickoff()
                 signal.alarm(0)  # Cancel timeout
-                print(f"✅ Assessment completed successfully in under 1 minute")
+                print(f"✅ Hybrid assessment completed successfully!")
             except TimeoutError:
                 signal.alarm(0)  # Cancel timeout
                 print(f"⏰ Assessment timed out after 2 minutes, using fallback")
@@ -1370,7 +1426,7 @@ def create_change_assessment_agent(llm):
         verbose=False,  # Reduce verbosity to prevent noise
         allow_delegation=False,  # Disable delegation to prevent loops
         llm=llm,
-        tools=[]  # No tools to prevent failures
+        tools=[AssessmentDataTool()]  # Simple, reliable tools for analysis
     )
 
 def create_change_scoring_agent(llm):
@@ -1385,7 +1441,7 @@ def create_change_scoring_agent(llm):
         verbose=False,  # Reduce verbosity
         allow_delegation=False,
         llm=llm,
-        tools=[]  # No tools to prevent failures
+        tools=[AssessmentDataTool()]  # Simple, reliable tools for analysis
     )
 
 def create_change_strategy_agent(llm):
@@ -1400,7 +1456,7 @@ def create_change_strategy_agent(llm):
         verbose=False,  # Reduce verbosity to prevent noise
         allow_delegation=False,  # Disable delegation to prevent loops
         llm=llm,
-        tools=[]  # No tools to prevent failures
+        tools=[AssessmentDataTool()]  # Simple, reliable tools for analysis
     )
 
 def create_change_risk_agent(llm):
@@ -1415,7 +1471,7 @@ def create_change_risk_agent(llm):
         verbose=False,  # Reduce verbosity
         allow_delegation=False,
         llm=llm,
-        tools=[]  # No tools to prevent failures
+        tools=[AssessmentDataTool()]  # Simple, reliable tools for analysis
     )
 
 def create_portfolio_management_agent(llm):
@@ -1430,7 +1486,7 @@ def create_portfolio_management_agent(llm):
         verbose=False,  # Reduce verbosity
         allow_delegation=False,
         llm=llm,
-        tools=[]  # No tools to prevent failures
+        tools=[AssessmentDataTool()]  # Simple, reliable tools for analysis
     )
 
 # =============================================================================
@@ -1770,17 +1826,20 @@ def test_crewai_system(openai_api_key: str):
         }
 
 if __name__ == "__main__":
-    print("🤖 ULTRA-STREAMLINED CREWAI ASSESSMENT SYSTEM")
+    print("🤖 HYBRID INTELLIGENT CREWAI ASSESSMENT SYSTEM")
     print("="*60)
-    print("🔧 Anti-Loop Features:")
-    print("• NO TOOLS on any agents (tools=[])")
-    print("• max_iter=1 to force single execution")
+    print("🎧 Intelligent Question Generation:")
+    print("• Full agent intelligence with tools for questions 1-5")
+    print("• Contextual, adaptive questioning")
+    print("• Multi-agent collaboration for personalized questions")
+    print("• verbose=True for rich question generation")
+    print("\n🔧 Reliable Analysis:")
+    print("• Simplified, robust tools for post-assessment")
+    print("• max_iter=2 for balanced quality and speed")
     print("• memory=False to prevent context buildup")
-    print("• embedder=None to disable tool access")
-    print("• Explicit 'NO TOOLS' in all task descriptions")
-    print("\n🚀 Designed to eliminate tool usage loops!")
-    print("\n⚙️ Loop Prevention:")
-    print("• Fixed JSON templates in task descriptions")
-    print("• 'COMPLETE IN ONE STEP' instructions")
-    print("• 30s timeouts with signal handlers")
-    print("• Aggressive crew configuration")
+    print("• Timeout protection with signal handlers")
+    print("\n⚙️ Best of Both Worlds:")
+    print("• Smart questions (the core value)")
+    print("• Reliable analysis (no infinite loops)")
+    print("• 1-minute timeout for fast failure detection")
+    print("• Simple, proven tool patterns")
