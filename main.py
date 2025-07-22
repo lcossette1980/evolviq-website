@@ -2059,6 +2059,8 @@ def perform_crewai_change_assessment(session_id: str, org_data: Dict, project_da
     """Perform sophisticated change readiness assessment using TRUE CrewAI multi-agent collaboration."""
     try:
         logger.info(f"🚀 Starting TRUE CrewAI change assessment for session {session_id}")
+        logger.info(f"📊 Questions completed: {len(question_history)}")
+        logger.info(f"🏢 Organization: {org_data.get('name', 'Unknown')}")
         
         # Check if CrewAI is available
         if not crewai_available:
@@ -2073,11 +2075,26 @@ def perform_crewai_change_assessment(session_id: str, org_data: Dict, project_da
         
         # Run TRUE CrewAI change assessment with real agent collaboration
         logger.info("🤖 Initializing CrewAI change readiness agents...")
-        crewai_results = run_crewai_change_assessment(
-            openai_api_key=openai_api_key,
-            org_data=org_data,
-            question_history=question_history
-        )
+        
+        # Add timeout wrapper to prevent infinite loops
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(
+                run_crewai_change_assessment,
+                openai_api_key=openai_api_key,
+                org_data=org_data,
+                question_history=question_history
+            )
+            try:
+                # Wait maximum 90 seconds for CrewAI results
+                crewai_results = future.result(timeout=90)
+                logger.info("✅ CrewAI change assessment completed successfully")
+            except concurrent.futures.TimeoutError:
+                logger.warning("⏰ CrewAI change assessment timed out after 90 seconds, using function-based fallback")
+                return perform_function_based_change_assessment(session_id, org_data, project_data, question_history)
+            except Exception as e:
+                logger.error(f"🚨 CrewAI change assessment failed with error: {str(e)}")
+                return perform_function_based_change_assessment(session_id, org_data, project_data, question_history)
         
         # Process CrewAI results for API response
         if crewai_results.get("error") or crewai_results.get("fallback_needed"):
