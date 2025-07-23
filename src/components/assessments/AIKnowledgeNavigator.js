@@ -46,7 +46,7 @@ const AIKnowledgeNavigator = () => {
   const [learningPlan, setLearningPlan] = useState(null);
   const [showPremiumFeatures, setShowPremiumFeatures] = useState(false);
 
-  // Color palette
+  // Brand color palette
   const colors = {
     charcoal: '#2A2A2A',
     chestnut: '#A44A3F',
@@ -278,108 +278,136 @@ const AIKnowledgeNavigator = () => {
   };
 
   const renderIntroduction = () => (
-    <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 px-4 sm:px-0">
-      {/* Hero Section */}
-      <div className="text-center py-8 sm:py-12 px-4 sm:px-8 rounded-xl" style={{ backgroundColor: colors.pearl }}>
-        <Brain className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6" style={{ color: colors.chestnut }} />
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4" style={{ color: colors.charcoal, fontFamily: 'Playfair Display' }}>
+    <div className="max-w-4xl mx-auto space-y-8">
+      {/* Clean Hero Section */}
+      <div className="text-center py-12 px-8" style={{ backgroundColor: colors.pearl }}>
+        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: colors.chestnut }}>
+          <Brain className="w-8 h-8 text-white" />
+        </div>
+        
+        <h1 className="text-4xl font-bold mb-4" style={{ color: colors.charcoal, fontFamily: 'Playfair Display' }}>
           AI Knowledge Navigator
         </h1>
-        <p className="text-lg sm:text-xl mb-6" style={{ color: colors.charcoal }}>
+        
+        <p className="text-lg mb-6" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>
           Discover your AI knowledge level and get a personalized learning pathway
         </p>
-        <div className="flex flex-col sm:flex-row justify-center items-center space-y-2 sm:space-y-0 sm:space-x-4">
-          <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
-            Free Basic Assessment
-          </span>
-          <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm font-medium">
-            Premium Learning Plans
-          </span>
+        
+        <div className="flex justify-center space-x-4">
+          <div className="inline-block px-4 py-2 rounded text-sm font-medium text-white" style={{ backgroundColor: colors.chestnut }}>
+            Free Assessment
+          </div>
+          <div className="inline-block px-4 py-2 rounded text-sm font-medium" style={{ backgroundColor: colors.khaki, color: colors.charcoal }}>
+            Premium Features Available
+          </div>
         </div>
       </div>
 
       {/* How It Works */}
-      <div className="bg-white rounded-xl p-4 sm:p-6 md:p-8 shadow-sm">
-        <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6" style={{ color: colors.charcoal, fontFamily: 'Playfair Display' }}>
+      <div className="bg-white rounded-lg p-8 shadow-sm">
+        <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: colors.charcoal, fontFamily: 'Playfair Display' }}>
           How It Works
         </h2>
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid md:grid-cols-3 gap-8">
           <div className="text-center">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-              <MessageSquare className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: colors.pearl }}>
+              <MessageSquare className="w-8 h-8" style={{ color: colors.chestnut }} />
             </div>
-            <h3 className="font-semibold mb-2 text-sm sm:text-base">Interactive Assessment</h3>
-            <p className="text-xs sm:text-sm text-gray-600">Intelligent assessment across 5 key areas: AI Fundamentals, Prompt Engineering, and AI Ecosystem - with personalized analysis</p>
+            <h3 className="font-bold mb-2" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>Interactive Assessment</h3>
+            <p className="text-sm" style={{ color: colors.khaki, fontFamily: 'Lato' }}>Intelligent assessment across key AI areas with personalized analysis</p>
           </div>
           <div className="text-center">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-              <Target className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: colors.pearl }}>
+              <Target className="w-8 h-8" style={{ color: colors.chestnut }} />
             </div>
-            <h3 className="font-semibold mb-2 text-sm sm:text-base">Knowledge Mapping</h3>
-            <p className="text-xs sm:text-sm text-gray-600">Get detailed insights into your strengths and areas for improvement across 6 AI domains</p>
+            <h3 className="font-bold mb-2" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>Knowledge Mapping</h3>
+            <p className="text-sm" style={{ color: colors.khaki, fontFamily: 'Lato' }}>Detailed insights into your strengths and areas for improvement</p>
           </div>
-          <div className="text-center sm:col-span-2 md:col-span-1">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-              <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
+          <div className="text-center">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: colors.pearl }}>
+              <BookOpen className="w-8 h-8" style={{ color: colors.chestnut }} />
             </div>
-            <h3 className="font-semibold mb-2 text-sm sm:text-base">Personalized Learning</h3>
-            <p className="text-xs sm:text-sm text-gray-600">Receive curated lessons, resources, and a step-by-step learning plan tailored to your level</p>
+            <h3 className="font-bold mb-2" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>Personalized Learning</h3>
+            <p className="text-sm" style={{ color: colors.khaki, fontFamily: 'Lato' }}>Curated lessons and step-by-step learning plan tailored to your level</p>
           </div>
         </div>
       </div>
 
       {/* Assessment Areas */}
-      <div className="bg-white rounded-xl p-4 sm:p-6 md:p-8 shadow-sm">
-        <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6" style={{ color: colors.charcoal, fontFamily: 'Playfair Display' }}>
+      <div className="bg-white rounded-lg p-8 shadow-sm">
+        <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: colors.charcoal, fontFamily: 'Playfair Display' }}>
           Assessment Areas
         </h2>
-        <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
+        <div className="grid md:grid-cols-2 gap-6">
           {maturityAreas.map((area, index) => (
-            <div key={index} className="flex items-start space-x-3 p-3 sm:p-4 rounded-lg" style={{ backgroundColor: colors.bone }}>
-              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-white rounded-full flex items-center justify-center flex-shrink-0 mt-1 sm:mt-0">
-                <span className="text-xs sm:text-sm font-medium" style={{ color: colors.chestnut }}>{index + 1}</span>
+            <div key={index} className="flex items-start space-x-4 p-4 rounded-lg" style={{ backgroundColor: colors.pearl }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: colors.chestnut }}>
+                <span className="text-sm font-bold text-white">{index + 1}</span>
               </div>
-              <div className="min-w-0">
-                <h3 className="font-medium text-sm sm:text-base" style={{ color: colors.charcoal }}>{area.title}</h3>
-                <p className="text-xs sm:text-sm" style={{ color: colors.khaki }}>{area.description}</p>
+              <div>
+                <h3 className="font-bold mb-2" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>{area.title}</h3>
+                <p className="text-sm" style={{ color: colors.khaki, fontFamily: 'Lato' }}>{area.description}</p>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Free vs Premium */}
-      <div className="bg-white rounded-xl p-4 sm:p-6 md:p-8 shadow-sm">
-        <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6" style={{ color: colors.charcoal, fontFamily: 'Playfair Display' }}>
+      {/* What You Get */}
+      <div className="bg-white rounded-lg p-8 shadow-sm">
+        <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: colors.charcoal, fontFamily: 'Playfair Display' }}>
           What You Get
         </h2>
-        <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-          <div className="border rounded-lg p-4 sm:p-6">
-            <div className="flex items-center mb-3 sm:mb-4">
-              <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 mr-2" />
-              <h3 className="font-bold text-base sm:text-lg">Free Assessment</h3>
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="border rounded-lg p-6" style={{ borderColor: colors.khaki }}>
+            <div className="flex items-center mb-4">
+              <CheckCircle className="w-6 h-6 mr-3" style={{ color: colors.chestnut }} />
+              <h3 className="font-bold text-lg" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>Free Assessment</h3>
             </div>
-            <ul className="space-y-2 text-xs sm:text-sm">
-              <li className="flex items-start"><CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />Complete AI knowledge assessment</li>
-              <li className="flex items-start"><CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />Overall maturity score</li>
-              <li className="flex items-start"><CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />Basic strengths and weaknesses</li>
-              <li className="flex items-start"><CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />General learning recommendations</li>
+            <ul className="space-y-3 text-sm" style={{ fontFamily: 'Lato' }}>
+              <li className="flex items-start">
+                <CheckCircle className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0" style={{ color: colors.chestnut }} />
+                <span style={{ color: colors.charcoal }}>Complete AI knowledge assessment</span>
+              </li>
+              <li className="flex items-start">
+                <CheckCircle className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0" style={{ color: colors.chestnut }} />
+                <span style={{ color: colors.charcoal }}>Overall maturity score</span>
+              </li>
+              <li className="flex items-start">
+                <CheckCircle className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0" style={{ color: colors.chestnut }} />
+                <span style={{ color: colors.charcoal }}>Basic strengths and weaknesses</span>
+              </li>
+              <li className="flex items-start">
+                <CheckCircle className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0" style={{ color: colors.chestnut }} />
+                <span style={{ color: colors.charcoal }}>General learning recommendations</span>
+              </li>
             </ul>
           </div>
-          <div className="border rounded-lg p-4 sm:p-6 relative">
-            <div className="absolute top-2 right-2">
-              <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600" />
+          <div className="border rounded-lg p-6 relative" style={{ borderColor: colors.khaki, backgroundColor: colors.bone }}>
+            <div className="absolute top-4 right-4">
+              <Lock className="w-5 h-5" style={{ color: colors.khaki }} />
             </div>
-            <div className="flex items-center mb-3 sm:mb-4">
-              <Star className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600 mr-2" />
-              <h3 className="font-bold text-base sm:text-lg">Premium Features</h3>
+            <div className="flex items-center mb-4">
+              <Star className="w-6 h-6 mr-3" style={{ color: colors.khaki }} />
+              <h3 className="font-bold text-lg" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>Premium Features</h3>
             </div>
-            <ul className="space-y-2 text-xs sm:text-sm">
-              <li className="flex items-start"><Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" />Detailed domain-specific scores</li>
-              <li className="flex items-start"><Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" />Personalized learning pathway</li>
-              <li className="flex items-start"><Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" />Curated lesson plans</li>
-              <li className="flex items-start"><Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" />Progress tracking</li>
-              <li className="flex items-start"><Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" />Resource recommendations</li>
+            <ul className="space-y-3 text-sm" style={{ fontFamily: 'Lato' }}>
+              <li className="flex items-start">
+                <Star className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0" style={{ color: colors.khaki }} />
+                <span style={{ color: colors.charcoal }}>Detailed domain-specific scores</span>
+              </li>
+              <li className="flex items-start">
+                <Star className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0" style={{ color: colors.khaki }} />
+                <span style={{ color: colors.charcoal }}>Personalized learning pathway</span>
+              </li>
+              <li className="flex items-start">
+                <Star className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0" style={{ color: colors.khaki }} />
+                <span style={{ color: colors.charcoal }}>Curated lesson plans</span>
+              </li>
+              <li className="flex items-start">
+                <Star className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0" style={{ color: colors.khaki }} />
+                <span style={{ color: colors.charcoal }}>Progress tracking and recommendations</span>
+              </li>
             </ul>
           </div>
         </div>
@@ -390,7 +418,8 @@ const AIKnowledgeNavigator = () => {
         <button
           onClick={startAssessment}
           disabled={isLoading}
-          className="bg-chestnut text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-medium hover:bg-chestnut/90 transition-colors disabled:opacity-50 touch-manipulation min-h-[44px] text-sm sm:text-base"
+          className="text-white px-8 py-4 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+          style={{ backgroundColor: colors.chestnut, fontFamily: 'Lato' }}
         >
           {isLoading ? (
             <>
@@ -399,11 +428,15 @@ const AIKnowledgeNavigator = () => {
             </>
           ) : (
             <>
-              <Play className="w-5 h-5 inline mr-2" />
               Start Assessment
+              <ArrowRight className="w-5 h-5 inline ml-2" />
             </>
           )}
         </button>
+        
+        <div className="mt-4 text-sm" style={{ color: colors.khaki, fontFamily: 'Lato' }}>
+          Takes 10-15 minutes to complete
+        </div>
       </div>
     </div>
   );
