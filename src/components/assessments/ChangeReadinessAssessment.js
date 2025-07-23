@@ -608,31 +608,31 @@ const ChangeReadinessAssessment = () => {
 
   const renderAIAgentsLoading = () => (
     <div className="max-w-4xl mx-auto">
-      {/* Loading Header */}
+      {/* Clean Loading Header */}
       <div className="text-center mb-12">
-        <div className="relative inline-flex items-center justify-center w-24 h-24 mb-8">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-pulse"></div>
-          <div className="relative bg-gradient-to-r from-blue-600 to-purple-700 p-6 rounded-full shadow-2xl">
-            <Brain className="w-12 h-12 text-white animate-pulse" />
-          </div>
+        <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: colors.chestnut }}>
+          <Brain className="w-10 h-10 text-white" />
         </div>
         
-        <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent" style={{ fontFamily: 'Playfair Display' }}>
+        <h2 className="text-3xl font-bold mb-4" style={{ color: colors.charcoal, fontFamily: 'Playfair Display' }}>
           AI Agents at Work
         </h2>
-        <p className="text-xl text-slate-600 mb-8">
-          Our specialized AI team is analyzing your organization's change readiness
+        <p className="text-lg mb-8" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>
+          Our AI team is analyzing your organization's change readiness
         </p>
         
-        {/* Progress Bar */}
+        {/* Simple Progress Bar */}
         <div className="max-w-md mx-auto mb-8">
-          <div className="bg-slate-200 rounded-full h-3 overflow-hidden">
+          <div className="bg-gray-200 rounded-full h-2 overflow-hidden">
             <div 
-              className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-500 ease-out"
-              style={{ width: `${loadingProgress}%` }}
+              className="h-full rounded-full transition-all duration-500"
+              style={{ 
+                backgroundColor: colors.chestnut,
+                width: `${loadingProgress}%` 
+              }}
             />
           </div>
-          <div className="flex justify-between text-sm text-slate-500 mt-2">
+          <div className="flex justify-between text-sm mt-2" style={{ color: colors.khaki, fontFamily: 'Lato' }}>
             <span>0%</span>
             <span className="font-medium">{Math.round(loadingProgress)}%</span>
             <span>100%</span>
@@ -642,22 +642,23 @@ const ChangeReadinessAssessment = () => {
 
       {/* Current Working Agent */}
       {currentWorkingAgent && (
-        <div className="bg-white rounded-2xl p-8 shadow-xl border border-slate-100 mb-8">
+        <div className="bg-white rounded-lg p-8 shadow-sm mb-8">
           <div className="flex items-center justify-center mb-6">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-lg opacity-30 animate-pulse scale-110"></div>
-              <div className={`relative w-20 h-20 rounded-full flex items-center justify-center shadow-lg ${currentWorkingAgent.color}`}>
-                {React.createElement(currentWorkingAgent.icon, { className: "w-10 h-10 text-white" })}
-              </div>
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center ${currentWorkingAgent.color}`}>
+              {React.createElement(currentWorkingAgent.icon, { className: "w-10 h-10 text-white" })}
             </div>
           </div>
           
           <div className="text-center">
-            <h3 className="text-2xl font-bold text-slate-800 mb-2">{currentWorkingAgent.name}</h3>
-            <p className="text-slate-600 mb-4">{currentWorkingAgent.role}</p>
-            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-full border border-blue-200">
-              <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-pulse mr-3"></div>
-              <span className="text-sm font-medium text-slate-700">
+            <h3 className="text-xl font-bold mb-2" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>
+              {currentWorkingAgent.name}
+            </h3>
+            <p className="mb-4" style={{ color: colors.khaki, fontFamily: 'Lato' }}>
+              {currentWorkingAgent.role}
+            </p>
+            <div className="inline-flex items-center px-4 py-2 rounded-full" style={{ backgroundColor: colors.pearl }}>
+              <div className="w-2 h-2 rounded-full mr-3" style={{ backgroundColor: colors.chestnut }}></div>
+              <span className="text-sm font-medium" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>
                 {currentWorkingAgent.message || "Working..."}
               </span>
             </div>
@@ -671,14 +672,13 @@ const ChangeReadinessAssessment = () => {
           const Icon = agent.icon;
           const isCompleted = loadingProgress > (index * 20);
           const isCurrent = currentWorkingAgent?.id === agent.id;
-          const isWaiting = !isCompleted && !isCurrent;
           
           return (
             <div key={agent.id} className="text-center">
-              <div className={`relative w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-all duration-500 ${
-                isCompleted ? 'bg-green-100 shadow-lg' : 
-                isCurrent ? `${agent.color} scale-110 shadow-xl` : 
-                'bg-slate-100'
+              <div className={`relative w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                isCompleted ? 'bg-green-100' : 
+                isCurrent ? agent.color : 
+                'bg-gray-100'
               }`}>
                 {isCompleted && (
                   <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
@@ -688,21 +688,21 @@ const ChangeReadinessAssessment = () => {
                 <Icon className={`w-8 h-8 ${
                   isCompleted ? 'text-green-600' : 
                   isCurrent ? 'text-white' : 
-                  'text-slate-400'
+                  'text-gray-400'
                 }`} />
               </div>
-              <h4 className={`font-semibold text-sm mb-1 ${
+              <h4 className={`font-medium text-sm mb-1 ${
                 isCompleted ? 'text-green-700' : 
-                isCurrent ? 'text-slate-800' : 
-                'text-slate-400'
-              }`}>
+                isCurrent ? colors.charcoal : 
+                'text-gray-400'
+              }`} style={{ fontFamily: 'Lato' }}>
                 {agent.name}
               </h4>
               <p className={`text-xs ${
                 isCompleted ? 'text-green-600' : 
-                isCurrent ? 'text-slate-600' : 
-                'text-slate-400'
-              }`}>
+                isCurrent ? colors.khaki : 
+                'text-gray-400'
+              }`} style={{ fontFamily: 'Lato' }}>
                 {isCompleted ? 'Complete' : 
                  isCurrent ? 'Working...' : 
                  'Waiting'}
@@ -714,9 +714,9 @@ const ChangeReadinessAssessment = () => {
 
       {/* Estimated Time */}
       <div className="text-center mt-12">
-        <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-full border border-amber-200">
-          <Clock className="w-5 h-5 text-amber-600 mr-2" />
-          <span className="text-sm font-medium text-amber-700">
+        <div className="inline-flex items-center px-6 py-3 rounded-full" style={{ backgroundColor: colors.pearl }}>
+          <Clock className="w-5 h-5 mr-2" style={{ color: colors.chestnut }} />
+          <span className="text-sm font-medium" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>
             Estimated completion: 2-3 minutes
           </span>
         </div>
@@ -725,334 +725,273 @@ const ChangeReadinessAssessment = () => {
   );
 
   const renderIntroduction = () => (
-    <div className="max-w-6xl mx-auto space-y-12">
-      {/* Premium Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50 rounded-3xl shadow-xl border border-slate-100">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-purple-600/5"></div>
-        <div className="relative text-center py-16 px-8 lg:px-16">
-          <div className="flex justify-center mb-8">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-xl opacity-20 scale-110"></div>
-              <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 p-6 rounded-full shadow-lg">
-                <Building className="w-12 h-12 text-white" />
-              </div>
-            </div>
-          </div>
-          
-          <div className="space-y-6 max-w-4xl mx-auto">
-            <div className="flex justify-center mb-4">
-              <span className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-semibold rounded-full shadow-lg">
-                <Crown className="w-4 h-4 mr-2" />
-                Executive Premium Assessment
-              </span>
-            </div>
-            
-            <h1 className="text-5xl lg:text-6xl font-bold bg-gradient-to-r from-slate-800 via-slate-700 to-slate-600 bg-clip-text text-transparent" style={{ fontFamily: 'Playfair Display' }}>
-              Change Readiness Assessment
-            </h1>
-            
-            <p className="text-xl lg:text-2xl text-slate-600 font-light leading-relaxed">
-              Multi-agent AI evaluation of your organization's readiness for digital transformation
-            </p>
-            
-            <div className="flex flex-wrap justify-center gap-4 mt-8">
-              <div className="flex items-center px-4 py-2 bg-white/70 backdrop-blur-sm rounded-full border border-slate-200">
-                <Brain className="w-5 h-5 text-blue-600 mr-2" />
-                <span className="text-sm font-medium text-slate-700">AI-Powered Analysis</span>
-              </div>
-              <div className="flex items-center px-4 py-2 bg-white/70 backdrop-blur-sm rounded-full border border-slate-200">
-                <Shield className="w-5 h-5 text-green-600 mr-2" />
-                <span className="text-sm font-medium text-slate-700">Enterprise Security</span>
-              </div>
-              <div className="flex items-center px-4 py-2 bg-white/70 backdrop-blur-sm rounded-full border border-slate-200">
-                <Award className="w-5 h-5 text-purple-600 mr-2" />
-                <span className="text-sm font-medium text-slate-700">Strategic Insights</span>
-              </div>
-            </div>
-          </div>
+    <div className="max-w-4xl mx-auto space-y-8">
+      {/* Clean Hero Section */}
+      <div className="text-center py-12 px-8" style={{ backgroundColor: colors.pearl }}>
+        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: colors.chestnut }}>
+          <Building className="w-8 h-8 text-white" />
+        </div>
+        
+        <h1 className="text-4xl font-bold mb-4" style={{ color: colors.charcoal, fontFamily: 'Playfair Display' }}>
+          Change Readiness Assessment
+        </h1>
+        
+        <p className="text-lg mb-6" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>
+          Multi-agent AI evaluation of your organization's readiness for change
+        </p>
+        
+        <div className="inline-block px-4 py-2 rounded text-sm font-medium text-white" style={{ backgroundColor: colors.chestnut }}>
+          Premium Assessment
         </div>
       </div>
 
-      {/* AI Agents Section */}
-      <div className="bg-white rounded-2xl p-8 lg:p-12 shadow-lg border border-slate-100">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl lg:text-4xl font-bold mb-4 bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent" style={{ fontFamily: 'Playfair Display' }}>
-            AI Assessment Team
+      {/* AI Assessment Process */}
+      <div className="bg-white rounded-lg p-8 shadow-sm">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold mb-4" style={{ color: colors.charcoal, fontFamily: 'Playfair Display' }}>
+            Assessment Process
           </h2>
-          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-            Five specialized AI agents working collaboratively to evaluate your organization from every strategic angle
+          <p className="text-base" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>
+            Five specialized AI agents will evaluate your organization from different perspectives
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
           {agents.map((agent, index) => {
             const Icon = agent.icon;
             return (
-              <div key={index} className="group text-center">
-                <div className="relative mb-6">
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-lg opacity-0 group-hover:opacity-20 transition-opacity duration-300 scale-110"></div>
-                  <div className={`relative w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-lg border-2 border-white group-hover:scale-105 transition-transform duration-300 ${agent.color}`}>
-                    <Icon className="w-10 h-10 text-white" />
-                  </div>
+              <div key={index} className="text-center">
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${agent.color}`}>
+                  <Icon className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="font-bold mb-2 text-sm lg:text-base text-slate-800">{agent.name}</h3>
-                <p className="text-xs lg:text-sm text-slate-500 leading-relaxed">{agent.role}</p>
+                <h3 className="font-medium mb-2 text-sm" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>
+                  {agent.name}
+                </h3>
+                <p className="text-xs" style={{ color: colors.khaki, fontFamily: 'Lato' }}>
+                  {agent.role}
+                </p>
               </div>
             );
           })}
         </div>
+      </div>
+
+      {/* What We Evaluate */}
+      <div className="bg-white rounded-lg p-8 shadow-sm">
+        <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: colors.charcoal, fontFamily: 'Playfair Display' }}>
+          What We Evaluate
+        </h2>
         
-        <div className="mt-12 text-center">
-          <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-full border border-blue-200">
-            <Brain className="w-5 h-5 text-blue-600 mr-2" />
-            <span className="text-sm font-medium text-blue-700">Collaborative Intelligence at Work</span>
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <div className="flex items-start space-x-4">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: colors.chestnut }}>
+                <Target className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold mb-2" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>Strategic Alignment</h3>
+                <p className="text-sm" style={{ color: colors.khaki, fontFamily: 'Lato' }}>How well initiatives align with business objectives</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-4">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: colors.chestnut }}>
+                <Users className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold mb-2" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>Organizational Readiness</h3>
+                <p className="text-sm" style={{ color: colors.khaki, fontFamily: 'Lato' }}>Culture, skills, and change management capabilities</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-4">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: colors.chestnut }}>
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold mb-2" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>Risk Assessment</h3>
+                <p className="text-sm" style={{ color: colors.khaki, fontFamily: 'Lato' }}>Potential challenges and mitigation strategies</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="space-y-6">
+            <div className="flex items-start space-x-4">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: colors.chestnut }}>
+                <Settings className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold mb-2" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>Technical Feasibility</h3>
+                <p className="text-sm" style={{ color: colors.khaki, fontFamily: 'Lato' }}>Infrastructure, data, and technical requirements</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-4">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: colors.chestnut }}>
+                <TrendingUp className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold mb-2" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>Impact Evaluation</h3>
+                <p className="text-sm" style={{ color: colors.khaki, fontFamily: 'Lato' }}>Expected outcomes and success metrics</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-4">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: colors.chestnut }}>
+                <BookOpen className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold mb-2" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>Implementation Roadmap</h3>
+                <p className="text-sm" style={{ color: colors.khaki, fontFamily: 'Lato' }}>Step-by-step plan for successful deployment</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Evaluation Areas Grid */}
-      <div className="grid lg:grid-cols-2 gap-8">
-        <div className="bg-white rounded-2xl p-8 shadow-lg border border-slate-100">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-4">
-              <Target className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="text-xl font-bold text-slate-800 mb-2">Strategic Assessment</h3>
-            <p className="text-slate-600">Business alignment and strategic evaluation</p>
-          </div>
-          <div className="space-y-4">
-            <div className="flex items-center p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
-              <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mr-3"></div>
-              <span className="text-sm font-medium text-slate-700">Business Objective Alignment</span>
-            </div>
-            <div className="flex items-center p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
-              <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mr-3"></div>
-              <span className="text-sm font-medium text-slate-700">Market Positioning Impact</span>
-            </div>
-            <div className="flex items-center p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
-              <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mr-3"></div>
-              <span className="text-sm font-medium text-slate-700">Resource Allocation Strategy</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-8 shadow-lg border border-slate-100">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-teal-600 rounded-full mb-4">
-              <Users className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="text-xl font-bold text-slate-800 mb-2">Organizational Analysis</h3>
-            <p className="text-slate-600">Culture, capabilities, and change readiness</p>
-          </div>
-          <div className="space-y-4">
-            <div className="flex items-center p-4 bg-gradient-to-r from-green-50 to-teal-50 rounded-xl border border-green-100">
-              <div className="w-3 h-3 bg-gradient-to-r from-green-500 to-teal-600 rounded-full mr-3"></div>
-              <span className="text-sm font-medium text-slate-700">Cultural Transformation Readiness</span>
-            </div>
-            <div className="flex items-center p-4 bg-gradient-to-r from-green-50 to-teal-50 rounded-xl border border-green-100">
-              <div className="w-3 h-3 bg-gradient-to-r from-green-500 to-teal-600 rounded-full mr-3"></div>
-              <span className="text-sm font-medium text-slate-700">Skills Gap Analysis</span>
-            </div>
-            <div className="flex items-center p-4 bg-gradient-to-r from-green-50 to-teal-50 rounded-xl border border-green-100">
-              <div className="w-3 h-3 bg-gradient-to-r from-green-500 to-teal-600 rounded-full mr-3"></div>
-              <span className="text-sm font-medium text-slate-700">Change Management Capabilities</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Executive Report Preview */}
-      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 rounded-3xl p-8 lg:p-12 text-white shadow-2xl">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full mb-6 shadow-lg">
-            <Award className="w-10 h-10 text-white" />
-          </div>
-          <h2 className="text-3xl lg:text-4xl font-bold mb-4" style={{ fontFamily: 'Playfair Display' }}>
-            Executive Assessment Report
-          </h2>
-          <p className="text-xl text-slate-300 max-w-3xl mx-auto">
-            Receive a comprehensive strategic analysis designed for executive leadership and board-level decision making
-          </p>
-        </div>
+      {/* Assessment Report */}
+      <div className="bg-white rounded-lg p-8 shadow-sm">
+        <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: colors.charcoal, fontFamily: 'Playfair Display' }}>
+          Comprehensive Assessment Report
+        </h2>
         
         <div className="grid md:grid-cols-3 gap-8">
-          <div className="text-center group">
-            <div className="relative mb-6">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
-              <div className="relative w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto shadow-lg group-hover:scale-105 transition-transform duration-300">
-                <BarChart3 className="w-10 h-10 text-white" />
-              </div>
+          <div className="text-center">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: colors.pearl }}>
+              <BarChart3 className="w-8 h-8" style={{ color: colors.chestnut }} />
             </div>
-            <h3 className="text-xl font-bold mb-3">Strategic Readiness Score</h3>
-            <p className="text-slate-300 leading-relaxed">Comprehensive readiness evaluation with detailed breakdowns across all business dimensions</p>
+            <h3 className="font-bold mb-2" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>Readiness Score</h3>
+            <p className="text-sm" style={{ color: colors.khaki, fontFamily: 'Lato' }}>Overall readiness level with detailed breakdown</p>
           </div>
           
-          <div className="text-center group">
-            <div className="relative mb-6">
-              <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-teal-500 rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
-              <div className="relative w-20 h-20 bg-gradient-to-r from-green-500 to-teal-600 rounded-full flex items-center justify-center mx-auto shadow-lg group-hover:scale-105 transition-transform duration-300">
-                <Lightbulb className="w-10 h-10 text-white" />
-              </div>
+          <div className="text-center">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: colors.pearl }}>
+              <Lightbulb className="w-8 h-8" style={{ color: colors.chestnut }} />
             </div>
-            <h3 className="text-xl font-bold mb-3">AI-Driven Insights</h3>
-            <p className="text-slate-300 leading-relaxed">Actionable recommendations from specialized AI agents with proven strategic frameworks</p>
+            <h3 className="font-bold mb-2" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>Strategic Insights</h3>
+            <p className="text-sm" style={{ color: colors.khaki, fontFamily: 'Lato' }}>Actionable recommendations from each agent</p>
           </div>
           
-          <div className="text-center group">
-            <div className="relative mb-6">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
-              <div className="relative w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto shadow-lg group-hover:scale-105 transition-transform duration-300">
-                <FileText className="w-10 h-10 text-white" />
-              </div>
+          <div className="text-center">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: colors.pearl }}>
+              <FileText className="w-8 h-8" style={{ color: colors.chestnut }} />
             </div>
-            <h3 className="text-xl font-bold mb-3">Implementation Roadmap</h3>
-            <p className="text-slate-300 leading-relaxed">Detailed phase-by-phase execution plan with timelines, milestones, and success metrics</p>
+            <h3 className="font-bold mb-2" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>Implementation Plan</h3>
+            <p className="text-sm" style={{ color: colors.khaki, fontFamily: 'Lato' }}>Detailed roadmap for your transformation</p>
           </div>
         </div>
       </div>
 
-      {/* Premium CTA */}
+      {/* Start Button */}
       <div className="text-center">
-        <div className="inline-flex flex-col items-center space-y-6">
-          <button
-            onClick={() => setCurrentStep('organization')}
-            className="group relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 hover:from-blue-700 hover:via-purple-700 hover:to-blue-800 text-white px-12 py-5 rounded-2xl font-semibold text-lg shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 transform hover:scale-105"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative flex items-center">
-              <ArrowRight className="w-6 h-6 mr-3 group-hover:translate-x-1 transition-transform duration-300" />
-              Begin Executive Assessment
-            </div>
-          </button>
-          
-          <div className="flex items-center space-x-4 text-sm text-slate-600">
-            <div className="flex items-center">
-              <Clock className="w-4 h-4 mr-1" />
-              <span>15-20 minutes</span>
-            </div>
-            <div className="w-1 h-1 bg-slate-400 rounded-full"></div>
-            <div className="flex items-center">
-              <Shield className="w-4 h-4 mr-1" />
-              <span>Enterprise secure</span>
-            </div>
-            <div className="w-1 h-1 bg-slate-400 rounded-full"></div>
-            <div className="flex items-center">
-              <Crown className="w-4 h-4 mr-1" />
-              <span>Premium members only</span>
-            </div>
-          </div>
+        <button
+          onClick={() => setCurrentStep('organization')}
+          className="text-white px-8 py-4 rounded-lg font-medium hover:opacity-90 transition-opacity" 
+          style={{ backgroundColor: colors.chestnut, fontFamily: 'Lato' }}
+        >
+          Begin Assessment
+          <ArrowRight className="w-5 h-5 inline ml-2" />
+        </button>
+        
+        <div className="mt-4 text-sm" style={{ color: colors.khaki, fontFamily: 'Lato' }}>
+          Takes 15-20 minutes to complete
         </div>
       </div>
     </div>
   );
 
   const renderOrganizationForm = () => (
-    <div className="max-w-4xl mx-auto space-y-8">
-      {/* Progress Header */}
+    <div className="max-w-3xl mx-auto space-y-8">
+      {/* Step Header */}
       <div className="text-center mb-8">
-        <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-full border border-blue-200 mb-4">
-          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mr-3">
+        <div className="inline-flex items-center px-4 py-2 rounded-full mb-4" style={{ backgroundColor: colors.pearl }}>
+          <div className="w-8 h-8 rounded-full flex items-center justify-center mr-3" style={{ backgroundColor: colors.chestnut }}>
             <span className="text-white text-sm font-bold">1</span>
           </div>
-          <span className="text-sm font-medium text-slate-700">Organization Profile</span>
+          <span className="text-sm font-medium" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>Organization Information</span>
         </div>
-        <h2 className="text-3xl font-bold text-slate-800" style={{ fontFamily: 'Playfair Display' }}>
+        <h2 className="text-3xl font-bold" style={{ color: colors.charcoal, fontFamily: 'Playfair Display' }}>
           Tell us about your organization
         </h2>
-        <p className="text-slate-600 mt-2">This information helps our AI agents provide more targeted analysis</p>
+        <p style={{ color: colors.khaki, fontFamily: 'Lato' }} className="mt-2">
+          This information helps our AI agents provide targeted analysis
+        </p>
       </div>
 
-      {/* Modern Form Card */}
-      <div className="bg-white rounded-2xl p-8 lg:p-12 shadow-xl border border-slate-100">
-        <div className="space-y-8">
+      {/* Form Card */}
+      <div className="bg-white rounded-lg p-8 shadow-sm">
+        <div className="space-y-6">
           {/* Organization Basics */}
-          <div className="grid lg:grid-cols-2 gap-8">
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-slate-700 mb-3">
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>
                 Organization Name *
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={organizationData.name}
-                  onChange={(e) => setOrganizationData({...organizationData, name: e.target.value})}
-                  className="w-full p-4 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-0 transition-colors duration-200 text-slate-700 placeholder-slate-400"
-                  placeholder="Enter your organization name"
-                  required
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-4">
-                  <Building className="w-5 h-5 text-slate-400" />
-                </div>
-              </div>
+              <input
+                type="text"
+                value={organizationData.name}
+                onChange={(e) => setOrganizationData({...organizationData, name: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                style={{ '--tw-ring-color': colors.chestnut }}
+                placeholder="Enter your organization name"
+                required
+              />
             </div>
             
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-slate-700 mb-3">
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>
                 Organization Type *
               </label>
-              <div className="relative">
-                <select
-                  value={organizationData.type}
-                  onChange={(e) => setOrganizationData({...organizationData, type: e.target.value})}
-                  className="w-full p-4 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-0 transition-colors duration-200 text-slate-700 appearance-none cursor-pointer"
-                  required
-                >
-                  <option value="">Select organization type...</option>
-                  {organizationTypes.map(type => (
-                    <option key={type.value} value={type.value}>{type.label}</option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                  <ChevronDown className="w-5 h-5 text-slate-400" />
-                </div>
-              </div>
+              <select
+                value={organizationData.type}
+                onChange={(e) => setOrganizationData({...organizationData, type: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                style={{ '--tw-ring-color': colors.chestnut }}
+                required
+              >
+                <option value="">Select type...</option>
+                {organizationTypes.map(type => (
+                  <option key={type.value} value={type.value}>{type.label}</option>
+                ))}
+              </select>
             </div>
           </div>
 
-          {/* Industry and Size */}
-          <div className="grid lg:grid-cols-2 gap-8">
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-slate-700 mb-3">
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>
                 Industry *
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={organizationData.industry}
-                  onChange={(e) => setOrganizationData({...organizationData, industry: e.target.value})}
-                  className="w-full p-4 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-0 transition-colors duration-200 text-slate-700 placeholder-slate-400"
-                  placeholder="e.g., Healthcare, Finance, Technology"
-                  required
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-4">
-                  <Briefcase className="w-5 h-5 text-slate-400" />
-                </div>
-              </div>
+              <input
+                type="text"
+                value={organizationData.industry}
+                onChange={(e) => setOrganizationData({...organizationData, industry: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                style={{ '--tw-ring-color': colors.chestnut }}
+                placeholder="e.g., Healthcare, Finance, Technology"
+                required
+              />
             </div>
             
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-slate-700 mb-3">
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>
                 Organization Size *
               </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  value={organizationData.size}
-                  onChange={(e) => setOrganizationData({...organizationData, size: e.target.value})}
-                  className="w-full p-4 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-0 transition-colors duration-200 text-slate-700 placeholder-slate-400"
-                  placeholder="Number of employees"
-                  required
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-4">
-                  <Users className="w-5 h-5 text-slate-400" />
-                </div>
-              </div>
+              <input
+                type="number"
+                value={organizationData.size}
+                onChange={(e) => setOrganizationData({...organizationData, size: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                style={{ '--tw-ring-color': colors.chestnut }}
+                placeholder="Number of employees"
+                required
+              />
             </div>
           </div>
 
           {/* AI Maturity Slider */}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-100">
-            <label className="block text-sm font-semibold text-slate-700 mb-4">
+          <div className="p-6 rounded-lg" style={{ backgroundColor: colors.pearl }}>
+            <label className="block text-sm font-medium mb-4" style={{ color: colors.charcoal, fontFamily: 'Lato' }}>
               Current AI Maturity Level
             </label>
             <div className="space-y-4">
@@ -1063,48 +1002,34 @@ const ChangeReadinessAssessment = () => {
                   max="5"
                   value={organizationData.aiMaturityScore || 1}
                   onChange={(e) => setOrganizationData({...organizationData, aiMaturityScore: parseInt(e.target.value)})}
-                  className="flex-1 h-3 bg-gradient-to-r from-blue-200 to-purple-200 rounded-lg appearance-none cursor-pointer slider"
-                  style={{
-                    background: `linear-gradient(to right, #3b82f6 0%, #8b5cf6 ${((organizationData.aiMaturityScore || 1) - 1) * 25}%, #e2e8f0 ${((organizationData.aiMaturityScore || 1) - 1) * 25}%, #e2e8f0 100%)`
-                  }}
+                  className="flex-1 h-2 rounded-lg appearance-none cursor-pointer"
+                  style={{ backgroundColor: colors.khaki }}
                 />
-                <div className="w-16 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white text-lg font-bold">
-                    {organizationData.aiMaturityScore || 1}
-                  </span>
+                <div className="w-12 h-8 rounded flex items-center justify-center text-white font-bold" style={{ backgroundColor: colors.chestnut }}>
+                  {organizationData.aiMaturityScore || 1}
                 </div>
               </div>
-              <div className="flex justify-between text-sm text-slate-600">
-                <span className="flex items-center">
-                  <div className="w-2 h-2 bg-red-400 rounded-full mr-2"></div>
-                  Beginner
-                </span>
-                <span>Developing</span>
-                <span>Intermediate</span>
-                <span>Advanced</span>
-                <span className="flex items-center">
-                  Expert
-                  <div className="w-2 h-2 bg-green-400 rounded-full ml-2"></div>
-                </span>
+              <div className="flex justify-between text-xs" style={{ color: colors.khaki, fontFamily: 'Lato' }}>
+                <span>Beginner</span>
+                <span>Expert</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Navigation */}
-        <div className="flex justify-between items-center mt-12 pt-8 border-t border-slate-200">
-          <div className="text-sm text-slate-500">
-            Step 1 of 3 • Organization Profile
+        <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
+          <div className="text-sm" style={{ color: colors.khaki, fontFamily: 'Lato' }}>
+            Step 1 of 3
           </div>
           <button
             onClick={() => setCurrentStep('project')}
             disabled={!organizationData.name || !organizationData.type || !organizationData.industry || !organizationData.size}
-            className="group bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:hover:shadow-lg"
+            className="text-white px-6 py-3 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ backgroundColor: colors.chestnut, fontFamily: 'Lato' }}
           >
-            <div className="flex items-center">
-              <span>Continue to Project Details</span>
-              <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
-            </div>
+            Continue to Project Details
+            <ArrowRight className="w-5 h-5 inline ml-2" />
           </button>
         </div>
       </div>
