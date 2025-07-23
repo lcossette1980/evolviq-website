@@ -24,7 +24,10 @@ import {
   Home,
   Brain,
   Layers,
-  PieChart
+  PieChart,
+  Crown,
+  ChevronDown,
+  Briefcase
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
