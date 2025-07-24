@@ -681,19 +681,29 @@ def create_maturity_scoring_task():
         - Advanced terminology used correctly indicates higher maturity
         - Focus on conceptual understanding, not keyword density
         
-        EXPERT INDICATORS:
+        CRITICAL SCORING RULES:
+        - Responses with "I don't know", "not sure", "need to learn" = Score 1.0-2.0 MAX
+        - Responses saying "they are the same thing" = Score 1.0-1.5 MAX
+        - Responses with multiple uncertainty markers ("I think", "maybe", "probably") = Score 1.5-2.5 MAX
+        - Basic/generic responses without technical depth = Score 2.0-3.0 MAX
+        - Only precise, knowledgeable responses should score 3.5+ 
+        
+        EXPERT INDICATORS (Score 4.0-5.0):
         - Technical precision (e.g., "transformer architecture" vs "AI technology")
         - Practical examples from real experience
         - Nuanced understanding of limitations and trade-offs
         - Strategic thinking about implementation
         - Concise but comprehensive explanations
+        - Confident, accurate use of technical terminology
         
-        NOVICE INDICATORS:
+        NOVICE INDICATORS (Score 1.0-2.5):
         - Verbose responses with little substance
         - Generic statements without specifics
         - Buzzword usage without understanding
-        - Uncertain language ("I think", "maybe", "probably")
+        - Uncertain language ("I think", "maybe", "probably", "not sure", "need to learn")
         - Long explanations that repeat basic concepts
+        - Admissions of limited knowledge or confusion
+        - Incorrect or oversimplified explanations
         
         Return EXACTLY this JSON format (no other text):
         {{
@@ -842,14 +852,75 @@ def get_agent_personas():
 def create_question_generation_task(section: str, question_history: List[Dict], agent_persona: dict):
     """Create task for generating the next question in sequence"""
     
-    # Determine question context based on history
-    context_info = ""
+    # Analyze user knowledge level from previous responses
+    user_knowledge_level = "beginner"  # Default
+    difficulty_guidance = ""
+    
     if question_history:
         previous_questions = [q.get('question', '') for q in question_history]
-        previous_answers = [q.get('answer', '') for q in question_history] 
+        previous_answers = [q.get('answer', '') for q in question_history]
+        
+        # Analyze knowledge indicators from responses
+        all_responses = " ".join(previous_answers).lower()
+        
+        # Beginner indicators
+        beginner_signals = ['not sure', 'don\'t know', 'think they are the same', 'need to learn', 
+                          'i think', 'maybe', 'probably', 'kind of', 'not too sure', 'basic']
+        
+        # Intermediate indicators  
+        intermediate_signals = ['understand', 'experience with', 'have used', 'familiar with',
+                              'can explain', 'difference between', 'business value']
+        
+        # Advanced indicators
+        advanced_signals = ['implementation', 'optimization', 'architecture', 'systematic',
+                          'methodology', 'framework', 'workflow', 'integration', 'scalability']
+        
+        beginner_count = sum(1 for signal in beginner_signals if signal in all_responses)
+        intermediate_count = sum(1 for signal in intermediate_signals if signal in all_responses)
+        advanced_count = sum(1 for signal in advanced_signals if signal in all_responses)
+        
+        # Determine knowledge level
+        if beginner_count > 0 or any('not' in resp.lower() for resp in previous_answers):
+            user_knowledge_level = "beginner"
+            difficulty_guidance = """
+            DIFFICULTY CALIBRATION - BEGINNER DETECTED:
+            - User shows uncertainty, uses phrases like "not sure", "need to learn"
+            - Ask BASIC, FOUNDATIONAL questions appropriate for someone learning
+            - Focus on simple concepts and definitions, not advanced techniques
+            - Example beginner question: "What's the difference between AI and regular software?"
+            - AVOID: Complex workflows, optimization, advanced terminology
+            """
+        elif advanced_count > intermediate_count and advanced_count > 1:
+            user_knowledge_level = "advanced"
+            difficulty_guidance = """
+            DIFFICULTY CALIBRATION - ADVANCED DETECTED:
+            - User demonstrates technical knowledge and practical experience
+            - Ask ADVANCED questions about implementation, optimization, strategy
+            - Focus on sophisticated concepts and real-world application
+            - Example advanced question: "How would you design a multi-step workflow for..."
+            """
+        else:
+            user_knowledge_level = "intermediate"
+            difficulty_guidance = """
+            DIFFICULTY CALIBRATION - INTERMEDIATE DETECTED:
+            - User shows basic understanding but not deep technical knowledge
+            - Ask MODERATE questions that build on fundamentals
+            - Focus on practical application without advanced techniques
+            - Example intermediate question: "How might you use AI tools in your business?"
+            """
+        
         context_info = f"""
         Previous Questions Asked: {previous_questions}
         Previous User Responses: {previous_answers}
+        DETECTED KNOWLEDGE LEVEL: {user_knowledge_level.upper()}
+        """
+    else:
+        context_info = "This is the first question - start with moderate difficulty to gauge knowledge level."
+        difficulty_guidance = """
+        DIFFICULTY CALIBRATION - FIRST QUESTION:
+        - Start with MODERATE difficulty to assess user's baseline knowledge  
+        - Not too basic (assume business professional) but not too advanced
+        - Focus on practical understanding rather than technical implementation
         """
     
     return Task(
@@ -858,19 +929,21 @@ def create_question_generation_task(section: str, question_history: List[Dict], 
         
         {context_info}
         
+        {difficulty_guidance}
+        
         Your responsibilities:
         1. Ask a question that builds on previous responses (if any)
-        2. Focus on {agent_persona['section']} concepts
+        2. Focus on {agent_persona['section']} concepts  
         3. Target areas: {', '.join(agent_persona['focus'])}
-        4. Adapt based on user's apparent knowledge level
-        5. Make the question engaging and specific
+        4. **CRITICAL**: Calibrate difficulty to user's demonstrated knowledge level
+        5. Make the question engaging and specific to their level
         
         Question Requirements:
         - Open-ended (no multiple choice)
         - Reveals depth of understanding in {section}
         - Builds logically on conversation flow
-        - Appropriate for business professionals
-        - Clear and actionable
+        - **MUST match user's knowledge level** (don't ask advanced questions to beginners)
+        - Clear and actionable for their level
         
         Context: This is question #{len(question_history) + 1} of 5 in an AI readiness assessment.
         
