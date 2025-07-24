@@ -7,15 +7,16 @@ import Footer from './components/layout/Footer';
 import AuthModal from './components/auth/AuthModal';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import ScrollToTop from './components/common/ScrollToTop';
-import HomePage from './pages/HomePage';
+import ErrorBoundary from './components/common/ErrorBoundary';
+import HomePage from './pages/HomePage.jsx';
 import AboutPage from './pages/AboutPage';
 import ServicesPage from './pages/ServicesPage';
 import ProjectsPage from './pages/ProjectsPage';
 import BlogPage from './pages/BlogPage';
 import MembersPage from './pages/MembersPage';
-import MemberDashboard from './pages/MemberDashboard';
+import MemberDashboard from './pages/MemberDashboard.jsx';
 import AccountSettings from './pages/AccountSettings';
-import AdminDashboard from './pages/AdminDashboard';
+import AdminDashboard from './pages/AdminDashboard.jsx';
 import LinearRegressionPage from './pages/LinearRegressionPage';
 import EDAExplorePage from './pages/EDAExplorePageNew';
 import ClassificationExplorePage from './pages/ClassificationExplorePageNew';
@@ -30,8 +31,10 @@ import AIImplementationPlaybook from './components/guides/ai-implementation-play
 import AIReadinessAssessment from './components/guides/ai-readiness-assessment.tsx';
 import AIUseCaseROIToolkit from './components/guides/ai-use-case-roi-toolkit.tsx';
 import AIStrategyStarterKit from './components/guides/ai-strategy-starter-kit.tsx';
-import AIKnowledgeNavigator from './components/assessments/AIKnowledgeNavigator';
-import ChangeReadinessAssessment from './components/assessments/ChangeReadinessAssessment';
+import AIKnowledgeNavigator from './components/assessments/AIKnowledgeNavigator.jsx';
+import ChangeReadinessAssessment from './components/assessments/ChangeReadinessAssessment.jsx';
+import PaymentSuccess from './pages/PaymentSuccess.jsx';
+import PaymentCancelled from './pages/PaymentCancelled.jsx';
 import './styles/globals.css';
 
 const AppContent = () => {
@@ -88,6 +91,10 @@ const AppContent = () => {
           
           {/* Service Intake */}
           <Route path="/service-intake" element={<ServiceIntake />} />
+          
+          {/* Payment Routes */}
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/payment-cancelled" element={<PaymentCancelled />} />
           
           {/* Assessment Tool Routes */}
           <Route 
@@ -164,13 +171,15 @@ const AppContent = () => {
 
 const App = () => {
   return (
-    <AuthProvider>
-      <ProjectProvider>
-        <Router>
-          <AppContent />
-        </Router>
-      </ProjectProvider>
-    </AuthProvider>
+    <ErrorBoundary level="page">
+      <AuthProvider>
+        <ProjectProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </ProjectProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 };
 
