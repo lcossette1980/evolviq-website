@@ -1378,15 +1378,53 @@ def extract_crewai_results_for_api(crewai_output: Dict) -> Dict:
         
         print(f"🔍 Raw CrewAI results length: {len(str(results))}")
         
-        # Try to parse structured data from CrewAI agent results
-        # For now, generate intelligent scores based on typical assessment patterns
-        maturity_scores = {
-            "F1.1": round(3.5 + (hash("F1.1") % 20) / 10, 1),  # 3.5-5.0 range
-            "F1.2": round(3.0 + (hash("F1.2") % 25) / 10, 1),  # 3.0-5.5 range  
-            "P2.1": round(2.8 + (hash("P2.1") % 22) / 10, 1),  # 2.8-5.0 range
-            "P2.2": round(2.5 + (hash("P2.2") % 25) / 10, 1),  # 2.5-5.0 range
-            "E3.1": round(3.2 + (hash("E3.1") % 18) / 10, 1)   # 3.2-5.0 range
-        }
+        # Parse actual agent results instead of using fake hash-based scores
+        maturity_scores = {}
+        overall_score = 2.0  # Default low score
+        readiness_level = "needs_foundation"
+        
+        try:
+            # Try to parse the actual agent results
+            if isinstance(results, str) and results.strip():
+                # Look for JSON in the results string
+                import re
+                json_matches = re.findall(r'\{[^{}]*"section_scores"[^{}]*\}', str(results), re.DOTALL)
+                
+                for json_match in json_matches:
+                    try:
+                        agent_data = json.loads(json_match)
+                        if "section_scores" in agent_data:
+                            maturity_scores = agent_data["section_scores"]
+                            overall_score = agent_data.get("overall_score", sum(maturity_scores.values()) / len(maturity_scores))
+                            readiness_level = agent_data.get("readiness_level", "ready_to_learn")
+                            print(f"✅ Successfully parsed agent scores: {maturity_scores}")
+                            break
+                    except json.JSONDecodeError:
+                        continue
+            
+            # If no valid scores found, use conservative defaults for unknown responses
+            if not maturity_scores:
+                print("⚠️ No valid agent scores found, using conservative defaults")
+                maturity_scores = {
+                    "F1.1": 2.0,  # Conservative score for uncertain responses
+                    "F1.2": 2.0,
+                    "P2.1": 1.8,
+                    "P2.2": 1.5,  # Lower for advanced concepts
+                    "E3.1": 2.2
+                }
+                overall_score = sum(maturity_scores.values()) / len(maturity_scores)
+                
+        except Exception as e:
+            print(f"❌ Error parsing agent results: {e}")
+            # Fallback to very conservative scores
+            maturity_scores = {
+                "F1.1": 1.5,
+                "F1.2": 1.5, 
+                "P2.1": 1.3,
+                "P2.2": 1.0,
+                "E3.1": 1.7
+            }
+            overall_score = sum(maturity_scores.values()) / len(maturity_scores)
         
         # Calculate overall metrics
         overall_score = sum(maturity_scores.values()) / len(maturity_scores)
