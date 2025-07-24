@@ -56,6 +56,10 @@ from ml_frameworks import (
     NLPWorkflow, NLPConfig
 )
 
+# Set up logging first
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Import Stripe integration
 try:
     from stripe_integration import stripe_integration
@@ -63,10 +67,6 @@ try:
 except Exception as e:
     logger.error(f"❌ Failed to load Stripe integration: {e}")
     stripe_integration = None
-
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # Create FastAPI app
 app = FastAPI(
@@ -274,7 +274,18 @@ async def health_check():
         "timestamp": datetime.now().isoformat(),
         "stripe_integration": stripe_status,
         "stripe_error": stripe_error,
-        "environment": os.getenv("RAILWAY_ENVIRONMENT", "local")
+        "environment": os.getenv("RAILWAY_ENVIRONMENT", "local"),
+        "version": "2.1.0"  # Added to verify deployment
+    }
+
+@app.get("/deployment-test")
+async def deployment_test():
+    """Simple endpoint to test if latest deployment is active."""
+    return {
+        "message": "Latest deployment is active",
+        "timestamp": datetime.now().isoformat(),
+        "git_commit": "fa026241c",
+        "stripe_available": stripe_integration is not None
     }
 
 @app.post("/api/regression/session", response_model=SessionResponse)
