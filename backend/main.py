@@ -57,7 +57,12 @@ from ml_frameworks import (
 )
 
 # Import Stripe integration
-from stripe_integration import stripe_integration
+try:
+    from stripe_integration import stripe_integration
+    logger.info("✅ Stripe integration loaded successfully")
+except Exception as e:
+    logger.error(f"❌ Failed to load Stripe integration: {e}")
+    stripe_integration = None
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -257,7 +262,20 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Alternative health check endpoint."""
-    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+    stripe_status = "available" if stripe_integration is not None else "unavailable"
+    stripe_error = None
+    
+    # Check Stripe configuration
+    if stripe_integration is None:
+        stripe_error = "STRIPE_SECRET_KEY not configured"
+    
+    return {
+        "status": "healthy", 
+        "timestamp": datetime.now().isoformat(),
+        "stripe_integration": stripe_status,
+        "stripe_error": stripe_error,
+        "environment": os.getenv("RAILWAY_ENVIRONMENT", "local")
+    }
 
 @app.post("/api/regression/session", response_model=SessionResponse)
 async def create_session(request: SessionCreateRequest):
@@ -3220,6 +3238,12 @@ async def create_checkout_session(request: CreateCheckoutSessionRequest):
     Create a Stripe Checkout session for subscription
     """
     try:
+        if stripe_integration is None:
+            raise HTTPException(
+                status_code=503, 
+                detail="Payment system is not available. Please check server configuration."
+            )
+        
         logger.info(f"Creating checkout session for user {request.user_id}, plan {request.plan_id}")
         
         result = await stripe_integration.create_checkout_session(
@@ -3233,6 +3257,8 @@ async def create_checkout_session(request: CreateCheckoutSessionRequest):
         
         return CreateCheckoutSessionResponse(**result)
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Failed to create checkout session: {e}")
         raise HTTPException(status_code=500, detail=f"Checkout session creation failed: {str(e)}")
