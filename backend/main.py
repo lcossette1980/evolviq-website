@@ -56,6 +56,9 @@ from ml_frameworks import (
     NLPWorkflow, NLPConfig
 )
 
+# Import Stripe integration
+from stripe_integration import stripe_integration
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -130,6 +133,35 @@ class TrainingRequest(BaseModel):
 class PreprocessingRequest(BaseModel):
     config: PreprocessingConfig
     target_column: str
+
+# Stripe Payment Models
+class CreateCheckoutSessionRequest(BaseModel):
+    user_id: str
+    email: str
+    plan_id: str  # 'monthly', 'annual', or 'business'
+    name: Optional[str] = None
+    success_url: str
+    cancel_url: str
+
+class CreateCheckoutSessionResponse(BaseModel):
+    session_id: str
+    session_url: str
+    customer_id: str
+
+class SubscriptionStatusResponse(BaseModel):
+    has_subscription: bool
+    status: str
+    plan_id: Optional[str]
+    current_period_end: Optional[datetime]
+    cancel_at_period_end: Optional[bool] = False
+    trial_end: Optional[datetime] = None
+
+class CustomerPortalRequest(BaseModel):
+    user_id: str
+    return_url: str
+
+class CustomerPortalResponse(BaseModel):
+    portal_url: str
 
 # Utility Functions
 def get_session_workflow(session_id: str, tool_type: str = 'regression') -> Any:
@@ -3177,6 +3209,89 @@ async def respond_change_readiness_assessment(request: AssessmentAnswerRequest):
     except Exception as e:
         logger.error(f"Failed to process Change Readiness response: {e}")
         raise HTTPException(status_code=500, detail=f"Response processing failed: {str(e)}")
+
+# =============================================================================
+# STRIPE PAYMENT ENDPOINTS
+# =============================================================================
+
+@app.post("/api/payments/create-checkout-session", response_model=CreateCheckoutSessionResponse)
+async def create_checkout_session(request: CreateCheckoutSessionRequest):
+    """
+    Create a Stripe Checkout session for subscription
+    """
+    try:
+        logger.info(f"Creating checkout session for user {request.user_id}, plan {request.plan_id}")
+        
+        result = await stripe_integration.create_checkout_session(
+            user_id=request.user_id,
+            email=request.email,
+            plan_id=request.plan_id,
+            success_url=request.success_url,
+            cancel_url=request.cancel_url,
+            name=request.name
+        )
+        
+        return CreateCheckoutSessionResponse(**result)
+        
+    except Exception as e:
+        logger.error(f"Failed to create checkout session: {e}")
+        raise HTTPException(status_code=500, detail=f"Checkout session creation failed: {str(e)}")
+
+@app.get("/api/payments/subscription-status/{user_id}", response_model=SubscriptionStatusResponse)
+async def get_subscription_status(user_id: str):
+    """
+    Get current subscription status for a user
+    """
+    try:
+        logger.info(f"Getting subscription status for user {user_id}")
+        
+        status = await stripe_integration.get_subscription_status(user_id)
+        
+        return SubscriptionStatusResponse(**status)
+        
+    except Exception as e:
+        logger.error(f"Failed to get subscription status: {e}")
+        raise HTTPException(status_code=500, detail=f"Status retrieval failed: {str(e)}")
+
+@app.post("/api/payments/create-portal-session", response_model=CustomerPortalResponse)
+async def create_customer_portal_session(request: CustomerPortalRequest):
+    """
+    Create a Stripe Customer Portal session for subscription management
+    """
+    try:
+        logger.info(f"Creating customer portal session for user {request.user_id}")
+        
+        portal_url = await stripe_integration.create_customer_portal_session(
+            user_id=request.user_id,
+            return_url=request.return_url
+        )
+        
+        return CustomerPortalResponse(portal_url=portal_url)
+        
+    except Exception as e:
+        logger.error(f"Failed to create portal session: {e}")
+        raise HTTPException(status_code=500, detail=f"Portal session creation failed: {str(e)}")
+
+@app.post("/api/payments/webhook")
+async def stripe_webhook(request: Request):
+    """
+    Handle Stripe webhook events
+    """
+    try:
+        payload = await request.body()
+        sig_header = request.headers.get('stripe-signature')
+        
+        if not sig_header:
+            raise HTTPException(status_code=400, detail="Missing stripe-signature header")
+        
+        result = await stripe_integration.handle_webhook_event(payload, sig_header)
+        
+        logger.info(f"Webhook processed successfully: {result}")
+        return result
+        
+    except Exception as e:
+        logger.error(f"Webhook processing failed: {e}")
+        raise HTTPException(status_code=400, detail=f"Webhook processing failed: {str(e)}")
 
 # Error handlers
 @app.exception_handler(404)
