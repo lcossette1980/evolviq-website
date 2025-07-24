@@ -1384,23 +1384,74 @@ def extract_crewai_results_for_api(crewai_output: Dict) -> Dict:
         readiness_level = "needs_foundation"
         
         try:
-            # Try to parse the actual agent results
-            if isinstance(results, str) and results.strip():
-                # Look for JSON in the results string
-                import re
-                json_matches = re.findall(r'\{[^{}]*"section_scores"[^{}]*\}', str(results), re.DOTALL)
-                
-                for json_match in json_matches:
+            # ACTUALLY use the agent results instead of fake scores
+            results_str = str(results)
+            print(f"🔍 Searching for agent scores in: {results_str[:500]}...")
+            
+            # Look for the scoring agent's JSON output in the results with better regex
+            import re
+            
+            # Try multiple patterns to find the agent scores
+            patterns = [
+                r'"section_scores":\s*\{[^}]+\}[^}]*?"overall_score":\s*([\d.]+)[^}]*?"readiness_level":\s*"([^"]+)"',
+                r'\{[^{}]*"section_scores":\s*\{[^}]+\}[^}]*?"overall_score"[^}]*?\}',
+                r'"section_scores":\s*(\{[^}]+\})',
+                r'"overall_score":\s*([\d.]+)'
+            ]
+            
+            agent_found = False
+            for pattern in patterns:
+                matches = re.findall(pattern, results_str, re.DOTALL)
+                if matches:
                     try:
-                        agent_data = json.loads(json_match)
-                        if "section_scores" in agent_data:
-                            maturity_scores = agent_data["section_scores"]
-                            overall_score = agent_data.get("overall_score", sum(maturity_scores.values()) / len(maturity_scores))
-                            readiness_level = agent_data.get("readiness_level", "ready_to_learn")
-                            print(f"✅ Successfully parsed agent scores: {maturity_scores}")
+                        print(f"🎯 Found pattern match: {matches}")
+                        
+                        # Try to extract scores from the first pattern (most complete)
+                        if len(matches[0]) == 2 and isinstance(matches[0], tuple):
+                            overall_agent_score = float(matches[0][0])
+                            readiness_level = matches[0][1]
+                            overall_score = overall_agent_score
+                            agent_found = True
+                            print(f"✅ Using REAL agent score: {overall_agent_score}/5.0 = {round(overall_agent_score * 20)}%")
                             break
-                    except json.JSONDecodeError:
+                        elif pattern == r'"overall_score":\s*([\d.]+)' and len(matches) > 0:
+                            overall_agent_score = float(matches[0])
+                            overall_score = overall_agent_score
+                            agent_found = True
+                            print(f"✅ Using REAL agent overall score: {overall_agent_score}/5.0")
+                            break
+                            
+                    except (ValueError, IndexError) as e:
+                        print(f"⚠️ Error parsing match {matches}: {e}")
                         continue
+            
+            # If we found agent scores, try to extract section scores too
+            if agent_found:
+                section_pattern = r'"F1\.1":\s*([\d.]+).*?"F1\.2":\s*([\d.]+).*?"P2\.1":\s*([\d.]+).*?"P2\.2":\s*([\d.]+).*?"E3\.1":\s*([\d.]+)'
+                section_match = re.search(section_pattern, results_str, re.DOTALL)
+                if section_match:
+                    maturity_scores = {
+                        "F1.1": float(section_match.group(1)),
+                        "F1.2": float(section_match.group(2)), 
+                        "P2.1": float(section_match.group(3)),
+                        "P2.2": float(section_match.group(4)),
+                        "E3.1": float(section_match.group(5))
+                    }
+                    print(f"✅ Extracted section scores: {maturity_scores}")
+                else:
+                    # Use default section distribution if overall score found
+                    print("⚠️ Using estimated section scores based on overall score")
+                    base_score = overall_score
+                    maturity_scores = {
+                        "F1.1": round(base_score + 0.2, 1),
+                        "F1.2": round(base_score - 0.1, 1),
+                        "P2.1": round(base_score + 0.1, 1), 
+                        "P2.2": round(base_score - 0.4, 1),  # Advanced section typically lower
+                        "E3.1": round(base_score + 0.2, 1)
+                    }
+            
+            if not agent_found:
+                raise ValueError("Could not find agent scores in results")
             
             # If no valid scores found, use conservative defaults for unknown responses
             if not maturity_scores:
@@ -1426,9 +1477,12 @@ def extract_crewai_results_for_api(crewai_output: Dict) -> Dict:
             }
             overall_score = sum(maturity_scores.values()) / len(maturity_scores)
         
-        # Calculate overall metrics
-        overall_score = sum(maturity_scores.values()) / len(maturity_scores)
+        # Calculate overall metrics (but preserve agent score if found)
+        if not hasattr(locals(), 'agent_found') or not locals().get('agent_found', False):
+            overall_score = sum(maturity_scores.values()) / len(maturity_scores)
         overall_score_percentage = round(overall_score * 20)  # Convert to 0-100 scale
+        
+        print(f"🎯 FINAL SCORES: overall={overall_score}/5.0 ({overall_score_percentage}%), readiness={readiness_level}")
         
         # Determine readiness level based on overall score
         if overall_score >= 4.5:
