@@ -49,7 +49,8 @@ const API_CONFIG = {
       CHANGE_READINESS_START: '/api/change-readiness/start',
       CHANGE_READINESS_RESPOND: '/api/change-readiness/respond',
       SUBMIT: '/assessments/submit',
-      RESULTS: '/assessments/results'
+      RESULTS: '/assessments/results',
+      HEALTH: '/api/assessment/health'
     }
   },
   

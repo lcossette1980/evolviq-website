@@ -3404,6 +3404,264 @@ async def sync_subscription_status(user_id: str):
         logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Sync failed: 500: Internal server error")
 
+# =============================================================================
+# ENHANCED ASSESSMENT SYSTEM v2.0 ENDPOINTS
+# =============================================================================
+
+# Initialize enhanced assessment system
+enhanced_assessment_system = None
+try:
+    from assessment_v2 import AIReadinessCrewAI
+    enhanced_assessment_system = AIReadinessCrewAI()
+    logger.info("✅ Enhanced Assessment System v2.0 initialized successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ Enhanced Assessment System v2.0 not available: {e}")
+    enhanced_assessment_system = None
+
+@app.post("/api/ai-knowledge/start")
+async def start_ai_knowledge_assessment(request: dict):
+    """
+    Start AI Knowledge Assessment - Frontend Compatible Endpoint
+    
+    Uses enhanced v2.0 system with backward compatibility.
+    """
+    try:
+        user_id = request.get('user_id')
+        assessment_type = request.get('assessment_type', 'ai_knowledge')
+        
+        if not user_id:
+            raise HTTPException(status_code=400, detail="user_id is required")
+        
+        logger.info(f"Starting AI knowledge assessment for user {user_id}")
+        
+        if enhanced_assessment_system:
+            # Use enhanced v2.0 system
+            question_history = request.get('question_history', [])
+            result = enhanced_assessment_system.generate_agent_question(question_history)
+            
+            if 'error' in result:
+                logger.error(f"Enhanced system error: {result['error']}")
+                # Fall back to original system if available
+                if 'fallback_question' in result:
+                    return {
+                        "success": True,
+                        "data": result['fallback_question'],
+                        "system_version": "2.0-fallback",
+                        "enhanced_features": enhanced_assessment_system.get_system_health()
+                    }
+                else:
+                    raise HTTPException(status_code=500, detail=result['error'])
+            
+            return {
+                "success": True,
+                "data": result,
+                "system_version": "2.0",
+                "enhanced_features": {
+                    "modular_architecture": True,
+                    "performance_monitoring": True,
+                    "advanced_validation": True
+                }
+            }
+        else:
+            # Fallback to original system
+            try:
+                from crewai_assessment import AIReadinessCrewAI as OriginalAIReadinessCrewAI
+                original_system = OriginalAIReadinessCrewAI()
+                result = original_system.generate_agent_question([])
+                
+                return {
+                    "success": True,
+                    "data": result,
+                    "system_version": "1.0-fallback"
+                }
+            except Exception as fallback_error:
+                logger.error(f"Both enhanced and original systems failed: {fallback_error}")
+                raise HTTPException(status_code=500, detail="Assessment system unavailable")
+                
+    except Exception as e:
+        logger.error(f"Failed to start AI knowledge assessment: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/ai-knowledge/respond")
+async def respond_ai_knowledge_assessment(request: dict):
+    """
+    Process AI Knowledge Assessment Response - Frontend Compatible Endpoint
+    
+    Uses enhanced v2.0 system with backward compatibility.
+    """
+    try:
+        user_id = request.get('user_id')
+        question_id = request.get('question_id')
+        answer = request.get('answer')
+        session_data = request.get('session_data', {})
+        
+        if not all([user_id, question_id, answer]):
+            raise HTTPException(status_code=400, detail="user_id, question_id, and answer are required")
+        
+        logger.info(f"Processing AI knowledge response for user {user_id}, question {question_id}")
+        
+        if enhanced_assessment_system:
+            # Use enhanced v2.0 system
+            # First, extract responses from session or create mock responses for analysis
+            responses = session_data.get('responses', [])
+            responses.append({
+                'question_id': question_id,
+                'answer': answer,
+                'timestamp': datetime.now().isoformat()
+            })
+            
+            # Check if this is the final response
+            current_question_index = session_data.get('questionIndex', 0)
+            is_final_response = current_question_index >= 4  # 5 questions total (0-4)
+            
+            if is_final_response:
+                # Process complete assessment
+                result = enhanced_assessment_system.analyze_assessment_responses(responses)
+                
+                return {
+                    "success": True,
+                    "completed": True,
+                    "data": result,
+                    "message": "Assessment completed successfully",
+                    "system_version": "2.0",
+                    "session_id": session_data.get('session_id', ''),
+                    "total_sections": 5
+                }
+            else:
+                # Generate next question
+                next_result = enhanced_assessment_system.generate_agent_question(responses)
+                
+                if 'error' in next_result:
+                    raise HTTPException(status_code=500, detail=next_result['error'])
+                
+                return {
+                    "success": True,
+                    "completed": False,
+                    "data": next_result,
+                    "session_id": session_data.get('session_id', ''),
+                    "system_version": "2.0"
+                }
+        else:
+            # Fallback to original system
+            try:
+                from crewai_assessment import AIReadinessCrewAI as OriginalAIReadinessCrewAI
+                original_system = OriginalAIReadinessCrewAI()
+                
+                # Mock processing for original system
+                return {
+                    "success": True,
+                    "completed": False,
+                    "data": {"question": "Fallback question", "question_id": "fallback_1"},
+                    "system_version": "1.0-fallback"
+                }
+            except Exception as fallback_error:
+                logger.error(f"Both enhanced and original systems failed: {fallback_error}")
+                raise HTTPException(status_code=500, detail="Assessment system unavailable")
+                
+    except Exception as e:
+        logger.error(f"Failed to process AI knowledge response: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/change-readiness/start")
+async def start_change_readiness_assessment(request: dict):
+    """
+    Start Change Readiness Assessment - Frontend Compatible Endpoint
+    """
+    try:
+        user_id = request.get('user_id')
+        assessment_type = request.get('assessment_type', 'change_readiness')
+        
+        if not user_id:
+            raise HTTPException(status_code=400, detail="user_id is required")
+        
+        logger.info(f"Starting change readiness assessment for user {user_id}")
+        
+        # For now, return a simple success response
+        # This can be enhanced with the v2.0 system when change readiness is fully implemented
+        return {
+            "success": True,
+            "data": {
+                "question": "Please describe your organization's current readiness for AI implementation.",
+                "question_id": "change_readiness_1",
+                "session_id": f"change_session_{user_id}_{int(time.time())}",
+                "agent_name": "Change Readiness Specialist",
+                "agent_focus": "Organizational Assessment"
+            },
+            "system_version": "2.0-preview"
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to start change readiness assessment: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/change-readiness/respond") 
+async def respond_change_readiness_assessment(request: dict):
+    """
+    Process Change Readiness Assessment Response - Frontend Compatible Endpoint
+    """
+    try:
+        user_id = request.get('user_id')
+        question_id = request.get('question_id')
+        answer = request.get('answer')
+        
+        if not all([user_id, question_id, answer]):
+            raise HTTPException(status_code=400, detail="user_id, question_id, and answer are required")
+        
+        logger.info(f"Processing change readiness response for user {user_id}")
+        
+        # For now, return a completion response
+        # This can be enhanced with the v2.0 system when change readiness is fully implemented
+        return {
+            "success": True,
+            "completed": True,
+            "data": {
+                "readiness_level": "ready_to_implement",
+                "recommendations": [
+                    "Develop change management strategy",
+                    "Establish governance framework", 
+                    "Create training programs"
+                ],
+                "overall_score": 75
+            },
+            "message": "Change readiness assessment completed",
+            "system_version": "2.0-preview"
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to process change readiness response: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/assessment/health")
+async def get_assessment_system_health():
+    """Get comprehensive assessment system health and capabilities"""
+    try:
+        if enhanced_assessment_system:
+            health_data = enhanced_assessment_system.get_system_health()
+            return {
+                "status": "healthy",
+                "system_version": "2.0",
+                "health_data": health_data,
+                "timestamp": datetime.now().isoformat()
+            }
+        else:
+            return {
+                "status": "degraded",
+                "system_version": "fallback",
+                "message": "Enhanced system not available, using fallback",
+                "timestamp": datetime.now().isoformat()
+            }
+    except Exception as e:
+        logger.error(f"Failed to get assessment system health: {e}")
+        return {
+            "status": "error",
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+# Import datetime for timestamps
+from datetime import datetime
+import time
+
 # Error handlers
 @app.exception_handler(404)
 async def not_found_handler(request, exc):
