@@ -157,6 +157,14 @@ class StripeIntegration:
                         'plan_id': plan_id
                     }
                 }
+            else:
+                # Even without trial, add metadata to subscription
+                session_params['subscription_data'] = {
+                    'metadata': {
+                        'firebase_uid': user_id,
+                        'plan_id': plan_id
+                    }
+                }
             
             session = stripe.checkout.Session.create(**session_params)
             
@@ -346,6 +354,7 @@ class StripeIntegration:
         """
         try:
             customer_id = subscription.customer
+            logger.info(f"Updating subscription for customer {customer_id}, event: {event_type}")
             
             # Find user by Stripe customer ID
             users_ref = self.db.collection('users')
@@ -353,23 +362,45 @@ class StripeIntegration:
             docs = query.stream()
             
             user_doc = None
+            user_count = 0
             for doc in docs:
                 user_doc = doc
+                user_count += 1
+                logger.info(f"Found user document: {doc.id}")
                 break
             
             if not user_doc:
-                logger.warning(f"No user found for Stripe customer {customer_id}")
-                return
+                logger.error(f"No user found for Stripe customer {customer_id}. This is critical - user won't be updated!")
+                # Let's also try to find by metadata if available
+                if hasattr(subscription, 'metadata') and subscription.metadata.get('firebase_uid'):
+                    firebase_uid = subscription.metadata.get('firebase_uid')
+                    logger.info(f"Attempting to find user by firebase_uid from metadata: {firebase_uid}")
+                    user_doc = self.db.collection('users').document(firebase_uid).get()
+                    if user_doc.exists:
+                        logger.info(f"Found user by firebase_uid: {firebase_uid}")
+                    else:
+                        logger.error(f"User not found by firebase_uid either: {firebase_uid}")
+                        return
+                else:
+                    return
             
             # Determine plan ID
             plan_id = None
+            price_id_from_stripe = subscription.items.data[0].price.id if subscription.items.data else None
+            logger.info(f"Stripe price ID: {price_id_from_stripe}")
+            logger.info(f"Price mapping: {self.price_mapping}")
+            
             for pid, price_id in self.price_mapping.items():
-                if subscription.items.data[0].price.id == price_id:
+                if price_id and price_id_from_stripe == price_id:
                     plan_id = pid
                     break
             
+            if not plan_id:
+                logger.warning(f"Could not determine plan ID from price {price_id_from_stripe}")
+            
             # Determine premium status
             is_premium = subscription.status in ['active', 'trialing']
+            logger.info(f"Subscription status: {subscription.status}, isPremium will be: {is_premium}")
             
             # Update user document
             update_data = {
@@ -387,9 +418,16 @@ class StripeIntegration:
             if subscription.trial_end:
                 update_data['trialEnd'] = datetime.fromtimestamp(subscription.trial_end)
             
-            user_doc.reference.update(update_data)
+            logger.info(f"Updating user {user_doc.id if hasattr(user_doc, 'id') else 'Unknown'} with data: {update_data}")
             
-            logger.info(f"Updated subscription status for user {user_doc.id}: {subscription.status}")
+            # Handle both document reference types
+            if hasattr(user_doc, 'reference'):
+                user_doc.reference.update(update_data)
+            else:
+                # If we got the document directly (from firebase_uid lookup)
+                self.db.collection('users').document(user_doc.id).update(update_data)
+            
+            logger.info(f"Successfully updated subscription status for user {user_doc.id if hasattr(user_doc, 'id') else 'Unknown'}: {subscription.status}, isPremium={is_premium}")
             
         except Exception as e:
             logger.error(f"Error updating user subscription status: {e}")

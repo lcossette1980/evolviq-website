@@ -53,6 +53,16 @@ const PaymentSuccess = () => {
 
   const fetchSubscriptionStatus = async () => {
     try {
+      // First, try to sync the subscription status to ensure Firebase is updated
+      try {
+        await paymentAPI.syncSubscriptionStatus(user.uid);
+        console.log('Successfully synced subscription status');
+      } catch (syncError) {
+        console.error('Error syncing subscription status:', syncError);
+        // Continue even if sync fails
+      }
+      
+      // Then fetch the status
       const status = await paymentAPI.getSubscriptionStatus(user.uid);
       setSubscriptionInfo(status);
     } catch (error) {
