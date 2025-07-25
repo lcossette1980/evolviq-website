@@ -61,8 +61,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Import Stripe integration
+stripe_integration = None
 try:
-    from stripe_integration import stripe_integration
+    from stripe_integration import StripeIntegration
+    stripe_integration = StripeIntegration()
     logger.info("✅ Stripe integration loaded successfully")
 except Exception as e:
     logger.error(f"❌ Failed to load Stripe integration: {e}")

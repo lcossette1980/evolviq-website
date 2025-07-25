@@ -394,5 +394,4 @@ class StripeIntegration:
         except Exception as e:
             logger.error(f"Error updating user subscription status: {e}")
 
-# Global instance
-stripe_integration = StripeIntegration()
+# Global instance will be created in main.py with proper error handling
