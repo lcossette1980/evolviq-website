@@ -277,10 +277,22 @@ class StripeIntegration:
             
             # Determine plan ID from price
             plan_id = None
-            for pid, price_id in self.price_mapping.items():
-                if active_subscription.items.data[0].price.id == price_id:
-                    plan_id = pid
-                    break
+            try:
+                price_id_from_stripe = None
+                if hasattr(active_subscription, 'items') and active_subscription.items:
+                    if hasattr(active_subscription.items, 'data') and active_subscription.items.data:
+                        price_id_from_stripe = active_subscription.items.data[0].price.id
+                    elif len(active_subscription.items) > 0:
+                        price_id_from_stripe = active_subscription.items[0].price.id
+                
+                if price_id_from_stripe:
+                    for pid, price_id in self.price_mapping.items():
+                        if price_id_from_stripe == price_id:
+                            plan_id = pid
+                            break
+            except Exception as e:
+                logger.error(f"Error extracting plan ID from subscription: {e}")
+                logger.info(f"Subscription items structure: {type(active_subscription.items) if hasattr(active_subscription, 'items') else 'No items'}")
             
             return {
                 'has_subscription': True,
@@ -333,6 +345,9 @@ class StripeIntegration:
             raise HTTPException(status_code=400, detail="Invalid signature")
         except Exception as e:
             logger.error(f"Error handling webhook: {e}")
+            logger.error(f"Error type: {type(e).__name__}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             raise HTTPException(status_code=500, detail="Webhook processing error")
 
     async def _handle_subscription_created(self, subscription):
@@ -349,15 +364,29 @@ class StripeIntegration:
 
     async def _handle_payment_succeeded(self, invoice):
         """Handle successful payment"""
-        if invoice.subscription:
-            subscription = stripe.Subscription.retrieve(invoice.subscription)
-            await self._update_user_subscription_status(subscription, 'payment_succeeded')
+        try:
+            if invoice.subscription:
+                logger.info(f"Processing payment succeeded for subscription: {invoice.subscription}")
+                subscription = stripe.Subscription.retrieve(invoice.subscription)
+                await self._update_user_subscription_status(subscription, 'payment_succeeded')
+            else:
+                logger.info("Payment succeeded but no subscription associated")
+        except Exception as e:
+            logger.error(f"Error handling payment succeeded webhook: {e}")
+            raise
 
     async def _handle_payment_failed(self, invoice):
         """Handle failed payment"""
-        if invoice.subscription:
-            subscription = stripe.Subscription.retrieve(invoice.subscription)
-            await self._update_user_subscription_status(subscription, 'payment_failed')
+        try:
+            if invoice.subscription:
+                logger.info(f"Processing payment failed for subscription: {invoice.subscription}")
+                subscription = stripe.Subscription.retrieve(invoice.subscription)
+                await self._update_user_subscription_status(subscription, 'payment_failed')
+            else:
+                logger.info("Payment failed but no subscription associated")
+        except Exception as e:
+            logger.error(f"Error handling payment failed webhook: {e}")
+            raise
 
     async def _update_user_subscription_status(self, subscription, event_type: str):
         """
