@@ -3350,6 +3350,7 @@ async def sync_subscription_status(user_id: str):
         
         # Get current subscription status from Stripe
         status = await stripe_integration.get_subscription_status(user_id)
+        logger.info(f"Retrieved subscription status for user {user_id}: {status}")
         
         # If user has an active subscription, manually update Firebase
         if status['has_subscription'] and status['status'] in ['active', 'trialing']:
@@ -3357,33 +3358,51 @@ async def sync_subscription_status(user_id: str):
             user_ref = stripe_integration.db.collection('users').document(user_id)
             user_doc = user_ref.get()
             
-            if user_doc.exists:
-                user_data = user_doc.to_dict()
-                customer_id = user_data.get('stripe_customer_id')
-                
-                if customer_id:
-                    # Get subscription details from Stripe
-                    import stripe
-                    subscriptions = stripe.Subscription.list(
-                        customer=customer_id,
-                        status='all',
-                        limit=1
-                    )
-                    
-                    if subscriptions.data:
-                        subscription = subscriptions.data[0]
-                        # Manually trigger the update
-                        await stripe_integration._update_user_subscription_status(
-                            subscription, 
-                            'manual_sync'
-                        )
-                        logger.info(f"Successfully synced subscription for user {user_id}")
+            if not user_doc.exists:
+                logger.error(f"User document does not exist for user {user_id}")
+                raise HTTPException(status_code=404, detail=f"User not found: {user_id}")
+            
+            user_data = user_doc.to_dict()
+            customer_id = user_data.get('stripe_customer_id')
+            
+            if not customer_id:
+                logger.error(f"No Stripe customer ID found for user {user_id}")
+                raise HTTPException(status_code=400, detail="No Stripe customer ID found for user")
+            
+            logger.info(f"Found customer ID {customer_id} for user {user_id}")
+            
+            # Get subscription details from Stripe
+            import stripe
+            subscriptions = stripe.Subscription.list(
+                customer=customer_id,
+                status='all',
+                limit=1
+            )
+            
+            if not subscriptions.data:
+                logger.error(f"No subscriptions found for customer {customer_id}")
+                raise HTTPException(status_code=404, detail="No subscriptions found for customer")
+            
+            subscription = subscriptions.data[0]
+            logger.info(f"Found subscription {subscription.id} with status {subscription.status}")
+            
+            # Manually trigger the update
+            await stripe_integration._update_user_subscription_status(
+                subscription, 
+                'manual_sync'
+            )
+            logger.info(f"Successfully synced subscription for user {user_id}")
+        else:
+            logger.info(f"User {user_id} does not have an active subscription to sync")
         
         return {"success": True, "subscription_status": status}
         
     except Exception as e:
-        logger.error(f"Failed to sync subscription status: {e}")
-        raise HTTPException(status_code=500, detail=f"Sync failed: {str(e)}")
+        logger.error(f"Failed to sync subscription status for user {user_id}: {e}")
+        logger.error(f"Error type: {type(e).__name__}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Sync failed: 500: Internal server error")
 
 # Error handlers
 @app.exception_handler(404)

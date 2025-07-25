@@ -418,16 +418,27 @@ class StripeIntegration:
             if subscription.trial_end:
                 update_data['trialEnd'] = datetime.fromtimestamp(subscription.trial_end)
             
-            logger.info(f"Updating user {user_doc.id if hasattr(user_doc, 'id') else 'Unknown'} with data: {update_data}")
+            # Get user document ID properly
+            user_id = None
+            if hasattr(user_doc, 'id'):
+                user_id = user_doc.id
+            elif hasattr(user_doc, 'reference'):
+                user_id = user_doc.reference.id
+            
+            logger.info(f"Updating user {user_id} with data: {update_data}")
             
             # Handle both document reference types
             if hasattr(user_doc, 'reference'):
+                # This is from a query result
                 user_doc.reference.update(update_data)
-            else:
-                # If we got the document directly (from firebase_uid lookup)
+            elif hasattr(user_doc, 'id'):
+                # This is a direct document get
                 self.db.collection('users').document(user_doc.id).update(update_data)
+            else:
+                logger.error(f"Unable to determine document reference type for user update")
+                return
             
-            logger.info(f"Successfully updated subscription status for user {user_doc.id if hasattr(user_doc, 'id') else 'Unknown'}: {subscription.status}, isPremium={is_premium}")
+            logger.info(f"Successfully updated subscription status for user {user_id}: {subscription.status}, isPremium={is_premium}")
             
         except Exception as e:
             logger.error(f"Error updating user subscription status: {e}")
