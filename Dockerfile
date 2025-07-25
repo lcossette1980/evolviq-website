@@ -1,4 +1,4 @@
-# Simple Dockerfile with API files in root
+# Dockerfile for backend in /backend directory
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -9,23 +9,15 @@ RUN apt-get update && apt-get install -y \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install dependencies
-COPY requirements.txt .
+# Copy requirements and install dependencies from backend directory
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy API files
-COPY main.py .
-COPY crewai_assessment.py .
-COPY test_crewai.py .
-COPY regression/ ./regression/
-COPY ml_frameworks/ ./ml_frameworks/
-COPY start.sh .
-
-# Make start script executable
-RUN chmod +x start.sh
+# Copy all backend files
+COPY backend/ .
 
 # Expose port
 EXPOSE 8000
 
 # Command to run the application
-CMD ["./start.sh"]
+CMD ["python", "main.py"]
