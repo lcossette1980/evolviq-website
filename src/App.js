@@ -31,7 +31,7 @@ import AIImplementationPlaybook from './components/guides/ai-implementation-play
 import AIReadinessAssessment from './components/guides/ai-readiness-assessment.tsx';
 import AIUseCaseROIToolkit from './components/guides/ai-use-case-roi-toolkit.tsx';
 import AIStrategyStarterKit from './components/guides/ai-strategy-starter-kit.tsx';
-import AIKnowledgeNavigator from './components/assessments/AIKnowledgeNavigator.jsx';
+import AIKnowledgeNavigator from './components/assessments/AIKnowledgeNavigator.v2.jsx';
 import ChangeReadinessAssessment from './components/assessments/ChangeReadinessAssessment.jsx';
 import PaymentSuccess from './pages/PaymentSuccess.jsx';
 import PaymentCancelled from './pages/PaymentCancelled.jsx';
