@@ -58,6 +58,29 @@ class PaymentAPI {
   }
 
   /**
+   * Force sync subscription status from Stripe to Firebase
+   */
+  async syncSubscriptionStatus(userId) {
+    try {
+      const response = await fetch(
+        buildUrl(`/api/payments/sync-subscription/${userId}`),
+        createRequestConfig('POST')
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to sync subscription status');
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Error syncing subscription status:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Create customer portal session for subscription management
    */
   async createCustomerPortalSession(userId, returnUrl) {

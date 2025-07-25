@@ -234,6 +234,34 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const refreshUserData = async () => {
+    try {
+      if (!user || user.isAnonymous) {
+        return;
+      }
+      
+      // Fetch latest user data from Firestore
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
+        
+        // Update local state with fresh data
+        setUser(prev => ({
+          ...prev,
+          isPremium: userData.isPremium || false,
+          subscriptionType: userData.subscriptionType || null,
+          subscriptionStatus: userData.subscriptionStatus || null,
+          currentPeriodEnd: userData.currentPeriodEnd,
+          cancelAtPeriodEnd: userData.cancelAtPeriodEnd
+        }));
+      }
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -243,6 +271,7 @@ export const AuthProvider = ({ children }) => {
       logout,
       upgradeToAnonymous,
       upgradeToPremium,
+      refreshUserData,
       isLoading,
       isLoginModalOpen,
       setIsLoginModalOpen,

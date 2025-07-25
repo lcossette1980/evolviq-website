@@ -10,7 +10,7 @@ import paymentAPI from '../services/paymentAPI';
 const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, refreshUserData } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [subscriptionInfo, setSubscriptionInfo] = useState(null);
   
@@ -21,9 +21,9 @@ const PaymentSuccess = () => {
       // Handle payment success
       const result = paymentAPI.handlePaymentSuccess(sessionId);
       
-      // Fetch updated subscription status
+      // Fetch updated subscription status and force sync
       if (user && !user.isAnonymous) {
-        fetchSubscriptionStatus();
+        syncAndFetchSubscriptionStatus();
       } else {
         setIsLoading(false);
       }
@@ -32,6 +32,24 @@ const PaymentSuccess = () => {
       navigate('/');
     }
   }, [sessionId, user, navigate]);
+
+  const syncAndFetchSubscriptionStatus = async () => {
+    try {
+      // First, force sync from Stripe to Firebase
+      await paymentAPI.syncSubscriptionStatus(user.uid);
+      
+      // Refresh user data in AuthContext
+      await refreshUserData();
+      
+      // Then fetch the updated status
+      const status = await paymentAPI.getSubscriptionStatus(user.uid);
+      setSubscriptionInfo(status);
+    } catch (error) {
+      console.error('Error syncing/fetching subscription status:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const fetchSubscriptionStatus = async () => {
     try {
