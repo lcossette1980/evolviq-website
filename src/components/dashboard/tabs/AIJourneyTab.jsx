@@ -1,18 +1,121 @@
-import React from 'react';
-import { Target, TrendingUp, BookOpen } from 'lucide-react';
+import React, { useState } from 'react';
+import { Target, TrendingUp, BookOpen, MessageCircle, Zap } from 'lucide-react';
 import { useDashboardStore } from '../../../store/dashboardStore';
+import { useWebSocket } from '../../../hooks/useWebSocket';
+import { useAuth } from '../../../contexts/AuthContext';
 import { colors } from '../../../utils/colors';
+import ConversationalAssessment from '../../assessment/ConversationalAssessment';
 
 /**
  * AI Journey Tab Component
- * Displays user's AI learning and implementation journey
+ * Displays user's AI learning and implementation journey with real-time agent communication
  */
 const AIJourneyTab = () => {
+  const { user } = useAuth();
   const { userAssessments, getCompletedAssessments } = useDashboardStore();
+  const [showConversationalAssessment, setShowConversationalAssessment] = useState(false);
+  const [selectedAssessmentType, setSelectedAssessmentType] = useState('ai_knowledge');
+  
   const completedAssessments = getCompletedAssessments();
+  
+  const {
+    isConnected,
+    connectionStatus,
+    agentMessages,
+    agentStatuses,
+    activeSessions
+  } = useWebSocket(user?.uid, { autoConnect: true });
+
+  const handleStartConversationalAssessment = (assessmentType) => {
+    setSelectedAssessmentType(assessmentType);
+    setShowConversationalAssessment(true);
+  };
+
+  const handleAssessmentComplete = (results) => {
+    setShowConversationalAssessment(false);
+    // Refresh dashboard data
+    console.log('Assessment completed:', results);
+  };
+
+  if (showConversationalAssessment) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-lg shadow p-6">
+          <ConversationalAssessment
+            assessmentType={selectedAssessmentType}
+            onComplete={handleAssessmentComplete}
+            onClose={() => setShowConversationalAssessment(false)}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      {/* Real-time Agent Communication Status */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <Zap className="w-6 h-6" style={{ color: colors.chestnut }} />
+            <h3 className="text-lg font-semibold" style={{ color: colors.charcoal }}>
+              Live Agent Communication
+            </h3>
+          </div>
+          <div className={`flex items-center space-x-2 ${
+            isConnected ? 'text-green-600' : 'text-red-600'
+          }`}>
+            <div className={`w-3 h-3 rounded-full ${
+              isConnected ? 'bg-green-600' : 'bg-red-600'
+            }`} />
+            <span className="text-sm font-medium">
+              {isConnected ? 'Connected' : 'Disconnected'}
+            </span>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="text-center p-4 bg-gray-50 rounded-lg">
+            <div className="text-2xl font-bold" style={{ color: colors.chestnut }}>
+              {activeSessions.length}
+            </div>
+            <div className="text-sm text-gray-500">Active Sessions</div>
+          </div>
+          <div className="text-center p-4 bg-gray-50 rounded-lg">
+            <div className="text-2xl font-bold" style={{ color: colors.khaki }}>
+              {agentStatuses.size}
+            </div>
+            <div className="text-sm text-gray-500">Agents Online</div>
+          </div>
+          <div className="text-center p-4 bg-gray-50 rounded-lg">
+            <div className="text-2xl font-bold" style={{ color: colors.navy }}>
+              {agentMessages.length}
+            </div>
+            <div className="text-sm text-gray-500">Messages Today</div>
+          </div>
+        </div>
+
+        {/* Quick Start Conversational Assessment */}
+        <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="font-semibold text-gray-900">Try Conversational Assessment</h4>
+              <p className="text-sm text-gray-600 mt-1">
+                Experience our new AI-powered conversational assessment interface
+              </p>
+            </div>
+            <button
+              onClick={() => handleStartConversationalAssessment('ai_knowledge')}
+              className="flex items-center px-4 py-2 rounded-lg text-white font-medium hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: colors.chestnut }}
+            >
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Start Chat
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Journey Overview */}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center mb-4">
