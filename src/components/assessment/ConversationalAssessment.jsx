@@ -238,15 +238,49 @@ const ConversationalAssessment = ({
     }
   };
 
-  if (!isConnected && connectionStatus !== 'connected') {
+  if (!isConnected && connectionStatus === 'disconnected') {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <LoadingSpinner message="Connecting to assessment system..." />
         {wsError && (
-          <div className="mt-4 p-4 bg-red-50 text-red-800 rounded-lg text-center">
-            Connection error: {wsError}
+          <div className="mt-4 p-4 bg-yellow-50 text-yellow-800 rounded-lg text-center">
+            <div className="flex items-center justify-center space-x-2">
+              <AlertCircle className="w-5 h-5" />
+              <span>WebSocket connection unavailable</span>
+            </div>
+            <p className="text-sm mt-2">
+              The real-time assessment feature is currently offline. Please try the standard assessment instead.
+            </p>
+            <button
+              onClick={onClose}
+              className="mt-3 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
+            >
+              Use Standard Assessment
+            </button>
           </div>
         )}
+      </div>
+    );
+  }
+
+  if (connectionStatus === 'offline') {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="p-6 bg-blue-50 text-blue-800 rounded-lg text-center">
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <Brain className="w-8 h-8" />
+            <span className="text-lg font-semibold">Offline Mode</span>
+          </div>
+          <p className="mb-4">
+            The conversational assessment is currently unavailable. The system will automatically switch to our standard assessment experience.
+          </p>
+          <button
+            onClick={onClose}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Continue with Standard Assessment
+          </button>
+        </div>
       </div>
     );
   }

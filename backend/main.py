@@ -70,6 +70,19 @@ except Exception as e:
     logger.error(f"❌ Failed to load Stripe integration: {e}")
     stripe_integration = None
 
+# Import WebSocket server
+websocket_app = None
+websocket_server = None
+try:
+    from websocket_server import get_websocket_app, get_websocket_server
+    websocket_app = get_websocket_app()
+    websocket_server = get_websocket_server()
+    logger.info("✅ WebSocket server loaded successfully")
+except Exception as e:
+    logger.error(f"❌ Failed to load WebSocket server: {e}")
+    websocket_app = None
+    websocket_server = None
+
 # Create FastAPI app
 app = FastAPI(
     title="EvolvIQ ML Tools API",
@@ -95,6 +108,11 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"]
 )
+
+# Mount WebSocket server
+if websocket_app:
+    app.mount("/socket.io", websocket_app)
+    logger.info("✅ WebSocket server mounted at /socket.io")
 
 # Global session storage (in production, use Redis or database)
 active_sessions: Dict[str, Dict[str, Any]] = {}  # session_id -> {tool_type: workflow_instance}
@@ -267,18 +285,30 @@ async def health_check():
     """Alternative health check endpoint."""
     stripe_status = "available" if stripe_integration is not None else "unavailable"
     stripe_error = None
+    websocket_status = "available" if websocket_server is not None else "unavailable"
+    websocket_stats = {}
     
     # Check Stripe configuration
     if stripe_integration is None:
         stripe_error = "STRIPE_SECRET_KEY not configured"
+    
+    # Get WebSocket statistics
+    if websocket_server:
+        try:
+            websocket_stats = websocket_server.get_session_stats()
+        except Exception as e:
+            websocket_status = "error"
+            websocket_stats = {"error": str(e)}
     
     return {
         "status": "healthy", 
         "timestamp": datetime.now().isoformat(),
         "stripe_integration": stripe_status,
         "stripe_error": stripe_error,
+        "websocket_integration": websocket_status,
+        "websocket_stats": websocket_stats,
         "environment": os.getenv("RAILWAY_ENVIRONMENT", "local"),
-        "version": "2.1.0"  # Added to verify deployment
+        "version": "2.2.0"  # Updated for WebSocket integration
     }
 
 @app.get("/deployment-test")

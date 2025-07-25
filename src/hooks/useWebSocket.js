@@ -52,12 +52,23 @@ export const useWebSocket = (userId, options = {}) => {
     };
 
     const handleConnectionError = (data) => {
-      setError(`Connection error: ${data.error.message}`);
+      const errorMessage = data.error?.message || data.error || 'Unknown connection error';
+      setError(`Connection error: ${errorMessage}`);
+      
+      // Stop trying to reconnect after max attempts
+      if (data.attempts >= 3) {
+        console.warn('WebSocket: Max reconnection attempts reached. Switching to offline mode.');
+        setConnectionStatus('offline');
+        setError('WebSocket unavailable - using offline mode');
+        return;
+      }
+      
       if (reconnectOnError && data.attempts < 3) {
+        const delay = Math.min(2000 * Math.pow(2, data.attempts), 10000); // Exponential backoff
         setTimeout(() => {
-          console.log('Attempting to reconnect...');
+          console.log(`Attempting to reconnect... (attempt ${data.attempts + 1})`);
           connect();
-        }, 2000 * data.attempts);
+        }, delay);
       }
     };
 

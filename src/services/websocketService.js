@@ -24,7 +24,11 @@ class WebSocketService {
       return;
     }
 
-    const socketUrl = buildUrl('').replace(/^http/, 'ws');
+    // Build the correct Socket.IO URL
+    const baseUrl = buildUrl('');
+    const socketUrl = baseUrl.replace(/\/+$/, ''); // Remove trailing slashes
+    
+    console.log('WebSocket connecting to:', socketUrl);
     
     this.socket = io(socketUrl, {
       auth: {
@@ -32,16 +36,16 @@ class WebSocketService {
         token: userToken
       },
       transports: ['websocket', 'polling'],
-      timeout: 20000,
+      timeout: 10000,
       reconnection: true,
       reconnectionAttempts: this.maxReconnectAttempts,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000
+      reconnectionDelay: 2000,
+      reconnectionDelayMax: 10000,
+      forceNew: true,
+      upgrade: true
     });
 
     this.setupEventHandlers();
-    
-    console.log('WebSocket connecting to:', socketUrl);
   }
 
   /**

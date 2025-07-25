@@ -37,6 +37,10 @@ stripe>=8.0.0
 # Firebase Integration
 firebase-admin>=6.0.0
 
+# WebSocket and Real-time Communication
+python-socketio>=5.8.0
+python-engineio>=4.7.0
+
 # Utilities
 python-dotenv
 aiofiles
