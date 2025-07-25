@@ -280,19 +280,247 @@ class GuidesAPI {
       // Log export
       await this.logGuideAccess(userId, guideId, 'export');
 
-      // In a real implementation, this would generate a PDF or other format
-      // For now, return the progress data
+      // Generate and download the export file
+      const guide = this.guides[guideId];
+      const exportContent = this.formatExportContent(guide, progress, format);
+      this.downloadFile(exportContent, `${guide.title.replace(/\s+/g, '_')}_Export.${format}`, format);
+      
       return {
         guideId,
         userId,
         exportFormat: format,
         generatedAt: new Date().toISOString(),
-        data: progress
+        success: true
       };
     } catch (error) {
       console.error('Error generating guide export:', error);
       throw error;
     }
+  }
+
+  formatExportContent(guide, progress, format) {
+    const formData = progress.formData || {};
+    const completedSections = progress.completedSections || [];
+    const timestamp = new Date().toLocaleDateString();
+    
+    if (format === 'json') {
+      return JSON.stringify({
+        guide: {
+          id: guide.id,
+          title: guide.title,
+          description: guide.description,
+          exportedAt: timestamp
+        },
+        progress: {
+          completedSections,
+          completionPercentage: Math.round((completedSections.length / (guide.sections?.length || 5)) * 100)
+        },
+        formData
+      }, null, 2);
+    }
+    
+    // Default to HTML format
+    let html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${guide.title} - Export</title>
+    <style>
+        body {
+            font-family: 'Lato', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: #2A2A2A;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #F5F2EA;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-family: 'Playfair Display', serif;
+            color: #A44A3F;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        h2 {
+            font-family: 'Playfair Display', serif;
+            color: #2A2A2A;
+            border-bottom: 2px solid #A44A3F;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        h3 {
+            color: #A44A3F;
+            margin-top: 25px;
+        }
+        .progress-bar {
+            background: #D7CEB2;
+            height: 10px;
+            border-radius: 5px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            background: #A44A3F;
+            height: 100%;
+        }
+        .section {
+            background: white;
+            margin: 20px 0;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .completed {
+            border-left: 4px solid #A44A3F;
+        }
+        .field {
+            margin: 15px 0;
+        }
+        .field-label {
+            font-weight: bold;
+            color: #2A2A2A;
+            margin-bottom: 5px;
+        }
+        .field-value {
+            background: #F5F2EA;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 3px solid #A59E8C;
+            white-space: pre-wrap;
+        }
+        .export-info {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            background: #D7CEB2;
+            border-radius: 10px;
+            font-size: 0.9em;
+            color: #2A2A2A;
+        }
+        ul { padding-left: 20px; }
+        li { margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>${guide.title}</h1>
+        <p>${guide.description}</p>
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: ${Math.round((completedSections.length / (guide.sections?.length || 5)) * 100)}%"></div>
+        </div>
+        <p>Progress: ${completedSections.length} of ${guide.sections?.length || 5} sections completed (${Math.round((completedSections.length / (guide.sections?.length || 5)) * 100)}%)</p>
+    </div>`;
+
+    // Add form data sections
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value && typeof value === 'string' && value.trim()) {
+        html += `
+    <div class="section ${completedSections.includes(key) ? 'completed' : ''}">
+        <h3>${this.formatFieldName(key)}</h3>
+        <div class="field">
+            <div class="field-value">${this.formatFieldValue(value)}</div>
+        </div>
+    </div>`;
+      } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+        html += `
+    <div class="section ${completedSections.includes(key) ? 'completed' : ''}">
+        <h2>${this.formatFieldName(key)}</h2>`;
+        
+        Object.entries(value).forEach(([subKey, subValue]) => {
+          if (subValue && typeof subValue === 'string' && subValue.trim()) {
+            html += `
+        <div class="field">
+            <div class="field-label">${this.formatFieldName(subKey)}</div>
+            <div class="field-value">${this.formatFieldValue(subValue)}</div>
+        </div>`;
+          }
+        });
+        html += `
+    </div>`;
+      } else if (Array.isArray(value) && value.length > 0) {
+        html += `
+    <div class="section ${completedSections.includes(key) ? 'completed' : ''}">
+        <h2>${this.formatFieldName(key)}</h2>
+        <ul>`;
+        value.forEach(item => {
+          if (typeof item === 'string' && item.trim()) {
+            html += `<li>${this.formatFieldValue(item)}</li>`;
+          } else if (typeof item === 'object' && item) {
+            html += `<li>`;
+            Object.entries(item).forEach(([itemKey, itemValue]) => {
+              if (itemValue && typeof itemValue === 'string' && itemValue.trim()) {
+                html += `<strong>${this.formatFieldName(itemKey)}:</strong> ${this.formatFieldValue(itemValue)}<br>`;
+              }
+            });
+            html += `</li>`;
+          }
+        });
+        html += `</ul>
+    </div>`;
+      }
+    });
+
+    html += `
+    <div class="export-info">
+        <p><strong>Exported on:</strong> ${timestamp}</p>
+        <p><strong>Generated by:</strong> EvolvIQ AI Implementation Platform</p>
+        <p>Visit <a href="https://evolviq.ai" style="color: #A44A3F;">evolviq.ai</a> to continue your AI journey</p>
+    </div>
+</body>
+</html>`;
+
+    return html;
+  }
+
+  formatFieldName(key) {
+    return key
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, str => str.toUpperCase())
+      .replace(/_/g, ' ')
+      .trim();
+  }
+
+  formatFieldValue(value) {
+    if (typeof value !== 'string') return String(value);
+    
+    // Convert markdown-like formatting to HTML
+    return value
+      .replace(/\n/g, '<br>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/^- (.*?)$/gm, '• $1');
+  }
+
+  downloadFile(content, filename, format) {
+    const mimeTypes = {
+      'html': 'text/html',
+      'json': 'application/json',
+      'txt': 'text/plain'
+    };
+    
+    const blob = new Blob([content], { type: mimeTypes[format] || 'text/html' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.style.display = 'none';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up the URL object
+    setTimeout(() => URL.revokeObjectURL(url), 100);
   }
 
   // Real-time Progress Subscription

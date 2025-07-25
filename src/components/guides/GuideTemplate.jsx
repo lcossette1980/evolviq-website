@@ -99,11 +99,43 @@ const GuideTemplate = ({
       newCompleted.add(section);
       try {
         await guidesAPI.markSectionComplete(user.uid, guideId, section);
+        // Auto-advance to next uncompleted section after marking complete
+        setTimeout(() => {
+          autoAdvanceToNext(section);
+        }, 500);
       } catch (error) {
         console.error('Error marking section complete:', error);
       }
     }
     setCompletedSections(newCompleted);
+  };
+
+  const autoAdvanceToNext = (currentSection) => {
+    const currentIndex = tabs.findIndex(tab => tab.id === currentSection);
+    const nextIncompleteSection = tabs.slice(currentIndex + 1).find(tab => !completedSections.has(tab.id));
+    
+    if (nextIncompleteSection) {
+      setActiveTab(nextIncompleteSection.id);
+      // Smooth scroll to top after tab change
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
+    }
+  };
+
+  const navigateToSection = (sectionId) => {
+    setActiveTab(sectionId);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const getNextSection = () => {
+    const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
+    return currentIndex < tabs.length - 1 ? tabs[currentIndex + 1] : null;
+  };
+
+  const getPreviousSection = () => {
+    const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
+    return currentIndex > 0 ? tabs[currentIndex - 1] : null;
   };
 
   const updateFormData = (field, value) => {
@@ -149,7 +181,8 @@ const GuideTemplate = ({
     expandedSections,
     toggleSection,
     user,
-    guideId
+    guideId,
+    navigateToSection
   };
 
   if (isLoading) {
@@ -197,23 +230,47 @@ const GuideTemplate = ({
                 <Save size={16} />
                 <span>{isSaving ? 'Saving...' : 'Save Progress'}</span>
               </button>
-              <button 
-                className="flex items-center space-x-2 px-4 py-2 rounded-lg text-white transition-colors hover:opacity-90"
-                style={{ backgroundColor: '#A44A3F' }}
-                onClick={async () => {
-                  if (!user) return;
-                  try {
-                    const exportData = await guidesAPI.generateGuideExport(user.uid, guideId, 'pdf');
-                    console.log('Export data:', exportData);
-                    // Handle export download
-                  } catch (error) {
-                    console.error('Error exporting guide:', error);
-                  }
-                }}
-              >
-                <Download size={16} />
-                <span>Export Plan</span>
-              </button>
+              <div className="relative">
+                <button 
+                  className="flex items-center space-x-2 px-4 py-2 rounded-lg text-white transition-colors hover:opacity-90 disabled:opacity-50"
+                  style={{ backgroundColor: '#A44A3F' }}
+                  onClick={async () => {
+                    if (!user) return;
+                    try {
+                      const exportBtn = document.querySelector('.export-btn');
+                      if (exportBtn) {
+                        exportBtn.disabled = true;
+                        exportBtn.innerHTML = '<span>Exporting...</span>';
+                      }
+                      
+                      await guidesAPI.generateGuideExport(user.uid, guideId, 'html');
+                      
+                      // Success feedback
+                      if (exportBtn) {
+                        exportBtn.innerHTML = '<span>✓ Downloaded!</span>';
+                        setTimeout(() => {
+                          exportBtn.disabled = false;
+                          exportBtn.innerHTML = '<span>Export Plan</span>';
+                        }, 2000);
+                      }
+                    } catch (error) {
+                      console.error('Error exporting guide:', error);
+                      const exportBtn = document.querySelector('.export-btn');
+                      if (exportBtn) {
+                        exportBtn.innerHTML = '<span>Export Failed</span>';
+                        setTimeout(() => {
+                          exportBtn.disabled = false;
+                          exportBtn.innerHTML = '<span>Export Plan</span>';
+                        }, 2000);
+                      }
+                    }
+                  }}
+                  className="export-btn"
+                >
+                  <Download size={16} />
+                  <span>Export Plan</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -234,7 +291,7 @@ const GuideTemplate = ({
                   return (
                     <button
                       key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
+                      onClick={() => navigateToSection(tab.id)}
                       className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
                         isActive 
                           ? 'text-white' 
@@ -281,6 +338,51 @@ const GuideTemplate = ({
           <div className="flex-1">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
               {renderContent(activeTab, guideHelpers)}
+              
+              {/* Navigation Controls */}
+              <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
+                <div>
+                  {getPreviousSection() && (
+                    <button
+                      onClick={() => navigateToSection(getPreviousSection().id)}
+                      className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      <ChevronRight size={16} className="transform rotate-180" />
+                      <span>Previous: {getPreviousSection().label}</span>
+                    </button>
+                  )}
+                </div>
+                
+                <div className="flex items-center space-x-4">
+                  {!completedSections.has(activeTab) && (
+                    <button
+                      onClick={() => markSectionComplete(activeTab)}
+                      className="flex items-center space-x-2 px-6 py-2 rounded-lg text-white transition-colors"
+                      style={{ backgroundColor: '#A44A3F' }}
+                    >
+                      <CheckCircle size={16} />
+                      <span>Mark Complete</span>
+                    </button>
+                  )}
+                  
+                  {getNextSection() && (
+                    <button
+                      onClick={() => navigateToSection(getNextSection().id)}
+                      className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      <span>Next: {getNextSection().label}</span>
+                      <ChevronRight size={16} />
+                    </button>
+                  )}
+                  
+                  {!getNextSection() && completedSections.size === tabs.length && (
+                    <div className="flex items-center space-x-2 px-4 py-2 text-green-600">
+                      <CheckCircle size={16} />
+                      <span className="font-medium">Guide Complete!</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>

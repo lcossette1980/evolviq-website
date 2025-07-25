@@ -2,7 +2,7 @@
 
 export const checkAdminAccess = (user) => {
   // In production, this would check against a database of admin users
-  const adminEmails = ['loren@evolviq.org'];
+  const adminEmails = ['lorentcossette@gmail.com'];
   return user && !user.isAnonymous && adminEmails.includes(user.email);
 };
 

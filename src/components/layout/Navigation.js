@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, User, ChevronDown, Crown, Settings, LogOut } from 'lucide-react';
+import { Menu, X, User, ChevronDown, Crown, Settings, LogOut, Shield } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { checkAdminAccess } from '../../utils/adminHelpers';
 import Logo from '../common/Logo';
 
 const Navigation = () => {
@@ -10,6 +11,7 @@ const Navigation = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { user, setIsLoginModalOpen, logout } = useAuth();
+  const isAdmin = checkAdminAccess(user);
 
   const navItems = [
     { id: 'home', label: 'Home', path: '/' },
@@ -108,6 +110,18 @@ const Navigation = () => {
                       <User className="w-4 h-4 mr-3" />
                       Account Settings
                     </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => {
+                          navigate('/admin');
+                          setIsUserMenuOpen(false);
+                        }}
+                        className="flex items-center w-full px-4 py-2 text-sm text-charcoal hover:bg-gray-50"
+                      >
+                        <Shield className="w-4 h-4 mr-3" />
+                        Admin Dashboard
+                      </button>
+                    )}
                     <div className="border-t border-gray-100 my-1"></div>
                     <button
                       onClick={() => {
@@ -215,6 +229,17 @@ const Navigation = () => {
                 >
                   Account Settings
                 </button>
+                {isAdmin && (
+                  <button
+                    onClick={() => {
+                      navigate('/admin');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="block w-full text-left px-4 py-4 text-charcoal hover:bg-chestnut/5 rounded-lg font-medium touch-manipulation min-h-[44px]"
+                  >
+                    Admin Dashboard
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     logout();

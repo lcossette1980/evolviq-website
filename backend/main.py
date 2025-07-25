@@ -245,7 +245,8 @@ async def root():
         return {
             "message": "EvolvIQ ML Tools API",
             "status": "running",
-            "version": "2.0.0",
+            "version": "2.1.2",
+            "deployment_fix": "CORS_ISSUE_FIX",
             "timestamp": datetime.now().isoformat(),
             "health": "ok",
             "available_tools": ["regression", "eda", "classification", "clustering", "nlp"],

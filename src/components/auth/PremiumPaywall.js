@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Crown, Lock, CheckCircle, Star, ArrowRight, X } from 'lucide-react';
+import { Crown, Lock, CheckCircle, Star, ArrowRight, X, CreditCard } from 'lucide-react';
 import { 
   PREMIUM_PRICING, 
   PREMIUM_FEATURES, 
@@ -8,6 +8,8 @@ import {
   PREMIUM_GUARANTEES, 
   PREMIUM_MESSAGING 
 } from '../../config/premiumConfig';
+import { useAuth } from '../../contexts/AuthContext';
+import paymentAPI from '../../services/paymentAPI';
 
 const PremiumPaywall = ({ 
   isOpen, 
@@ -17,6 +19,10 @@ const PremiumPaywall = ({
   onUpgrade 
 }) => {
   const [selectedPlan, setSelectedPlan] = useState('monthly');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState('');
+  
+  const { user } = useAuth();
 
   const plans = [
     {
@@ -42,6 +48,36 @@ const PremiumPaywall = ({
     ...benefit,
     icon: getIconComponent(benefit.icon)
   }));
+
+  const handleUpgrade = async () => {
+    if (!user) {
+      setError('Please sign in to continue with your subscription.');
+      return;
+    }
+
+    if (user.isAnonymous) {
+      setError('Please create an account to subscribe to Premium.');
+      return;
+    }
+
+    setIsProcessing(true);
+    setError('');
+
+    try {
+      // Redirect to Stripe Checkout
+      await paymentAPI.redirectToCheckout(user, selectedPlan);
+      
+      // Call the onUpgrade callback if provided
+      if (onUpgrade) {
+        onUpgrade(selectedPlan);
+      }
+      
+    } catch (error) {
+      console.error('Payment error:', error);
+      setError(error.message || 'Something went wrong. Please try again.');
+      setIsProcessing(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -174,25 +210,48 @@ const PremiumPaywall = ({
               {PREMIUM_MESSAGING.upgrade.description}
             </p>
             
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+                {error}
+              </div>
+            )}
+            
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button 
-                onClick={() => {
-                  console.log('Upgrading to:', selectedPlan);
-                  onUpgrade && onUpgrade(selectedPlan);
-                }}
-                className="bg-chestnut text-white px-8 py-3 rounded-lg font-medium hover:bg-chestnut/90 transition-colors flex items-center justify-center"
+                onClick={handleUpgrade}
+                disabled={isProcessing || user?.isAnonymous}
+                className="bg-chestnut text-white px-8 py-3 rounded-lg font-medium hover:bg-chestnut/90 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span>{PREMIUM_CTA.primary}</span>
-                <ArrowRight className="w-4 h-4 ml-2" />
+                {isProcessing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    <span>{PREMIUM_CTA.primary}</span>
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </>
+                )}
               </button>
               
               <button 
                 onClick={onClose}
-                className="border-2 border-chestnut text-chestnut px-8 py-3 rounded-lg font-medium hover:bg-chestnut hover:text-white transition-colors"
+                disabled={isProcessing}
+                className="border-2 border-chestnut text-chestnut px-8 py-3 rounded-lg font-medium hover:bg-chestnut hover:text-white transition-colors disabled:opacity-50"
               >
-{PREMIUM_CTA.maybe_later}
+                {PREMIUM_CTA.maybe_later}
               </button>
             </div>
+
+            {/* Sign in prompt for anonymous users */}
+            {user?.isAnonymous && (
+              <p className="text-sm text-chestnut mt-4">
+                Please create an account to subscribe to Premium features.
+              </p>
+            )}
 
             <p className="text-xs text-charcoal/60 mt-4">
               {PREMIUM_GUARANTEES.join(' • ')}

@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import API_CONFIG, { buildUrl, createRequestConfig } from '../config/apiConfig';
+import logger from '../utils/logger';
 
 class AssessmentAPI {
   constructor() {
@@ -509,7 +510,7 @@ class AssessmentAPI {
 
   async generateActionItemsFromAssessment(userId, projectId, assessmentType, assessmentData) {
     try {
-      console.log('generateActionItemsFromAssessment - assessmentData:', assessmentData);
+      logger.debug('Generating action items from assessment', { assessmentType });
       const actionItems = [];
 
       if (assessmentType === 'ai_knowledge_navigator') {
@@ -518,12 +519,14 @@ class AssessmentAPI {
         const maturityScores = assessmentData.maturityScores || analysisData.maturity_scores || {};
         const learningPlan = assessmentData.learningPath || analysisData.learning_path || {};
         
-        console.log('maturityScores:', maturityScores);
-        console.log('learningPlan:', learningPlan);
+        logger.debug('Assessment data extracted', { 
+          maturityScoresCount: Object.keys(maturityScores || {}).length,
+          hasLearningPlan: !!learningPlan 
+        });
 
         // Create action items for all maturity areas based on experience level
         Object.entries(maturityScores).forEach(([area, score]) => {
-          console.log(`Creating action item for area ${area}: ${score}`);
+          logger.debug('Creating action item for maturity area', { area, score });
           
           let actionItem;
           if (score < 2) {
@@ -584,9 +587,9 @@ class AssessmentAPI {
         // Create action items from learning plan recommendations
         const learningResources = learningPlan.learning_resources || learningPlan.learningResources || [];
         const recommendations = learningPlan.basic_recommendations || learningPlan.basicRecommendations || learningResources || [];
-        console.log('recommendations:', recommendations);
+        logger.debug('Learning recommendations extracted', { count: recommendations.length });
         if (recommendations.length > 0) {
-          console.log(`Creating action items from ${recommendations.length} recommendations`);
+          logger.debug('Creating action items from recommendations', { count: recommendations.length });
           recommendations.slice(0, 3).forEach((recommendation, index) => {
             // Ensure description is always a string, never an object
             let description;

@@ -99,10 +99,15 @@ const AIReadinessAssessment = () => {
     }
   ];
 
-  // Scroll to top when component mounts
+  // Scroll to top when component mounts or step changes
   useEffect(() => {
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
+
+  // Scroll to top when step changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentStep]);
 
   const updateFormData = useCallback((path, value) => {
     setFormData(prev => {
@@ -120,6 +125,14 @@ const AIReadinessAssessment = () => {
     });
   }, []);
 
+  // Helper function for smooth step navigation
+  const navigateToStep = (stepIndex) => {
+    setCurrentStep(stepIndex);
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
+  };
+
   // Helper component for textarea inputs to handle keyboard events properly
   const TextareaField = ({ value, onChange, placeholder, rows = 4, className = "" }) => {
     const handleKeyDown = (e) => {
@@ -127,6 +140,19 @@ const AIReadinessAssessment = () => {
       if (e.key === ' ') {
         e.stopPropagation();
       }
+      // Prevent arrow keys from interfering with step navigation
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.stopPropagation();
+      }
+    };
+
+    const handleFocus = (e) => {
+      // Ensure the textarea is visible and prevent scroll jumping
+      e.target.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center', 
+        inline: 'nearest' 
+      });
     };
 
     return (
@@ -135,7 +161,8 @@ const AIReadinessAssessment = () => {
         onChange={onChange}
         placeholder={placeholder}
         onKeyDown={handleKeyDown}
-        className={`w-full p-3 border border-[#D7CEB2] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A44A3F] ${className}`}
+        onFocus={handleFocus}
+        className={`w-full p-3 border border-[#D7CEB2] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A44A3F] transition-all duration-200 ${className}`}
         rows={rows}
       />
     );
@@ -265,36 +292,33 @@ const AIReadinessAssessment = () => {
               <label className="block text-sm font-medium text-[#2A2A2A] mb-2">
                 Resistance from Non-Data Roles
               </label>
-              <textarea
+              <TextareaField
                 value={formData.challenges.nonDataRoles}
                 onChange={(e) => updateFormData('challenges.nonDataRoles', e.target.value)}
                 placeholder="How might employees without 'data' in their job title react to AI initiatives?"
-                className="w-full p-3 border border-[#D7CEB2] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A44A3F]"
-                rows="2"
+                rows={2}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-[#2A2A2A] mb-2">
                 Overwhelm from Other Projects
               </label>
-              <textarea
+              <TextareaField
                 value={formData.challenges.overwhelmed}
                 onChange={(e) => updateFormData('challenges.overwhelmed', e.target.value)}
                 placeholder="How will you address team capacity and competing priorities?"
-                className="w-full p-3 border border-[#D7CEB2] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A44A3F]"
-                rows="2"
+                rows={2}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-[#2A2A2A] mb-2">
                 Fear of Change
               </label>
-              <textarea
+              <TextareaField
                 value={formData.challenges.fearOfChange}
                 onChange={(e) => updateFormData('challenges.fearOfChange', e.target.value)}
                 placeholder="What concerns might employees have about AI impacting their roles?"
-                className="w-full p-3 border border-[#D7CEB2] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A44A3F]"
-                rows="2"
+                rows={2}
               />
             </div>
           </div>
@@ -778,7 +802,7 @@ const AIReadinessAssessment = () => {
                 <span className="font-semibold text-[#2A2A2A]">{section.title}</span>
               </div>
               <button
-                onClick={() => setCurrentStep(index)}
+                onClick={() => navigateToStep(index)}
                 className="text-[#A44A3F] hover:text-[#2A2A2A] transition-colors"
               >
                 <ChevronRight size={20} />
@@ -805,7 +829,7 @@ const AIReadinessAssessment = () => {
   const NavigationButtons = () => (
     <div className="flex justify-between mt-12">
       <button
-        onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+        onClick={() => navigateToStep(Math.max(0, currentStep - 1))}
         disabled={currentStep === 0}
         className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-colors ${
           currentStep === 0
@@ -818,7 +842,7 @@ const AIReadinessAssessment = () => {
       </button>
 
       <button
-        onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}
+        onClick={() => navigateToStep(Math.min(steps.length - 1, currentStep + 1))}
         disabled={currentStep === steps.length - 1}
         className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-colors ${
           currentStep === steps.length - 1

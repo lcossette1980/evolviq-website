@@ -13,6 +13,7 @@ import {
   serverTimestamp,
   updateDoc 
 } from 'firebase/firestore';
+import logger from '../utils/logger';
 
 const ProjectContext = createContext();
 
