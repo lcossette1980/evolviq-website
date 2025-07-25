@@ -96,10 +96,21 @@ class StripeIntegration:
                     # Verify customer still exists in Stripe
                     try:
                         customer = stripe.Customer.retrieve(user_data['stripe_customer_id'])
-                        return customer.id
-                    except stripe.error.InvalidRequestError:
+                        if customer.deleted:
+                            logger.info(f"Customer {user_data['stripe_customer_id']} is deleted, creating new one")
+                            # Clear the old customer ID from Firebase
+                            user_ref.update({'stripe_customer_id': firestore.DELETE_FIELD})
+                        else:
+                            return customer.id
+                    except stripe.error.InvalidRequestError as e:
                         # Customer doesn't exist in Stripe, create new one
-                        pass
+                        logger.info(f"Customer {user_data['stripe_customer_id']} not found in Stripe: {e}")
+                        # Clear the old customer ID from Firebase
+                        user_ref.update({'stripe_customer_id': firestore.DELETE_FIELD})
+                    except Exception as e:
+                        logger.error(f"Error retrieving customer {user_data['stripe_customer_id']}: {e}")
+                        # Clear the old customer ID from Firebase to allow recreation
+                        user_ref.update({'stripe_customer_id': firestore.DELETE_FIELD})
             
             # Create new customer
             return await self.create_customer(user_id, email, name)
@@ -386,8 +397,20 @@ class StripeIntegration:
             
             # Determine plan ID
             plan_id = None
-            price_id_from_stripe = subscription.items.data[0].price.id if subscription.items.data else None
-            logger.info(f"Stripe price ID: {price_id_from_stripe}")
+            price_id_from_stripe = None
+            
+            try:
+                # Handle both subscription.items.data and subscription.items attribute access
+                if hasattr(subscription, 'items') and subscription.items:
+                    if hasattr(subscription.items, 'data') and subscription.items.data:
+                        price_id_from_stripe = subscription.items.data[0].price.id
+                    elif len(subscription.items) > 0:
+                        price_id_from_stripe = subscription.items[0].price.id
+                logger.info(f"Stripe price ID: {price_id_from_stripe}")
+            except Exception as e:
+                logger.error(f"Error extracting price ID from subscription: {e}")
+                logger.info(f"Subscription items structure: {type(subscription.items) if hasattr(subscription, 'items') else 'No items'}")
+            
             logger.info(f"Price mapping: {self.price_mapping}")
             
             for pid, price_id in self.price_mapping.items():
