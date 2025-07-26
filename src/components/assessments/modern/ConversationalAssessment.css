@@ -3,9 +3,10 @@
   background: linear-gradient(135deg, #F5F2EA 0%, #fefefe 100%);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 20px;
+  overflow-y: auto;
 }
 
 .assessment-container {
@@ -14,10 +15,10 @@
   background: white;
   border-radius: 20px;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
-  overflow: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  height: 80vh;
+  max-height: 90vh;
   min-height: 600px;
 }
 
@@ -95,10 +96,11 @@
 @media (max-width: 768px) {
   .conversational-assessment {
     padding: 10px;
+    align-items: flex-start;
   }
 
   .assessment-container {
-    height: 90vh;
+    max-height: 95vh;
     min-height: 500px;
     border-radius: 16px;
   }
@@ -116,10 +118,11 @@
 @media (max-width: 480px) {
   .conversational-assessment {
     padding: 5px;
+    align-items: flex-start;
   }
 
   .assessment-container {
-    height: 95vh;
+    max-height: 98vh;
     border-radius: 12px;
   }
 }

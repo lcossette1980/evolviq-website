@@ -180,8 +180,10 @@ const AssessmentIntro = ({ onStartAssessment, assessmentType, isLoading }) => {
         .assessment-intro {
           max-width: 600px;
           margin: 0 auto;
-          padding: 40px 24px;
+          padding: 20px 24px;
           text-align: center;
+          height: 100%;
+          overflow-y: auto;
         }
 
         .intro-header {
@@ -386,33 +388,42 @@ const AssessmentIntro = ({ onStartAssessment, assessmentType, isLoading }) => {
 
         @media (max-width: 768px) {
           .assessment-intro {
-            padding: 24px 16px;
+            padding: 16px 12px;
+          }
+
+          .intro-header {
+            margin-bottom: 24px;
           }
 
           .intro-title {
-            font-size: 2rem;
+            font-size: 1.75rem;
           }
 
           .intro-subtitle {
-            font-size: 1.125rem;
+            font-size: 1rem;
           }
 
           .intro-content {
-            padding: 24px;
+            padding: 20px;
           }
 
           .agent-preview {
             flex-direction: column;
             text-align: center;
             gap: 12px;
+            padding: 16px;
+          }
+
+          .features-section {
+            margin-bottom: 24px;
           }
 
           .features-list {
-            gap: 8px;
+            gap: 6px;
           }
 
           .feature-item {
-            padding: 8px 0;
+            padding: 6px 0;
           }
         }
       `}</style>
