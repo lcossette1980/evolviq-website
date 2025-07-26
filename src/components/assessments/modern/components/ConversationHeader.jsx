@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Brain, User, Zap } from 'lucide-react';
 import { colors } from '../../../../utils/colors';
+import './ConversationHeader.css';
 
 /**
  * Conversation Header Component
@@ -184,7 +185,6 @@ const ConversationHeader = ({ agent, progress }) => {
             font-size: 1.125rem;
           }
         }
-      `}</style>
     </motion.div>
   );
 };

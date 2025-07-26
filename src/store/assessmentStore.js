@@ -83,7 +83,10 @@ export const useAssessmentStore = create(
               messages: [initialMessage],
               currentAgent: initialMessage.agent,
               isTyping: false,
-              context: { sessionId: response.session_id },
+              context: { 
+                sessionId: response.session_id,
+                currentQuestionId: response.question_id || 'intro'
+              },
               suggestions: initialMessage.suggestions,
               started: true
             },
