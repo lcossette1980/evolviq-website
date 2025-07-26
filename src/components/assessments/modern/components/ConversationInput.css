@@ -1,0 +1,154 @@
+.conversation-input {
+  background: #f5f3f0;
+  border-top: 1px solid rgba(42, 42, 42, 0.1);
+  padding: 20px 24px;
+}
+
+.suggestions-container {
+  margin-bottom: 16px;
+}
+
+.suggestions-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #998b7d;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.suggestions-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.suggestion-chip {
+  background: white;
+  border: 2px solid #f7f7f6;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  color: #1d2124;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.suggestion-chip:hover:not(:disabled) {
+  border-color: #a44a3f;
+  background: #f7f7f6;
+}
+
+.suggestion-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.input-container {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.textarea-container {
+  flex: 1;
+  position: relative;
+}
+
+.conversation-textarea {
+  width: 100%;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  resize: none;
+  background: white;
+  color: #1d2124;
+  transition: all 0.2s ease;
+  min-height: 48px;
+  max-height: 120px;
+}
+
+.conversation-textarea::placeholder {
+  color: #998b7d;
+}
+
+.conversation-textarea:focus {
+  outline: none;
+  border-color: #a44a3f;
+  box-shadow: 0 0 0 3px rgba(164, 74, 63, 0.1);
+}
+
+.conversation-textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f5f5f5;
+}
+
+.character-count {
+  position: absolute;
+  bottom: -20px;
+  right: 0;
+  font-size: 0.75rem;
+  color: #998b7d;
+}
+
+.send-button {
+  background: #a44a3f;
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.send-button:hover:not(:disabled) {
+  background: #8e3d33;
+  box-shadow: 0 4px 12px rgba(164, 74, 63, 0.3);
+}
+
+.send-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.input-helper {
+  text-align: center;
+  margin-top: 12px;
+  font-size: 0.75rem;
+  color: #998b7d;
+}
+
+@media (max-width: 768px) {
+  .conversation-input {
+    padding: 16px;
+  }
+
+  .suggestions-grid {
+    flex-direction: column;
+  }
+
+  .suggestion-chip {
+    text-align: center;
+  }
+
+  .send-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .conversation-textarea {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+}

@@ -127,7 +127,7 @@ export const useAssessmentStore = create(
         
         try {
           const response = await assessmentAPI.submitAssessmentResponse({
-            questionId: conversation.context.currentQuestionId || 'current',
+            questionId: get().conversation.context?.currentQuestionId || 'intro',
             answer: content,
             sessionData: {
               session_id: activeAssessment.sessionId,
