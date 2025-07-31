@@ -15,6 +15,7 @@ import OverviewTab from '../components/dashboard/tabs/OverviewTab';
 // Lazy load heavy components for better performance
 const AIJourneyTab = React.lazy(() => import('../components/dashboard/tabs/AIJourneyTab'));
 const ProjectsTab = React.lazy(() => import('../components/dashboard/tabs/ProjectsTab'));
+const InteractiveToolsTab = React.lazy(() => import('../components/dashboard/tabs/InteractiveToolsTab'));
 const ActionItemsTab = React.lazy(() => import('../components/dashboard/tabs/ActionItemsTab'));
 
 /**
@@ -68,6 +69,12 @@ const MemberDashboard = () => {
         return (
           <React.Suspense fallback={<LoadingSpinner message="Loading Projects..." />}>
             <ProjectsTab />
+          </React.Suspense>
+        );
+      case 'tools':
+        return (
+          <React.Suspense fallback={<LoadingSpinner message="Loading Interactive Tools..." />}>
+            <InteractiveToolsTab />
           </React.Suspense>
         );
       case 'actions':

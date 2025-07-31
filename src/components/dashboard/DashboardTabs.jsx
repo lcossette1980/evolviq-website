@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, Target, BookOpen, CheckCircle } from 'lucide-react';
+import { BarChart3, Target, BookOpen, CheckCircle, Wrench } from 'lucide-react';
 import { useDashboardStore } from '../../store/dashboardStore';
 import { colors } from '../../utils/colors';
 
@@ -14,6 +14,7 @@ const DashboardTabs = () => {
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'journey', label: 'AI Journey', icon: Target },
     { id: 'projects', label: 'Projects & Guides', icon: BookOpen },
+    { id: 'tools', label: 'Interactive Tools', icon: Wrench },
     { id: 'actions', label: 'Action Items', icon: CheckCircle }
   ];
 

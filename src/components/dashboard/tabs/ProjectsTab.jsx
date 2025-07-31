@@ -10,7 +10,7 @@ import { colors } from '../../../utils/colors';
  */
 const ProjectsTab = () => {
   const navigate = useNavigate();
-  const { guideProgress } = useDashboardStore();
+  const { guideProgress, setActiveTab } = useDashboardStore();
 
   const guides = [
     {
@@ -143,7 +143,7 @@ const ProjectsTab = () => {
           </button>
           
           <button
-            onClick={() => navigate('/tools/linear-regression')}
+            onClick={() => setActiveTab('tools')}
             className="p-4 text-left border rounded-lg hover:bg-gray-50 transition-colors"
           >
             <div className="flex items-center mb-2">
@@ -151,7 +151,7 @@ const ProjectsTab = () => {
               <span className="font-medium">Explore Tools</span>
             </div>
             <p className="text-sm text-gray-600">
-              Access AI implementation tools and resources
+              Access ML/AI analysis tools and resources
             </p>
           </button>
           
