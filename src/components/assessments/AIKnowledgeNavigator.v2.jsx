@@ -12,6 +12,7 @@ import ConversationalAssessment from './modern/ConversationalAssessment';
 import AssessmentIntro from './components/AssessmentIntro';
 import AssessmentResults from './components/AssessmentResults';
 import { colors } from '../../utils/colors';
+import './AIKnowledgeNavigator.v2.css';
 
 /**
  * Modern AI Knowledge Navigator - Version 2.0
@@ -107,67 +108,6 @@ const AIKnowledgeNavigator = ({ useConversationalMode = true }) => {
               </div>
             </div>
 
-            <style jsx>{`
-              .assessment-error-fallback {
-                min-height: 100vh;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: linear-gradient(135deg, ${colors.bone} 0%, #fefefe 100%);
-                padding: 40px 20px;
-              }
-
-              .error-content {
-                text-align: center;
-                background: white;
-                padding: 40px;
-                border-radius: 16px;
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-                max-width: 400px;
-              }
-
-              .error-content h2 {
-                font-family: 'Playfair Display', serif;
-                font-size: 1.5rem;
-                color: ${colors.charcoal};
-                margin: 0 0 16px;
-              }
-
-              .error-content p {
-                color: ${colors.khaki};
-                margin: 0 0 24px;
-              }
-
-              .error-actions {
-                display: flex;
-                gap: 12px;
-                justify-content: center;
-                flex-wrap: wrap;
-              }
-
-              .fallback-button {
-                padding: 12px 20px;
-                border: none;
-                border-radius: 8px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: opacity 0.2s ease;
-              }
-
-              .fallback-button.primary {
-                color: white;
-              }
-
-              .fallback-button.secondary {
-                background: ${colors.pearl};
-                color: ${colors.charcoal};
-                border: 1px solid ${colors.khaki};
-              }
-
-              .fallback-button:hover {
-                opacity: 0.9;
-              }
-            `}</style>
           </div>
         )}
       >
@@ -188,48 +128,6 @@ const AIKnowledgeNavigator = ({ useConversationalMode = true }) => {
             onNavigateHome={handleNavigateHome}
           />
 
-          <style jsx>{`
-            .modern-assessment-container {
-              position: relative;
-            }
-
-            .assessment-mode-switcher {
-              position: absolute;
-              top: 20px;
-              right: 20px;
-              z-index: 100;
-            }
-
-            .mode-switch-button {
-              background: rgba(255, 255, 255, 0.9);
-              border: 1px solid ${colors.pearl};
-              border-radius: 20px;
-              padding: 8px 16px;
-              font-size: 0.875rem;
-              color: ${colors.khaki};
-              cursor: pointer;
-              transition: all 0.2s ease;
-              backdrop-filter: blur(10px);
-            }
-
-            .mode-switch-button:hover {
-              background: ${colors.pearl};
-              color: ${colors.charcoal};
-            }
-
-            @media (max-width: 768px) {
-              .assessment-mode-switcher {
-                position: static;
-                text-align: center;
-                padding: 16px;
-                background: ${colors.bone};
-              }
-
-              .mode-switch-button {
-                display: inline-block;
-              }
-            }
-          `}</style>
         </div>
       </ErrorBoundary>
     );
@@ -264,68 +162,6 @@ const AIKnowledgeNavigator = ({ useConversationalMode = true }) => {
         </button>
       </div>
 
-      <style jsx>{`
-        .legacy-assessment-container {
-          min-height: 100vh;
-          background: ${colors.bone};
-          padding: 40px 20px;
-        }
-
-        .legacy-header {
-          text-align: center;
-          max-width: 600px;
-          margin: 0 auto 40px;
-        }
-
-        .legacy-header h1 {
-          font-family: 'Playfair Display', serif;
-          font-size: 2.5rem;
-          color: ${colors.charcoal};
-          margin: 0 0 12px;
-        }
-
-        .legacy-header p {
-          color: ${colors.khaki};
-          font-size: 1.125rem;
-          margin: 0 0 24px;
-        }
-
-        .modern-mode-button,
-        .switch-button {
-          color: white;
-          border: none;
-          border-radius: 8px;
-          padding: 12px 24px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: opacity 0.2s ease;
-        }
-
-        .modern-mode-button:hover,
-        .switch-button:hover {
-          opacity: 0.9;
-        }
-
-        .legacy-content {
-          text-align: center;
-          background: white;
-          border-radius: 16px;
-          padding: 40px;
-          max-width: 600px;
-          margin: 0 auto;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        }
-
-        .legacy-content p {
-          color: ${colors.khaki};
-          margin: 0 0 16px;
-          font-size: 1.125rem;
-        }
-
-        .legacy-content p:last-of-type {
-          margin-bottom: 32px;
-        }
-      `}</style>
     </div>
   );
 };

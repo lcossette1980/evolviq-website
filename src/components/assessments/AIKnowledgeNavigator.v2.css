@@ -1,0 +1,112 @@
+/* AI Knowledge Navigator v2 Styles */
+
+.assessment-error-fallback {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #F7F6F2 0%, #fefefe 100%);
+  padding: 40px 20px;
+}
+
+.error-content {
+  max-width: 600px;
+  width: 100%;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 3rem;
+  text-align: center;
+}
+
+.error-content h2 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #2A2A2A;
+  margin-bottom: 1rem;
+  font-family: 'Playfair Display', serif;
+}
+
+.error-content p {
+  color: #666;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.error-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.fallback-button {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.fallback-button.primary {
+  background: #A44A3F;
+  color: white;
+}
+
+.fallback-button.primary:hover {
+  background: #8B3F33;
+}
+
+.fallback-button.secondary {
+  background: #E2E8F0;
+  color: #4A5568;
+}
+
+.fallback-button.secondary:hover {
+  background: #CBD5E0;
+}
+
+/* Modern Assessment Container */
+.modern-assessment-container {
+  position: relative;
+}
+
+.assessment-mode-switcher {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.assessment-mode-switcher:hover {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Legacy Assessment Container */
+.legacy-assessment-container {
+  min-height: 100vh;
+  background: #F7F6F2;
+  padding: 40px 20px;
+}
+
+.assessment-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.assessment-mode-switcher.legacy {
+  background: #A44A3F;
+  color: white;
+}
+
+.assessment-mode-switcher.legacy:hover {
+  background: #8B3F33;
+}
