@@ -3113,6 +3113,7 @@ async def start_ai_knowledge_assessment(request: AssessmentStartRequest):
         raise HTTPException(status_code=500, detail=f"Assessment initialization failed: {str(e)}")
 
 @app.post("/api/ai-knowledge/respond")
+@app.post("/api/ai_knowledge/respond")  # Support both hyphen and underscore
 async def respond_ai_knowledge_assessment(request: AssessmentAnswerRequest):
     """Process AI Knowledge Assessment response and get next AI-generated question."""
     try:
@@ -3519,8 +3520,8 @@ async def start_ai_knowledge_assessment(request: dict):
         logger.error(f"Failed to start AI knowledge assessment: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/ai-knowledge/respond")
-async def respond_ai_knowledge_assessment(request: dict):
+@app.post("/api/ai-knowledge/respond-v2")
+async def respond_ai_knowledge_assessment_v2(request: dict):
     """
     Process AI Knowledge Assessment Response - Frontend Compatible Endpoint
     
