@@ -129,15 +129,19 @@ export const useAssessmentStore = create(
         }));
         
         try {
-          const response = await assessmentAPI.submitAssessmentResponse({
-            questionId: get().conversation.context?.currentQuestionId || 'intro',
-            answer: content,
-            sessionData: {
-              session_id: activeAssessment.sessionId,
-              current_question: content,
-              questionIndex: get().progress.currentQuestion
+          const response = await assessmentAPI.submitAssessmentResponse(
+            activeAssessment.userId || 'current_user',
+            activeAssessment.type || 'ai_knowledge',
+            {
+              questionId: get().conversation.context?.currentQuestionId || 'intro',
+              answer: content,
+              sessionData: {
+                session_id: activeAssessment.sessionId,
+                current_question: content,
+                questionIndex: get().progress.currentQuestion
+              }
             }
-          });
+          );
           
           // Handle assessment completion
           if (response.completed) {
