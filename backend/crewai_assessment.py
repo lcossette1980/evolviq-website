@@ -38,6 +38,25 @@ from crewai.tools import BaseTool
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
+# Import structured prompts for database-compatible responses
+from structured_agent_prompts import (
+    create_structured_scoring_task,
+    create_structured_learning_plan_task,
+    create_structured_action_items_task,
+    create_structured_business_recommendations_task
+)
+
+# Import response validation
+from assessment_response_schema import (
+    validate_agent_response,
+    create_database_storage_format,
+    StructuredAssessmentResponse,
+    AssessmentScore,
+    PersonalizedLearningPlan,
+    ActionItem,
+    BusinessImplementationPlan
+)
+
 # =============================================================================
 # DATA STRUCTURES
 # =============================================================================
@@ -633,8 +652,7 @@ def create_concept_analysis_task(question_history: List[Dict]):
 def create_maturity_scoring_task():
     """Task for calculating focused maturity scores"""
     return Task(
-        description="""
-        CRITICAL: NO TOOLS. Analyze the user responses using the maturity scoring framework below.
+        description=create_structured_scoring_task(),
         
         MATURITY LEVELS (1.0-5.0 scale):
         
@@ -712,49 +730,31 @@ def create_maturity_scoring_task():
             "readiness_level": "ready_to_learn",
             "scoring_rationale": {{"F1.1": "Brief explanation of score", "F1.2": "Brief explanation"}}
         }}
-        """,
-        expected_output="Single JSON object with detailed scores and rationale",
+        expected_output="Structured JSON object with detailed scores, evidence, and rationale",
         agent=None
     )
 
 def create_learning_design_task():
     """Task for creating focused learning recommendations"""
     return Task(
-        description="""
-        CRITICAL: NO TOOLS. Provide learning recommendations.
-        
-        Return EXACTLY this JSON format (no other text):
-        {{
-            "priority_areas": ["AI Fundamentals", "Prompt Engineering", "Business Implementation"],
-            "learning_resources": ["AI Basics Course (Free, 4 weeks)", "Prompt Engineering Guide ($49, 3 weeks)", "Business AI Workshop (Free, 2 weeks)"],
-            "timeline": "6-8 weeks"
-        }}
-        
-        COMPLETE THIS TASK IN ONE STEP. NO TOOLS. NO LOOPS.
-        """,
-        expected_output="Single JSON object with learning recommendations",
+        description=create_structured_learning_plan_task(),
+        expected_output="Structured JSON object with detailed personalized learning plan",
         agent=None
     )
 
 def create_business_recommendations_task():
-    """Task for generating focused business recommendations"""
+    """Task for generating structured business recommendations"""
     return Task(
-        description="""
-        CRITICAL: NO TOOLS. Provide business recommendations.
-        
-        Return EXACTLY this JSON format (no other text):
-        {{
-            "recommended_tools": [
-                {{"name": "ChatGPT Plus", "cost": "$20/month", "use_case": "content creation"}},
-                {{"name": "Microsoft Copilot", "cost": "$30/month", "use_case": "productivity automation"}}
-            ],
-            "timeline": "Start immediately, scale over 3 months",
-            "expected_roi": "20-30% efficiency gain"
-        }}
-        
-        COMPLETE THIS TASK IN ONE STEP. NO TOOLS. NO LOOPS.
-        """,
-        expected_output="Single JSON object with business recommendations",
+        description=create_structured_business_recommendations_task(),
+        expected_output="Structured JSON object with detailed business implementation plan",
+        agent=None
+    )
+
+def create_action_items_task():
+    """Task for generating structured action items"""
+    return Task(
+        description=create_structured_action_items_task(),
+        expected_output="Structured JSON object with immediate and long-term action items",
         agent=None
     )
 
@@ -1166,6 +1166,9 @@ class AIReadinessCrewAI:
             learning_task = create_learning_design_task()
             learning_task.agent = self.learning_agent
             
+            action_items_task = create_action_items_task()
+            action_items_task.agent = self.learning_agent  # Use learning agent for action items
+            
             business_task = create_business_recommendations_task()
             business_task.agent = self.business_agent
             
@@ -1185,6 +1188,7 @@ class AIReadinessCrewAI:
                     concept_task,
                     scoring_task,
                     learning_task,
+                    action_items_task,
                     business_task,
                     risk_task
                 ],
@@ -1357,6 +1361,139 @@ def convert_question_history_to_crewai_format(question_history: List[Dict]) -> L
             formatted_history.append(formatted_entry)
     
     return formatted_history
+
+def parse_structured_crewai_responses(crewai_output: Dict) -> Dict:
+    """Parse structured JSON responses from CrewAI agents"""
+    
+    try:
+        print(f"🔍 Processing structured CrewAI output: {type(crewai_output)}")
+        
+        # Get the actual results from CrewAI
+        if isinstance(crewai_output, dict):
+            results = crewai_output.get("crewai_results", "")
+            agents_used = crewai_output.get("agents_used", [])
+        else:
+            results = str(crewai_output)
+            agents_used = []
+        
+        results_str = str(results)
+        print(f"🔍 Raw CrewAI results length: {len(results_str)}")
+        
+        # Extract JSON responses from each agent
+        extracted_data = {
+            "scoring_response": None,
+            "learning_response": None,
+            "action_items_response": None,
+            "business_response": None
+        }
+        
+        # Look for structured JSON responses in the results
+        import re
+        import json
+        
+        # Enhanced patterns to find complete JSON objects
+        json_patterns = [
+            # Look for complete section_scores objects
+            r'\{[^{}]*"section_scores"[^{}]*\[[^]]*\][^{}]*"overall_score"[^{}]*\}',
+            # Look for personalized_learning_plan objects  
+            r'\{[^{}]*"personalized_learning_plan"[^{}]*\{[^{}]*"phases"[^{}]*\}[^{}]*\}',
+            # Look for immediate_action_items objects
+            r'\{[^{}]*"immediate_action_items"[^{}]*\[[^]]*\][^{}]*\}',
+            # Look for business_implementation_plan objects
+            r'\{[^{}]*"business_implementation_plan"[^{}]*\{[^{}]*\}[^{}]*\}'
+        ]
+        
+        json_objects = []
+        for pattern in json_patterns:
+            matches = re.findall(pattern, results_str, re.DOTALL)
+            for match in matches:
+                try:
+                    # Try to parse as JSON
+                    parsed = json.loads(match)
+                    json_objects.append(parsed)
+                    print(f"✅ Successfully parsed JSON object with keys: {list(parsed.keys())}")
+                except json.JSONDecodeError:
+                    # If direct parsing fails, try to clean and parse
+                    cleaned = match.strip()
+                    try:
+                        parsed = json.loads(cleaned)
+                        json_objects.append(parsed)
+                        print(f"✅ Successfully parsed cleaned JSON object")
+                    except json.JSONDecodeError as e:
+                        print(f"⚠️ Failed to parse JSON: {e}")
+                        continue
+        
+        # Organize responses by type
+        for obj in json_objects:
+            if "section_scores" in obj and "overall_score" in obj:
+                extracted_data["scoring_response"] = obj
+            elif "personalized_learning_plan" in obj:
+                extracted_data["learning_response"] = obj
+            elif "immediate_action_items" in obj:
+                extracted_data["action_items_response"] = obj
+            elif "business_implementation_plan" in obj:
+                extracted_data["business_response"] = obj
+        
+        print(f"🎯 Extracted structured responses: {list(k for k, v in extracted_data.items() if v is not None)}")
+        
+        # Build consolidated response
+        consolidated_response = {
+            "assessment_id": f"assessment_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            "user_id": "current_user",  # This should come from session
+            "assessment_type": "ai_knowledge",
+            "completed_at": datetime.now().isoformat(),
+            "agents_used": agents_used,
+            "confidence_in_assessment": 0.85,  # Default confidence
+            "assessment_duration_minutes": 15.0  # Default duration
+        }
+        
+        # Add scoring data if available
+        if extracted_data["scoring_response"]:
+            scoring = extracted_data["scoring_response"]
+            consolidated_response.update({
+                "section_scores": scoring.get("section_scores", []),
+                "overall_score": scoring.get("overall_score", 2.5),
+                "overall_score_percentage": scoring.get("overall_score_percentage", 50),
+                "readiness_level": scoring.get("readiness_level", "ready_to_learn"),
+                "confidence_level": scoring.get("confidence_level", 0.75),
+                "scoring_rationale": scoring.get("scoring_rationale", {})
+            })
+        
+        # Add learning plan if available
+        if extracted_data["learning_response"]:
+            learning = extracted_data["learning_response"]
+            consolidated_response["personalized_learning_plan"] = learning.get("personalized_learning_plan", {})
+        
+        # Add action items if available
+        if extracted_data["action_items_response"]:
+            actions = extracted_data["action_items_response"]
+            consolidated_response.update({
+                "immediate_action_items": actions.get("immediate_action_items", []),
+                "medium_term_actions": actions.get("medium_term_actions", []),
+                "long_term_actions": actions.get("long_term_actions", [])
+            })
+        
+        # Add business plan if available
+        if extracted_data["business_response"]:
+            business = extracted_data["business_response"]
+            consolidated_response["business_implementation"] = business.get("business_implementation_plan", {})
+        
+        print(f"🎯 Consolidated response keys: {list(consolidated_response.keys())}")
+        return consolidated_response
+        
+    except Exception as e:
+        print(f"❌ Error parsing structured responses: {e}")
+        # Return minimal fallback response
+        return {
+            "assessment_id": f"assessment_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            "user_id": "current_user",
+            "assessment_type": "ai_knowledge", 
+            "completed_at": datetime.now().isoformat(),
+            "overall_score": 2.0,
+            "overall_score_percentage": 40,
+            "readiness_level": "needs_foundation",
+            "error": str(e)
+        }
 
 def extract_crewai_results_for_api(crewai_output: Dict) -> Dict:
     """Extract and format CrewAI results for API response"""

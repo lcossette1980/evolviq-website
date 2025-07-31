@@ -1166,6 +1166,7 @@ try:
         AIReadinessCrewAI, 
         convert_question_history_to_crewai_format,
         extract_crewai_results_for_api,
+        parse_structured_crewai_responses,
         generate_crewai_question,
         run_crewai_change_assessment
     )
@@ -1185,6 +1186,9 @@ except ImportError as e:
     
     def extract_crewai_results_for_api(crewai_output: dict) -> dict:
         return {"error": "CrewAI not available"}
+    
+    def parse_structured_crewai_responses(crewai_output: dict) -> dict:
+        return {"error": "CrewAI not available", "fallback_needed": True}
     
     class AIReadinessCrewAI:
         def __init__(self, *args, **kwargs):
@@ -1209,6 +1213,9 @@ except Exception as e:
     
     def extract_crewai_results_for_api(crewai_output: dict) -> dict:
         return {"error": "CrewAI error"}
+    
+    def parse_structured_crewai_responses(crewai_output: dict) -> dict:
+        return {"error": "CrewAI error", "fallback_needed": True}
     
     def run_crewai_change_assessment(openai_api_key: str, org_data: dict, question_history: list) -> dict:
         return {"error": "CrewAI change assessment error", "fallback_needed": True}
@@ -1466,9 +1473,9 @@ def perform_crewai_knowledge_assessment(session_id: str, question_history: List[
             user_context={"session_id": session_id}
         )
         
-        # Extract and format results for API response
-        logger.info("📊 Processing agent collaboration results...")
-        formatted_results = extract_crewai_results_for_api(crewai_results)
+        # Extract and format results for API response using new structured parsing
+        logger.info("📊 Processing structured agent collaboration results...")
+        formatted_results = parse_structured_crewai_responses(crewai_results)
         
         # Add session metadata
         formatted_results["session_id"] = session_id
