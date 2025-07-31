@@ -130,7 +130,7 @@ const ProjectsTab = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button
-            onClick={() => navigate('/assessments/ai-knowledge')}
+            onClick={() => navigate('/tools/ai-knowledge-navigator')}
             className="p-4 text-left border rounded-lg hover:bg-gray-50 transition-colors"
           >
             <div className="flex items-center mb-2">
@@ -143,7 +143,7 @@ const ProjectsTab = () => {
           </button>
           
           <button
-            onClick={() => navigate('/tools')}
+            onClick={() => navigate('/tools/linear-regression')}
             className="p-4 text-left border rounded-lg hover:bg-gray-50 transition-colors"
           >
             <div className="flex items-center mb-2">
