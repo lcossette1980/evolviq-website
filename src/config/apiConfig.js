@@ -60,7 +60,10 @@ const API_CONFIG = {
   },
   
   // Request timeout in milliseconds
-  TIMEOUT: 30000
+  TIMEOUT: 30000,
+  
+  // Extended timeout for long-running operations like CrewAI assessments
+  ASSESSMENT_TIMEOUT: 300000  // 5 minutes (300 seconds)
 };
 
 // Helper function to build full URL

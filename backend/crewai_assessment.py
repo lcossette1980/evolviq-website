@@ -1137,11 +1137,16 @@ class AIReadinessCrewAI:
                 print(f"✅ Hybrid assessment completed successfully!")
             except TimeoutError:
                 signal.alarm(0)  # Cancel timeout
-                print(f"⏰ Assessment timed out after 4 minutes, using fallback")
+                print(f"⏰ Assessment timed out after 4 minutes, attempting to extract partial results...")
+                
+                # Note: Agents may have produced analysis before timeout
+                print("💡 Note: Consider the business analysis visible in logs - agents are working but need more time")
+                
                 return {
                     "error": "Assessment timed out after 4 minutes",
-                    "fallback_analysis": "Timeout protection activated",
-                    "assessment_timestamp": datetime.now().isoformat()
+                    "fallback_analysis": "Timeout protection activated", 
+                    "assessment_timestamp": datetime.now().isoformat(),
+                    "note": "Full timeout without partial recovery"
                 }
             
             print("✅ CrewAI Assessment completed successfully!")

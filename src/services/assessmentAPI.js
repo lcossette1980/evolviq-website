@@ -129,13 +129,25 @@ class AssessmentAPI {
   // API COMMUNICATION
   // =============================================================================
 
-  async makeAPICall(endpoint, method = 'GET', data = null) {
+  async makeAPICall(endpoint, method = 'GET', data = null, useExtendedTimeout = false) {
     try {
       // Use centralized API configuration
       const config = createRequestConfig(method, data);
       const url = buildUrl(endpoint);
 
-      const response = await fetch(url, config);
+      // Use extended timeout for assessment operations
+      const timeoutMs = useExtendedTimeout ? API_CONFIG.ASSESSMENT_TIMEOUT : API_CONFIG.TIMEOUT;
+      
+      // Create AbortController for proper timeout handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      
+      const response = await fetch(url, {
+        ...config,
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         throw new Error(`API call failed: ${response.status} ${response.statusText}`);
@@ -143,6 +155,10 @@ class AssessmentAPI {
 
       return await response.json();
     } catch (error) {
+      if (error.name === 'AbortError') {
+        const timeoutSec = useExtendedTimeout ? 'timeout after 5 minutes' : 'timeout after 30 seconds';
+        throw new Error(`Request ${timeoutSec}. The assessment is taking longer than expected.`);
+      }
       console.error('API call error:', error);
       throw error;
     }
@@ -202,7 +218,7 @@ class AssessmentAPI {
         question_id: responseData.questionId,
         answer: responseData.answer,
         session_data: responseData.sessionData || {}
-      });
+      }, true); // Use extended timeout for assessment responses
 
       // Check if the response was successful
       if (response.success === false) {
@@ -1174,7 +1190,7 @@ class AssessmentAPI {
         endpoint = `/api/${assessmentType}/respond`;
       }
 
-      const response = await this.makeAPICall(endpoint, 'POST', requestData);
+      const response = await this.makeAPICall(endpoint, 'POST', requestData, true); // Use extended timeout
 
       // Check for validation issues in enhanced v2.0 responses
       if (response.data && response.data.validation) {
