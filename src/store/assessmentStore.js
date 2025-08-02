@@ -225,36 +225,56 @@ export const useAssessmentStore = create(
       },
       
       completeAssessment: async (analysisData = {}) => {
-        const { activeAssessment } = get();
+        const { activeAssessment, conversation } = get();
         
         set({ isLoading: true });
         
         try {
-          // Generate results based on analysis
+          console.log('🎯 Assessment completion - analysisData:', analysisData);
+          
+          // Use real CrewAI results if available, otherwise fallback to defaults
           const results = {
             sessionId: activeAssessment.sessionId,
             completedAt: new Date().toISOString(),
-            overallScore: analysisData.overallScore || 75,
-            maturityLevel: analysisData.maturityLevel || 3,
-            maturityScores: analysisData.maturityScores || {
-              ai_fundamentals: 80,
+            
+            // Use actual CrewAI analysis data
+            overallScore: analysisData.overall_score || analysisData.overallScore || 75,
+            maturityLevel: analysisData.maturity_level || analysisData.maturityLevel || 3,
+            readinessLevel: analysisData.readiness_level || analysisData.readinessLevel,
+            
+            // Real maturity scores from CrewAI
+            maturityScores: analysisData.maturity_scores || analysisData.maturityScores || {
+              ai_fundamentals: 75,
               machine_learning: 70,
               generative_ai: 75,
               ai_ethics: 65,
               business_application: 80,
               technical_implementation: 70
             },
-            basicInsights: analysisData.basicInsights || {
-              strengths: ['Strong foundational understanding', 'Good practical awareness'],
-              growthAreas: ['Advanced technical concepts', 'Implementation experience']
+            
+            // Real insights from CrewAI analysis
+            basicInsights: {
+              strengths: analysisData.strengths || analysisData.basicInsights?.strengths || ['Strong foundational understanding'],
+              growthAreas: analysisData.growth_areas || analysisData.basicInsights?.growthAreas || ['Advanced technical concepts']
             },
-            conceptAnalysis: analysisData.conceptAnalysis || {
-              detected_concepts: ['Machine Learning', 'Neural Networks', 'AI Ethics'],
-              knowledge_gaps: ['Deep Learning Architecture', 'Production Deployment'],
-              confidence_level: 0.78
-            },
+            
+            // Learning path from CrewAI
+            learningPath: analysisData.learning_path || analysisData.learningPath || {},
+            
+            // Business recommendations from CrewAI
+            businessRecommendations: analysisData.business_recommendations || analysisData.businessRecommendations || [],
+            
+            // Raw CrewAI output for enhanced processing
+            rawCrewAIResults: analysisData.raw_crewai_output || analysisData.crewai_results || null,
+            
+            // Assessment metadata
             questionsAnswered: get().progress.currentQuestion,
-            totalSections: get().progress.totalQuestions
+            totalSections: get().progress.totalQuestions,
+            responses: conversation.messages.filter(m => m.role === 'user').map(m => m.content),
+            
+            // Assessment type and user info
+            assessmentType: activeAssessment.type || 'ai_knowledge',
+            userId: activeAssessment.userId
           };
           
           set({
@@ -268,8 +288,41 @@ export const useAssessmentStore = create(
             }
           });
           
-          // Generate learning plan
-          get().generateLearningPlan(results);
+          // Save assessment results to Firestore
+          try {
+            await assessmentAPI.saveAssessmentProgress(
+              results.userId,
+              results.assessmentType,
+              {
+                results,
+                isComplete: true,
+                completedAt: results.completedAt,
+                sessionId: results.sessionId,
+                status: 'completed'
+              }
+            );
+            console.log('✅ Assessment results saved to Firestore');
+          } catch (firestoreError) {
+            console.error('❌ Error saving to Firestore:', firestoreError);
+          }
+          
+          // Generate and save enhanced learning plan from CrewAI results
+          await get().generateLearningPlan(results);
+          
+          // Generate action items from assessment results
+          try {
+            if (results.userId && results.businessRecommendations?.length > 0) {
+              await assessmentAPI.generateActionItemsFromAssessment(
+                results.userId,
+                null, // projectId - can be null for user-level action items
+                results.assessmentType,
+                { results, assessmentId: results.sessionId }
+              );
+              console.log('✅ Action items generated from assessment');
+            }
+          } catch (actionItemError) {
+            console.error('❌ Error generating action items:', actionItemError);
+          }
           
         } catch (error) {
           set({ 
@@ -281,8 +334,66 @@ export const useAssessmentStore = create(
       
       generateLearningPlan: async (results) => {
         try {
-          const learningPlan = {
-            basicRecommendations: [
+          console.log('📚 Generating learning plan from results:', results);
+          
+          // Extract learning recommendations from CrewAI results
+          const learningPath = results.learningPath || {};
+          const maturityScores = results.maturityScores || {};
+          const rawCrewAI = results.rawCrewAIResults;
+          
+          // Generate intelligent recommendations based on actual assessment data
+          const basicRecommendations = [];
+          
+          // Add maturity-based recommendations
+          Object.entries(maturityScores).forEach(([area, score]) => {
+            if (score < 80) { // Areas needing improvement
+              const areaName = area.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+              let priority = 'medium';
+              let estimatedTime = '3-4 weeks';
+              
+              if (score < 60) {
+                priority = 'high';
+                estimatedTime = '4-6 weeks';
+              }
+              
+              basicRecommendations.push({
+                title: `Improve ${areaName}`,
+                description: `Your current score is ${score}%. Focus on building stronger ${areaName.toLowerCase()} capabilities.`,
+                priority,
+                estimatedTime,
+                currentScore: score,
+                targetScore: Math.min(100, score + 20),
+                area
+              });
+            }
+          });
+          
+          // Add learning path specific recommendations if available
+          if (learningPath.basic_recommendations) {
+            learningPath.basic_recommendations.forEach((rec, index) => {
+              if (typeof rec === 'string') {
+                basicRecommendations.push({
+                  title: `Learning Focus ${index + 1}`,
+                  description: rec,
+                  priority: index === 0 ? 'high' : 'medium',
+                  estimatedTime: '2-4 weeks',
+                  source: 'crewai_analysis'
+                });
+              } else if (rec && typeof rec === 'object') {
+                basicRecommendations.push({
+                  title: rec.title || `Learning Recommendation ${index + 1}`,
+                  description: rec.description || rec.content || 'AI learning recommendation',
+                  priority: rec.priority || (index === 0 ? 'high' : 'medium'),
+                  estimatedTime: rec.duration || rec.estimatedTime || '2-4 weeks',
+                  source: 'crewai_analysis'
+                });
+              }
+            });
+          }
+          
+          // Fallback recommendations if no specific ones were generated
+          if (basicRecommendations.length === 0) {
+            basicRecommendations.push(
               {
                 title: "Strengthen Core AI Concepts",
                 description: "Focus on fundamental AI principles and terminology",
@@ -290,18 +401,21 @@ export const useAssessmentStore = create(
                 estimatedTime: "2-3 weeks"
               },
               {
-                title: "Hands-on Machine Learning Practice",
+                title: "Hands-on Machine Learning Practice", 
                 description: "Work with real datasets and ML algorithms",
-                priority: "medium", 
-                estimatedTime: "4-6 weeks"
-              },
-              {
-                title: "AI Ethics and Governance",
-                description: "Learn responsible AI practices and guidelines",
                 priority: "medium",
-                estimatedTime: "1-2 weeks"
+                estimatedTime: "4-6 weeks"
               }
-            ],
+            );
+          }
+          
+          const learningPlan = {
+            basicRecommendations,
+            createdAt: new Date().toISOString(),
+            assessmentId: results.sessionId,
+            userId: results.userId,
+            assessmentType: results.assessmentType,
+            basedOnScores: maturityScores,
             progressTracking: {
               phases: [
                 { name: "Foundation", duration: "3 weeks", status: "recommended" },
@@ -313,6 +427,18 @@ export const useAssessmentStore = create(
           };
           
           set({ learningPlan });
+          
+          // Save learning plan to Firestore
+          try {
+            await assessmentAPI.saveLearningProgress(
+              results.userId,
+              results.assessmentType,
+              learningPlan
+            );
+            console.log('✅ Learning plan saved to Firestore');
+          } catch (learningPlanError) {
+            console.error('❌ Error saving learning plan:', learningPlanError);
+          }
           
         } catch (error) {
           console.error('Failed to generate learning plan:', error);
