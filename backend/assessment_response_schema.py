@@ -2,7 +2,7 @@
 # This defines the structured format all CrewAI agents must follow
 
 from typing import Dict, List, Optional, Any
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 
@@ -149,21 +149,21 @@ class StructuredAssessmentResponse:
     medium_term_actions: List[ActionItem]  # 2-8 weeks
     long_term_actions: List[ActionItem]  # 2+ months
     
-    # Business Implementation (if applicable)
-    business_implementation: Optional[BusinessImplementationPlan] = None
-    
     # Analytics & Insights
     strengths_summary: List[str]
     growth_areas_summary: List[str]
     learning_style_indicators: List[str]
     motivation_factors: List[str]
-    potential_obstacles: List[str]
+    
+    # Business Implementation (if applicable)
+    business_implementation: Optional[BusinessImplementationPlan] = None
+    potential_obstacles: List[str] = field(default_factory=list)
     
     # Agent Metadata
-    agents_involved: List[str]
-    confidence_in_assessment: float
-    recommendations_confidence: float
-    assessment_duration_minutes: float
+    agents_involved: List[str] = field(default_factory=list)
+    confidence_in_assessment: float = 0.0
+    recommendations_confidence: float = 0.0
+    assessment_duration_minutes: float = 0.0
 
 # VALIDATION SCHEMAS FOR CREWAI AGENTS
 REQUIRED_AGENT_RESPONSE_FORMAT = {
