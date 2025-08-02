@@ -1123,7 +1123,7 @@ class AIReadinessCrewAI:
             
             # Execute assessment with timeout
             print("🤖 Agents collaborating on assessment...")
-            print(f"⏰ Starting {len(question_history)}-question analysis with 2-minute timeout...")
+            print(f"⏰ Starting {len(question_history)}-question analysis with 4-minute timeout...")
             
             def timeout_handler(signum, frame):
                 raise TimeoutError("Assessment timed out")
@@ -1137,9 +1137,9 @@ class AIReadinessCrewAI:
                 print(f"✅ Hybrid assessment completed successfully!")
             except TimeoutError:
                 signal.alarm(0)  # Cancel timeout
-                print(f"⏰ Assessment timed out after 2 minutes, using fallback")
+                print(f"⏰ Assessment timed out after 4 minutes, using fallback")
                 return {
-                    "error": "Assessment timed out after 2 minutes",
+                    "error": "Assessment timed out after 4 minutes",
                     "fallback_analysis": "Timeout protection activated",
                     "assessment_timestamp": datetime.now().isoformat()
                 }
@@ -1223,7 +1223,7 @@ class AIReadinessCrewAI:
             
             try:
                 signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(120)  # 2 minute timeout
+                signal.alarm(240)  # 4 minute timeout for complex business analysis
                 results = hierarchical_crew.kickoff()
                 signal.alarm(0)  # Cancel timeout
             except TimeoutError:
@@ -1291,16 +1291,32 @@ def parse_structured_crewai_responses(crewai_output: Dict) -> Dict:
     try:
         print(f"🔍 Processing structured CrewAI output: {type(crewai_output)}")
         
-        # Get the actual results from CrewAI
+        # Get the actual results from CrewAI - improved extraction
         if isinstance(crewai_output, dict):
-            results = crewai_output.get("crewai_results", "")
+            # Try multiple possible keys where results might be stored
+            results = (crewai_output.get("crewai_results") or 
+                      crewai_output.get("results") or 
+                      crewai_output.get("output") or 
+                      crewai_output.get("raw") or
+                      str(crewai_output))
             agents_used = crewai_output.get("agents_used", [])
+            
+            # If results is still a dict, convert to string
+            if isinstance(results, dict):
+                import json
+                results = json.dumps(results, indent=2)
         else:
             results = str(crewai_output)
             agents_used = []
         
         results_str = str(results)
         print(f"🔍 Raw CrewAI results length: {len(results_str)}")
+        
+        # Debug: Show first 500 chars of actual results
+        if len(results_str) > 0:
+            print(f"🔍 Raw CrewAI results preview: {results_str[:500]}...")
+        else:
+            print(f"⚠️ No results found in CrewAI output. Keys available: {list(crewai_output.keys()) if isinstance(crewai_output, dict) else 'Not a dict'}")
         
         # Extract JSON responses from each agent
         extracted_data = {
@@ -1401,6 +1417,27 @@ def parse_structured_crewai_responses(crewai_output: Dict) -> Dict:
             business = extracted_data["business_response"]
             consolidated_response["business_implementation"] = business.get("business_implementation_plan", {})
         
+        # FALLBACK: If no structured data was extracted, create analysis from raw text
+        if all(v is None for v in extracted_data.values()) and len(results_str) > 100:
+            print("🔧 No structured data extracted, using intelligent text parsing fallback...")
+            
+            # Extract business value information from the raw text
+            business_analysis = extract_business_analysis_from_text(results_str)
+            if business_analysis:
+                consolidated_response.update(business_analysis)
+            
+            # Extract maturity scoring from raw text
+            maturity_analysis = extract_maturity_scores_from_text(results_str)
+            if maturity_analysis:
+                consolidated_response.update(maturity_analysis)
+                
+            # Store the raw CrewAI output for enhanced processing later
+            consolidated_response["raw_crewai_output"] = {
+                "crewai_results": results_str[:5000],  # Store first 5000 chars
+                "timestamp": datetime.now().isoformat(),
+                "agents_collaboration_output": True
+            }
+        
         print(f"🎯 Consolidated response keys: {list(consolidated_response.keys())}")
         return consolidated_response
         
@@ -1417,6 +1454,114 @@ def parse_structured_crewai_responses(crewai_output: Dict) -> Dict:
             "readiness_level": "needs_foundation",
             "error": str(e)
         }
+
+def extract_business_analysis_from_text(text: str) -> dict:
+    """Extract business analysis from CrewAI text output"""
+    import re
+    
+    analysis = {}
+    
+    # Extract revenue opportunities
+    revenue_matches = re.findall(r'revenue[^.]*?(\$[0-9,k-]+[^.]*)', text, re.IGNORECASE)
+    if revenue_matches:
+        analysis["revenue_opportunities"] = revenue_matches[0]
+    
+    # Extract time savings
+    time_matches = re.findall(r'time[^.]*?(\d+[^.]*hours?[^.]*)', text, re.IGNORECASE)
+    if time_matches:
+        analysis["time_savings"] = time_matches[0]
+    
+    # Extract ROI information
+    roi_matches = re.findall(r'ROI[^.]*?(\d+[^.]*)', text, re.IGNORECASE)
+    if roi_matches:
+        analysis["roi_projection"] = roi_matches[0]
+    
+    # Extract timeline
+    timeline_matches = re.findall(r'timeline[^.]*?(\d+[^.]*months?)', text, re.IGNORECASE)
+    if timeline_matches:
+        analysis["timeline_months"] = timeline_matches[0]
+    
+    # Extract business recommendations from text
+    recommendations = []
+    
+    # Look for numbered recommendations or bullet points
+    rec_patterns = [
+        r'(?:^|\n)\s*\d+[\.\)]\s*([^.\n]+)',
+        r'(?:^|\n)\s*[-•]\s*([^.\n]+)',
+        r'(?:recommendation|suggest|recommend)[^.]*?:\s*([^.\n]+)',
+    ]
+    
+    for pattern in rec_patterns:
+        matches = re.findall(pattern, text, re.IGNORECASE | re.MULTILINE)
+        for match in matches[:3]:  # Take first 3 recommendations
+            if len(match.strip()) > 20:  # Filter out very short matches
+                recommendations.append(match.strip())
+    
+    if recommendations:
+        analysis["business_recommendations"] = recommendations
+    
+    return analysis
+
+def extract_maturity_scores_from_text(text: str) -> dict:
+    """Extract maturity scores from CrewAI text output"""
+    import re
+    
+    scores = {}
+    
+    # Look for score patterns like "AI fundamentals: 75%" or "score of 3.5/5"
+    score_patterns = [
+        r'([a-z\s]+):\s*(\d+)%',
+        r'([a-z\s]+):\s*(\d+\.?\d*)/5',
+        r'([a-z\s]+)\s*score[^:]*:\s*(\d+\.?\d*)',
+        r'(\d+\.?\d*)/5.*?([a-z\s]+)',
+    ]
+    
+    for pattern in score_patterns:
+        matches = re.findall(pattern, text, re.IGNORECASE)
+        for match in matches:
+            if len(match) == 2:
+                category, score = match
+                category = category.strip().lower().replace(' ', '_')
+                
+                # Convert score to 0-100 scale
+                try:
+                    score_val = float(score)
+                    if score_val <= 5:  # If it's on 1-5 scale, convert to percentage
+                        score_val = (score_val / 5) * 100
+                    
+                    # Map common categories
+                    category_mapping = {
+                        'ai_fundamentals': 'ai_fundamentals',
+                        'artificial_intelligence': 'ai_fundamentals', 
+                        'machine_learning': 'machine_learning',
+                        'ml': 'machine_learning',
+                        'generative_ai': 'generative_ai',
+                        'gen_ai': 'generative_ai',
+                        'ai_ethics': 'ai_ethics',
+                        'ethics': 'ai_ethics',
+                        'business_application': 'business_application',
+                        'business': 'business_application',
+                        'technical_implementation': 'technical_implementation',
+                        'technical': 'technical_implementation',
+                        'implementation': 'technical_implementation'
+                    }
+                    
+                    mapped_category = category_mapping.get(category, category)
+                    scores[mapped_category] = min(100, max(0, score_val))
+                    
+                except ValueError:
+                    continue
+    
+    # Calculate overall score if we have individual scores
+    if scores:
+        overall_score = sum(scores.values()) / len(scores)
+        return {
+            "maturity_scores": scores,
+            "overall_score": overall_score,
+            "maturity_level": 4 if overall_score >= 80 else 3 if overall_score >= 60 else 2
+        }
+    
+    return {}
 
 def extract_crewai_results_for_api(crewai_output: Dict) -> Dict:
     """Extract and format CrewAI results for API response"""
