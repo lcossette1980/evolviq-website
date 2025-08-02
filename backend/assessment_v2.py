@@ -62,6 +62,27 @@ class AIReadinessCrewAI:
         
         logger.info("Enhanced AI Readiness Assessment System v2.0 initialized")
     
+    async def generate_agent_question_async(self, question_history: List[Dict]) -> Dict:
+        """
+        Generate next question using enhanced agent system with proper async handling
+        """
+        # Start monitoring
+        self.monitor.start_timer("question_generation")
+        
+        # Create or get session
+        session_id = await self._get_or_create_session_id_async()
+        
+        # Use async orchestrator with timeout
+        try:
+            result = await asyncio.wait_for(
+                self.orchestrator.generate_next_question(session_id, question_history),
+                timeout=30.0  # 30 second timeout for question generation
+            )
+        except asyncio.TimeoutError:
+            raise Exception("Question generation timed out after 30 seconds")
+        
+        return result
+    
     def generate_agent_question(self, question_history: List[Dict]) -> Dict:
         """
         Generate next question using enhanced agent system
@@ -69,22 +90,20 @@ class AIReadinessCrewAI:
         Maintains backward compatibility with original API.
         """
         try:
-            # Start monitoring
-            self.monitor.start_timer("question_generation")
-            
-            # Create or get session
-            session_id = self._get_or_create_session_id()
-            
-            # Use async orchestrator
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            
+            # Use existing event loop if available, otherwise create new one
             try:
-                result = loop.run_until_complete(
-                    self.orchestrator.generate_next_question(session_id, question_history)
-                )
-            finally:
-                loop.close()
+                loop = asyncio.get_running_loop()
+                # If we're in an async context, we can't use run_until_complete
+                # This is a compatibility layer issue - ideally callers should use async version
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(
+                        lambda: asyncio.run(self.generate_agent_question_async(question_history))
+                    )
+                    result = future.result(timeout=35.0)  # Slightly longer than internal timeout
+            except RuntimeError:
+                # No event loop running, safe to create new one
+                result = asyncio.run(self.generate_agent_question_async(question_history))
             
             # Record metrics
             execution_time = self.monitor.end_timer("question_generation")
@@ -126,6 +145,46 @@ class AIReadinessCrewAI:
                 "system_version": "2.0"
             }
     
+    async def analyze_assessment_responses_async(self, responses: List[Dict]) -> Dict:
+        """
+        Analyze assessment responses using enhanced pipeline with concurrent processing
+        """
+        # Start monitoring
+        self.monitor.start_timer("assessment_analysis")
+        
+        # Get or create session
+        session_id = await self._get_or_create_session_id_async()
+        
+        # Process all responses concurrently with timeout
+        try:
+            # Create response processing tasks
+            response_tasks = [
+                self.orchestrator.process_user_response(
+                    session_id=session_id,
+                    question_id=response_data.get("question_id", f"q_{i}"),
+                    answer=response_data.get("answer", ""),
+                    response_metadata=response_data.get("metadata", {})
+                )
+                for i, response_data in enumerate(responses)
+            ]
+            
+            # Process responses concurrently with 2 minute timeout
+            await asyncio.wait_for(
+                asyncio.gather(*response_tasks, return_exceptions=True),
+                timeout=120.0
+            )
+            
+            # Complete assessment with 1 minute timeout
+            final_result = await asyncio.wait_for(
+                self.orchestrator.complete_assessment(session_id),
+                timeout=60.0
+            )
+            
+        except asyncio.TimeoutError:
+            raise Exception("Assessment analysis timed out - responses processed concurrently")
+        
+        return final_result
+    
     def analyze_assessment_responses(self, responses: List[Dict]) -> Dict:
         """
         Analyze assessment responses using enhanced pipeline
@@ -133,35 +192,19 @@ class AIReadinessCrewAI:
         Maintains backward compatibility with original API.
         """
         try:
-            # Start monitoring
-            self.monitor.start_timer("assessment_analysis")
-            
-            # Get or create session
-            session_id = self._get_or_create_session_id()
-            
-            # Process each response through the new system
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            
+            # Use existing event loop if available, otherwise create new one
             try:
-                # Process responses
-                for response_data in responses:
-                    loop.run_until_complete(
-                        self.orchestrator.process_user_response(
-                            session_id=session_id,
-                            question_id=response_data.get("question_id", f"q_{len(responses)}"),
-                            answer=response_data.get("answer", ""),
-                            response_metadata=response_data.get("metadata", {})
-                        )
+                loop = asyncio.get_running_loop()
+                # If we're in an async context, use ThreadPoolExecutor
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(
+                        lambda: asyncio.run(self.analyze_assessment_responses_async(responses))
                     )
-                
-                # Complete assessment
-                final_result = loop.run_until_complete(
-                    self.orchestrator.complete_assessment(session_id)
-                )
-                
-            finally:
-                loop.close()
+                    final_result = future.result(timeout=200.0)  # 3+ minutes total timeout
+            except RuntimeError:
+                # No event loop running, safe to create new one
+                final_result = asyncio.run(self.analyze_assessment_responses_async(responses))
             
             # Record metrics
             execution_time = self.monitor.end_timer("assessment_analysis")
@@ -227,23 +270,38 @@ class AIReadinessCrewAI:
             }
         }
     
+    async def _get_or_create_session_id_async(self) -> str:
+        """Get or create a session ID with proper async handling"""
+        session_id = f"compat_session_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        
+        if session_id not in self.active_sessions:
+            # Create session using orchestrator with timeout
+            session = await asyncio.wait_for(
+                self.orchestrator.start_assessment_session(session_id),
+                timeout=10.0  # 10 second timeout for session creation
+            )
+            self.active_sessions[session_id] = session
+        
+        return session_id
+    
     def _get_or_create_session_id(self) -> str:
         """Get or create a session ID for backward compatibility"""
         # Simple session management for compatibility
         session_id = f"compat_session_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         
         if session_id not in self.active_sessions:
-            # Create session using orchestrator
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            
+            # Use existing event loop if available
             try:
-                session = loop.run_until_complete(
-                    self.orchestrator.start_assessment_session(session_id)
-                )
-                self.active_sessions[session_id] = session
-            finally:
-                loop.close()
+                loop = asyncio.get_running_loop()
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(
+                        lambda: asyncio.run(self._get_or_create_session_id_async())
+                    )
+                    return future.result(timeout=15.0)
+            except RuntimeError:
+                # No event loop running, safe to create new one
+                return asyncio.run(self._get_or_create_session_id_async())
         
         return session_id
     
