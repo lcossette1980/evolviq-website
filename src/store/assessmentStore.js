@@ -288,20 +288,26 @@ export const useAssessmentStore = create(
             }
           });
           
-          // Save assessment results to Firestore
+          // Save assessment results to Firestore with CrewAI data
           try {
             await assessmentAPI.saveAssessmentProgress(
               results.userId,
-              results.assessmentType,
+              'ai_knowledge', // Use consolidated type
               {
                 results,
+                crewAIResults: analysisData,
+                overallScore: results.overallScore,
+                maturityScores: results.maturityScores,
+                learningPlan: results.learningPlan,
+                actionItems: results.actionItems,
                 isComplete: true,
                 completedAt: results.completedAt,
                 sessionId: results.sessionId,
-                status: 'completed'
+                status: 'completed',
+                type: 'ai_knowledge'
               }
             );
-            console.log('✅ Assessment results saved to Firestore');
+            console.log('✅ Assessment results consolidated and saved to Firestore');
           } catch (firestoreError) {
             console.error('❌ Error saving to Firestore:', firestoreError);
           }

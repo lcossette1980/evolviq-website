@@ -33,6 +33,7 @@ import AIUseCaseROIToolkit from './components/guides/ai-use-case-roi-toolkit.tsx
 import AIStrategyStarterKit from './components/guides/ai-strategy-starter-kit.tsx';
 import AIKnowledgeNavigator from './components/assessments/AIKnowledgeNavigator.v2.jsx';
 import ChangeReadinessAssessment from './components/assessments/ChangeReadinessAssessment.jsx';
+import AssessmentResultsView from './components/assessments/AssessmentResultsView.jsx';
 import PaymentSuccess from './pages/PaymentSuccess.jsx';
 import PaymentCancelled from './pages/PaymentCancelled.jsx';
 import './styles/globals.css';
@@ -110,6 +111,14 @@ const AppContent = () => {
             element={
               <ProtectedRoute requiresPremium={true}>
                 <ChangeReadinessAssessment />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/assessment-results/:assessmentId" 
+            element={
+              <ProtectedRoute requiresPremium={false}>
+                <AssessmentResultsView />
               </ProtectedRoute>
             } 
           />

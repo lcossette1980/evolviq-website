@@ -82,18 +82,36 @@ const OverviewTab = () => {
               <h4 className="font-medium text-gray-700 mb-2">Recent Assessments</h4>
               <div className="space-y-2">
                 {completedAssessments.slice(0, 3).map((assessment, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium">{assessment.type || 'Assessment'}</p>
-                      <p className="text-sm text-gray-500">
-                        Completed {new Date(assessment.completedAt).toLocaleDateString()}
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors">
+                    <div className="flex-1">
+                      <p className="font-medium">
+                        {assessment.assessmentType === 'ai_knowledge' ? 'AI Knowledge Assessment' : 
+                         assessment.assessmentType === 'change_readiness' ? 'Change Readiness Assessment' :
+                         assessment.type || 'Assessment'}
                       </p>
+                      <p className="text-sm text-gray-500">
+                        Completed {new Date(assessment.completedAt || assessment.updatedAt).toLocaleDateString()}
+                      </p>
+                      {assessment.learningPlan?.length > 0 && (
+                        <p className="text-xs text-blue-600 mt-1">
+                          {assessment.learningPlan.length} learning items • {assessment.actionItems?.length || 0} action items
+                        </p>
+                      )}
                     </div>
                     <div className="text-right">
                       <div className="text-lg font-bold" style={{ color: colors.chestnut }}>
-                        {Math.round(assessment.overallScore || 0)}%
+                        {Math.round((assessment.overallScore || assessment.results?.overallScore || 0) * (assessment.overallScore > 10 ? 1 : 20))}%
                       </div>
                       <div className="text-xs text-gray-500">Score</div>
+                      <button 
+                        className="text-xs text-blue-600 hover:text-blue-800 mt-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/assessment-results/${assessment.assessmentType || assessment.id}`);
+                        }}
+                      >
+                        View Details
+                      </button>
                     </div>
                   </div>
                 ))}

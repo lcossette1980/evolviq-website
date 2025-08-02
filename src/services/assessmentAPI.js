@@ -68,14 +68,46 @@ class AssessmentAPI {
 
   async saveAssessmentProgress(userId, assessmentType, progressData) {
     try {
-      const assessmentRef = doc(db, 'assessments', `${userId}_${assessmentType}`);
+      // Consolidate ai_knowledge_navigator and ai_knowledge into single record
+      const normalizedType = assessmentType === 'ai_knowledge_navigator' ? 'ai_knowledge' : assessmentType;
+      const assessmentRef = doc(db, 'assessments', `${userId}_${normalizedType}`);
       
       // Clean the data to remove undefined values
       const cleanedProgressData = this.cleanDataForFirestore(progressData);
       
+      // Check if this is CrewAI results being saved for an existing session
+      if (assessmentType === 'ai_knowledge' && progressData.crewAIResults) {
+        // Get existing record to preserve session data
+        try {
+          const existingDoc = await getDoc(assessmentRef);
+          if (existingDoc.exists()) {
+            const existingData = existingDoc.data();
+            
+            // Merge session data with CrewAI results
+            await setDoc(assessmentRef, {
+              ...existingData,
+              ...cleanedProgressData,
+              isComplete: true,
+              completedAt: new Date().toISOString(),
+              lastUpdated: serverTimestamp(),
+              updatedAt: new Date().toISOString(),
+              // Preserve session history while adding results
+              sessionData: existingData.sessionData || {},
+              crewAIResults: cleanedProgressData.crewAIResults,
+              results: cleanedProgressData.results || cleanedProgressData.crewAIResults
+            }, { merge: true });
+            
+            console.log('Consolidated assessment record with CrewAI results');
+            return true;
+          }
+        } catch (docError) {
+          console.log('No existing session found, creating new record');
+        }
+      }
+      
       await setDoc(assessmentRef, {
         userId,
-        assessmentType,
+        assessmentType: normalizedType,
         ...cleanedProgressData,
         lastUpdated: serverTimestamp(),
         updatedAt: new Date().toISOString()

@@ -7,6 +7,7 @@ import { useDashboardStore } from '../store/dashboardStore';
 import DashboardHeader from '../components/dashboard/DashboardHeader';
 import DashboardTabs from '../components/dashboard/DashboardTabs';
 import ProjectSelector from '../components/dashboard/ProjectSelector';
+import CreateProjectModal from '../components/dashboard/CreateProjectModal';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 
 // Tab Content Components (lazy loaded for performance)
@@ -109,6 +110,9 @@ const MemberDashboard = () => {
           </React.Suspense>
         </div>
       </div>
+
+      {/* Modals */}
+      <CreateProjectModal />
     </div>
   );
 };
