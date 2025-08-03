@@ -126,6 +126,18 @@ app = FastAPI(
     version="3.0.0"
 )
 
+# Root endpoint for health checks
+@app.get("/")
+async def root():
+    """Root endpoint for Railway health checks"""
+    return {
+        "status": "online",
+        "message": "EvolvIQ ML Tools API",
+        "version": "3.0.0",
+        "docs": "/docs",
+        "health": "/health"
+    }
+
 # Configure CORS for React frontend
 cors_origins_env = os.getenv("CORS_ALLOWED_ORIGINS", "*")
 if cors_origins_env == "*":
