@@ -178,7 +178,7 @@ async def startup_validation():
     required_vars = {
         "ADMIN_EMAILS": "Admin authentication system",
         "STRIPE_SECRET_KEY": "Payment processing",
-        "GOOGLE_APPLICATION_CREDENTIALS": "Firebase authentication"
+        "FIREBASE_SERVICE_ACCOUNT_KEY": "Firebase authentication"
     }
     
     missing = []
@@ -193,6 +193,7 @@ async def startup_validation():
     # Start background tasks
     asyncio.create_task(session_cleanup_task())
     asyncio.create_task(cleanup_old_files_task())
+    await rate_limiter.start_cleanup_task()
 
 async def cleanup_old_files_task():
     """Periodic cleanup of old uploaded files"""

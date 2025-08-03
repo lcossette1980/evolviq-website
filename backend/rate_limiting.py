@@ -34,8 +34,13 @@ class RateLimiter:
     
     def __init__(self):
         logger.info("✅ Rate limiting system initialized")
-        # Start cleanup task
-        asyncio.create_task(self._cleanup_task())
+        self._cleanup_task_started = False
+    
+    async def start_cleanup_task(self):
+        """Start the cleanup task - call this after the event loop is running"""
+        if not self._cleanup_task_started:
+            self._cleanup_task_started = True
+            asyncio.create_task(self._cleanup_task())
     
     async def _cleanup_task(self):
         """Periodic cleanup of old request records"""
