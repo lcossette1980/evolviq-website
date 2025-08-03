@@ -6,7 +6,6 @@ Replaces in-memory session storage for production use
 import json
 import os
 import pickle
-import redis
 import logging
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
@@ -17,6 +16,14 @@ import pandas as pd
 import numpy as np
 
 logger = logging.getLogger(__name__)
+
+# Conditional Redis import
+try:
+    import redis
+    REDIS_AVAILABLE = True
+except ImportError:
+    REDIS_AVAILABLE = False
+    logger.warning("Redis not available - will use file-based session storage")
 
 # Redis configuration
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
@@ -438,11 +445,15 @@ class FileSessionStorage(SessionStorage):
 # Factory function to create appropriate storage
 def create_session_storage() -> SessionStorage:
     """Create session storage instance based on availability"""
-    try:
-        # Try Redis first
-        return RedisSessionStorage()
-    except Exception as e:
-        logger.warning(f"Redis not available ({e}), falling back to file storage")
+    if REDIS_AVAILABLE:
+        try:
+            # Try Redis first
+            return RedisSessionStorage()
+        except Exception as e:
+            logger.warning(f"Redis connection failed ({e}), falling back to file storage")
+            return FileSessionStorage()
+    else:
+        logger.info("Redis not installed - using file-based session storage")
         return FileSessionStorage()
 
 # Global storage instance
