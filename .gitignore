@@ -22,7 +22,16 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pglite-debug.log
+*.log
 backend_env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
 
 # Archived legacy files
 /archived

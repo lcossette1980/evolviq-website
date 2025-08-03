@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { BarChart3, TrendingUp, CheckCircle, Eye, Download } from 'lucide-react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ScatterChart, Scatter, Cell } from 'recharts';
+import { BarChart3, TrendingUp, CheckCircle } from 'lucide-react';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import StepContainer from '../shared/StepContainer';
 
 const ResultsVisualization = ({ analysisResults, validationResults, onNext }) => {

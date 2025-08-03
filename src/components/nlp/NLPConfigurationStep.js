@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Type, Brain, Info } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import StepContainer from '../shared/StepContainer';
 
 const NLPConfigurationStep = ({ validationResults, onConfigure, isLoading }) => {

@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Mail, 
   Plus, 
   Search, 
-  Filter, 
   Download, 
-  Eye, 
   Edit3, 
   Trash2, 
   X,
@@ -85,7 +83,7 @@ const BlogSubscriberManager = () => {
     }
   };
 
-  const filterSubscribers = () => {
+  const filterSubscribers = useCallback(() => {
     let filtered = subscribers;
 
     // Apply search filter
@@ -102,7 +100,7 @@ const BlogSubscriberManager = () => {
     }
 
     setFilteredSubscribers(filtered);
-  };
+  }, [subscribers, searchTerm, statusFilter]);
 
   const handleAddSubscriber = async () => {
     if (!validateEmail(newSubscriber.email)) {

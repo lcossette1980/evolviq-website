@@ -1,7 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { Brain, User, CheckCircle, Lightbulb, HelpCircle } from 'lucide-react';
-import { colors } from '../../../../utils/colors';
 import './MessageBubble.css';
 
 /**

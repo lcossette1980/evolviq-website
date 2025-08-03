@@ -1,26 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ErrorBoundary from '../components/common/ErrorBoundary';
 import { 
   Users, 
   FileText, 
   BarChart3, 
   Settings, 
   Mail, 
-  Database,
-  Shield,
   Activity,
-  Calendar,
   DollarSign,
   TrendingUp,
   AlertCircle,
-  CheckCircle,
-  Eye,
-  Edit3,
-  Trash2,
-  Download,
-  Filter,
-  Search,
-  Plus
+  CheckCircle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import BlogSubscriberManager from '../components/admin/BlogSubscriberManager';
@@ -29,41 +20,77 @@ import ContentManager from '../components/admin/ContentManager';
 import AnalyticsManager from '../components/admin/AnalyticsManager';
 import SubscriptionManager from '../components/admin/SubscriptionManager';
 import SettingsManager from '../components/admin/SettingsManager';
-import { checkAdminAccess } from '../utils/adminHelpers';
+import AdminDashboardSkeleton from '../components/admin/AdminDashboardSkeleton';
+import { verifyAdminAccess } from '../utils/secureAdminHelpers';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [isLoading, setIsLoading] = useState(true);
-  
-  const isAdmin = checkAdminAccess(user);
+  const [adminData, setAdminData] = useState(null);
+  const [accessDenied, setAccessDenied] = useState(false);
 
+  // 🚨 SECURITY: Server-side admin verification
   useEffect(() => {
-    if (!isAdmin && !isLoading) {
+    const checkAdminAccess = async () => {
+      try {
+        setIsLoading(true);
+        
+        if (!user || user.isAnonymous) {
+          setAccessDenied(true);
+          setIsLoading(false);
+          return;
+        }
+
+        const adminAccess = await verifyAdminAccess(user);
+        
+        if (adminAccess) {
+          setAdminData(adminAccess);
+          console.log('✅ Admin access verified:', adminAccess.role);
+        } else {
+          setAccessDenied(true);
+        }
+      } catch (error) {
+        console.error('Admin access verification failed:', error);
+        setAccessDenied(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAdminAccess();
+  }, [user]);
+
+  // Redirect if access denied
+  useEffect(() => {
+    if (accessDenied && !isLoading) {
       navigate('/');
     }
-    setIsLoading(false);
-  }, [user, isAdmin, navigate, isLoading]);
+  }, [accessDenied, isLoading, navigate]);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-bone flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-chestnut mx-auto mb-4"></div>
-          <p>Loading admin dashboard...</p>
-        </div>
-      </div>
-    );
+    return <AdminDashboardSkeleton />;
   }
 
-  if (!isAdmin) {
+  if (accessDenied || !adminData) {
     return (
       <div className="min-h-screen bg-bone flex items-center justify-center">
         <div className="text-center">
-          <Shield className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-charcoal mb-2">Access Denied</h1>
-          <p className="text-gray-600">You don't have permission to access this page.</p>
+          <p className="text-charcoal/70 mb-4">
+            You don't have permission to access the admin dashboard.
+          </p>
+          <p className="text-sm text-charcoal/60">
+            Admin access is verified server-side for security.
+          </p>
+          <button
+            onClick={() => navigate('/')}
+            className="mt-4 px-4 py-2 bg-chestnut text-white rounded-lg hover:bg-chestnut/90"
+          >
+            Return to Homepage
+          </button>
         </div>
       </div>
     );
@@ -105,7 +132,15 @@ const AdminDashboard = () => {
           <div className="flex justify-between items-center py-4">
             <div>
               <h1 className="text-2xl font-bold text-charcoal">Admin Dashboard</h1>
-              <p className="text-gray-600">Welcome back, {user?.name}</p>
+              <div className="flex items-center space-x-3">
+                <p className="text-gray-600">Welcome back, {user?.name}</p>
+                <span className="px-2 py-1 bg-chestnut/10 text-chestnut text-xs font-medium rounded-full">
+                  {adminData?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+                </span>
+                <span className="text-xs text-gray-500">
+                  Verified: {new Date(adminData?.verified_at).toLocaleTimeString()}
+                </span>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
@@ -278,12 +313,36 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {activeTab === 'users' && <UserManager />}
-        {activeTab === 'content' && <ContentManager />}
-        {activeTab === 'analytics' && <AnalyticsManager />}
-        {activeTab === 'subscriptions' && <SubscriptionManager />}
-        {activeTab === 'subscribers' && <BlogSubscriberManager />}
-        {activeTab === 'settings' && <SettingsManager />}
+        {activeTab === 'users' && (
+          <ErrorBoundary level="component">
+            <UserManager />
+          </ErrorBoundary>
+        )}
+        {activeTab === 'content' && (
+          <ErrorBoundary level="component">
+            <ContentManager />
+          </ErrorBoundary>
+        )}
+        {activeTab === 'analytics' && (
+          <ErrorBoundary level="component">
+            <AnalyticsManager />
+          </ErrorBoundary>
+        )}
+        {activeTab === 'subscriptions' && (
+          <ErrorBoundary level="component">
+            <SubscriptionManager />
+          </ErrorBoundary>
+        )}
+        {activeTab === 'subscribers' && (
+          <ErrorBoundary level="component">
+            <BlogSubscriberManager />
+          </ErrorBoundary>
+        )}
+        {activeTab === 'settings' && (
+          <ErrorBoundary level="component">
+            <SettingsManager />
+          </ErrorBoundary>
+        )}
       </div>
     </div>
   );

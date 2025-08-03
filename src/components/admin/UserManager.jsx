@@ -5,21 +5,14 @@ import {
   Activity,
   TrendingUp,
   Eye,
-  Edit3,
-  Mail,
-  Ban,
-  UserCheck,
-  Calendar,
-  Star,
-  Target,
-  Award
+  Edit3
 } from 'lucide-react';
-import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import AdminTable from './AdminTable';
 import AdminModal from './AdminModal';
 import StatsCard from './StatsCard';
-import { formatDate, formatDateTime, exportToCSV } from '../../utils/adminHelpers';
+import { formatDate, exportToCSV } from '../../utils/adminHelpers';
 
 /**
  * Users Management Module

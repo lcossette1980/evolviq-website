@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Brain } from 'lucide-react';
 import StepContainer from '../shared/StepContainer';
 
 const ModelSelectionStep = ({ validationResults, onSelectModels, isLoading }) => {

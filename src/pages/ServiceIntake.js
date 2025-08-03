@@ -2,18 +2,18 @@ import React, { useState } from 'react';
 import { 
   User, 
   Building, 
-  Mail, 
-  Phone, 
-  Globe, 
-  Users, 
-  DollarSign, 
-  Calendar,
-  MessageSquare,
   CheckCircle,
-  Send
+  Send,
+  AlertCircle
 } from 'lucide-react';
+import { validateServiceIntakeForm } from '../utils/inputValidation';
+import { useError } from '../contexts/ErrorContext';
+import { LoadingButton } from '../components/common/LoadingSpinner';
+import { useRateLimit, rateLimitedFetch, getRateLimitMessage } from '../utils/rateLimiting';
 
 const ServiceIntake = () => {
+  const { showSuccess, showError, handleError } = useError();
+  const { checkRateLimit } = useRateLimit('forms', 'service-intake');
   const [formData, setFormData] = useState({
     // Contact Information
     firstName: '',
@@ -43,6 +43,8 @@ const ServiceIntake = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
+  const [showErrors, setShowErrors] = useState(false);
 
   const colors = {
     charcoal: '#2A2A2A',
@@ -121,19 +123,111 @@ const ServiceIntake = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setValidationErrors({});
+    setShowErrors(false);
 
     try {
-      // Here you would typically send the data to your backend
-      // For now, we'll simulate a submission
-      console.log('Service intake form submitted:', formData);
+      // 🚨 RATE LIMITING: Check client-side rate limit first
+      const rateLimitCheck = checkRateLimit();
+      if (!rateLimitCheck.allowed) {
+        showError(getRateLimitMessage({ 
+          code: 'CLIENT_RATE_LIMITED', 
+          retryAfter: rateLimitCheck.retryAfter,
+          message: rateLimitCheck.message 
+        }), {
+          category: 'rate_limit',
+          duration: 0,
+          actions: [
+            {
+              label: 'Contact Us Directly',
+              action: () => window.open('mailto:lorentcossette@gmail.com', '_blank')
+            }
+          ]
+        });
+        return;
+      }
+
+      // 🚨 SECURITY: Validate and sanitize all form inputs
+      const validatedData = validateServiceIntakeForm(formData);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('✅ Form validation passed');
+
+      // Submit with rate limiting
+      const { response } = await rateLimitedFetch('/api/forms/service-intake', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(validatedData)
+      }, {
+        action: 'forms',
+        identifier: 'service-intake'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Submission failed');
+      }
+
+      const result = await response.json();
+      console.log('✅ Service intake form successfully submitted:', result);
+      
+      // Show success notification
+      showSuccess('Your service inquiry has been submitted successfully! We\'ll be in touch within 24 hours.', {
+        duration: 5000
+      });
       
       setIsSubmitted(true);
     } catch (error) {
-      console.error('Error submitting form:', error);
-      alert('There was an error submitting your request. Please try again.');
+      console.error('❌ Error submitting service intake form:', error);
+      
+      // Handle validation errors
+      if (error.name === 'ValidationError' && error.errors) {
+        setValidationErrors(error.errors);
+        setShowErrors(true);
+        
+        // Show validation error notification
+        showError('Please correct the form errors and try again.', {
+          category: 'validation',
+          duration: 0, // Persistent until form is fixed
+          actions: [
+            {
+              label: 'Scroll to Errors',
+              action: () => {
+                const firstErrorField = Object.keys(error.errors)[0];
+                const errorElement = document.querySelector(`[name="${firstErrorField}"]`);
+                if (errorElement) {
+                  errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  errorElement.focus();
+                }
+              }
+            }
+          ]
+        });
+      } else if (error.code === 'CLIENT_RATE_LIMITED' || error.code === 'SERVER_RATE_LIMITED') {
+        // Handle rate limiting errors
+        showError(getRateLimitMessage(error), {
+          category: 'rate_limit',
+          duration: 0,
+          actions: [
+            {
+              label: 'Contact Us Directly',
+              action: () => window.open('mailto:lorentcossette@gmail.com', '_blank')
+            }
+          ]
+        });
+      } else {
+        // Use centralized error handling for network/server errors
+        handleError(error, {
+          retryAction: () => {
+            // Clear any previous errors and retry
+            setValidationErrors({});
+            setShowErrors(false);
+            handleSubmit({ preventDefault: () => {} });
+          },
+          details: 'Service intake form submission failed'
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -186,6 +280,25 @@ const ServiceIntake = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-8 space-y-8">
+          {/* Validation Error Summary */}
+          {showErrors && Object.keys(validationErrors).length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-start">
+                <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
+                <div>
+                  <h3 className="text-sm font-medium text-red-800 mb-2">
+                    Please correct the following errors:
+                  </h3>
+                  <ul className="text-sm text-red-700 space-y-1">
+                    {Object.entries(validationErrors).map(([field, error]) => (
+                      <li key={field}>• {error}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Contact Information */}
           <section>
             <h2 className="text-xl font-semibold mb-4 flex items-center" style={{ color: colors.charcoal }}>
@@ -194,7 +307,7 @@ const ServiceIntake = () => {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: colors.charcoal }}>
+                <label className={`block text-sm font-medium mb-1 ${validationErrors.firstName ? 'text-red-700' : ''}`} style={{ color: validationErrors.firstName ? '#dc2626' : colors.charcoal }}>
                   First Name *
                 </label>
                 <input
@@ -203,8 +316,18 @@ const ServiceIntake = () => {
                   required
                   value={formData.firstName}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-chestnut focus:border-transparent"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent ${
+                    validationErrors.firstName 
+                      ? 'border-red-500 bg-red-50 focus:ring-red-500' 
+                      : 'border-gray-300 focus:ring-chestnut'
+                  }`}
                 />
+                {validationErrors.firstName && (
+                  <div className="flex items-center space-x-1 text-red-600 text-sm mt-1">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>{validationErrors.firstName}</span>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1" style={{ color: colors.charcoal }}>
@@ -469,24 +592,17 @@ const ServiceIntake = () => {
 
           {/* Submit Button */}
           <div className="text-center pt-6">
-            <button
+            <LoadingButton
               type="submit"
-              disabled={isSubmitting || formData.servicesInterested.length === 0}
-              className="px-8 py-3 rounded-lg text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center mx-auto"
+              isLoading={isSubmitting}
+              loadingText="Submitting your inquiry..."
+              disabled={formData.servicesInterested.length === 0}
+              className="px-8 py-3 rounded-lg text-white font-medium transition-colors mx-auto"
               style={{ backgroundColor: colors.chestnut }}
             >
-              {isSubmitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4 mr-2" />
-                  Submit Service Inquiry
-                </>
-              )}
-            </button>
+              <Send className="w-4 h-4 mr-2" />
+              Submit Service Inquiry
+            </LoadingButton>
             <p className="text-sm text-gray-500 mt-2">
               We'll respond within 24 hours with next steps
             </p>

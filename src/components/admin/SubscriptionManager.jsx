@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   DollarSign,
-  CreditCard,
   Users,
   TrendingUp,
   AlertCircle,
   CheckCircle,
   XCircle,
-  RefreshCw,
   Calendar,
   Crown,
   Target,
@@ -16,7 +14,7 @@ import {
 import AdminTable from './AdminTable';
 import AdminModal from './AdminModal';
 import StatsCard from './StatsCard';
-import { formatDate, formatDateTime, exportToCSV } from '../../utils/adminHelpers';
+import { formatDate, exportToCSV } from '../../utils/adminHelpers';
 
 /**
  * Subscription Management Module

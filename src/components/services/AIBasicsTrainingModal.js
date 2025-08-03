@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, Users, Target, Clock, Lightbulb, Shield, MessageCircle, CheckCircle, ArrowRight, Calendar, FileText, Video, Award, X } from 'lucide-react';
+import { BookOpen, Users, Target, Clock, Lightbulb, Shield, MessageCircle, CheckCircle, ArrowRight, Calendar, X } from 'lucide-react';
 
 const AIBasicsTrainingModal = ({ isOpen, onClose }) => {
   const [activeModule, setActiveModule] = useState(null);

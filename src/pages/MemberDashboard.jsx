@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useProject } from '../contexts/ProjectContext';
 import { useDashboardStore } from '../store/dashboardStore';
+import ErrorBoundary from '../components/common/ErrorBoundary';
 
 // Layout Components
 import DashboardHeader from '../components/dashboard/DashboardHeader';
@@ -9,6 +10,7 @@ import DashboardTabs from '../components/dashboard/DashboardTabs';
 import ProjectSelector from '../components/dashboard/ProjectSelector';
 import CreateProjectModal from '../components/dashboard/CreateProjectModal';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import DashboardSkeleton from '../components/dashboard/DashboardSkeleton';
 
 // Tab Content Components (lazy loaded for performance)
 import OverviewTab from '../components/dashboard/tabs/OverviewTab';
@@ -51,41 +53,57 @@ const MemberDashboard = () => {
     }
   }, [user, currentProject, loadDashboardData]);
 
-  // Show loading spinner while data is loading
+  // Show skeleton while data is loading
   if (projectsLoading || isLoading) {
-    return <LoadingSpinner fullScreen message="Loading your dashboard..." />;
+    return <DashboardSkeleton />;
   }
 
   const renderTabContent = () => {
     switch (activeTab) {
       case 'overview':
-        return <OverviewTab />;
+        return (
+          <ErrorBoundary level="component">
+            <OverviewTab />
+          </ErrorBoundary>
+        );
       case 'journey':
         return (
-          <React.Suspense fallback={<LoadingSpinner message="Loading AI Journey..." />}>
-            <AIJourneyTab />
-          </React.Suspense>
+          <ErrorBoundary level="component">
+            <React.Suspense fallback={<LoadingSpinner message="Loading AI Journey..." />}>
+              <AIJourneyTab />
+            </React.Suspense>
+          </ErrorBoundary>
         );
       case 'projects':
         return (
-          <React.Suspense fallback={<LoadingSpinner message="Loading Projects..." />}>
-            <ProjectsTab />
-          </React.Suspense>
+          <ErrorBoundary level="component">
+            <React.Suspense fallback={<LoadingSpinner message="Loading Projects..." />}>
+              <ProjectsTab />
+            </React.Suspense>
+          </ErrorBoundary>
         );
       case 'tools':
         return (
-          <React.Suspense fallback={<LoadingSpinner message="Loading Interactive Tools..." />}>
-            <InteractiveToolsTab />
-          </React.Suspense>
+          <ErrorBoundary level="component">
+            <React.Suspense fallback={<LoadingSpinner message="Loading Interactive Tools..." />}>
+              <InteractiveToolsTab />
+            </React.Suspense>
+          </ErrorBoundary>
         );
       case 'actions':
         return (
-          <React.Suspense fallback={<LoadingSpinner message="Loading Action Items..." />}>
-            <ActionItemsTab />
-          </React.Suspense>
+          <ErrorBoundary level="component">
+            <React.Suspense fallback={<LoadingSpinner message="Loading Action Items..." />}>
+              <ActionItemsTab />
+            </React.Suspense>
+          </ErrorBoundary>
         );
       default:
-        return <OverviewTab />;
+        return (
+          <ErrorBoundary level="component">
+            <OverviewTab />
+          </ErrorBoundary>
+        );
     }
   };
 

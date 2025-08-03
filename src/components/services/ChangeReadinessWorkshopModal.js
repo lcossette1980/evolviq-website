@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Target, TrendingUp, CheckCircle, Calendar, FileText, X } from 'lucide-react';
+import { Users, Target, TrendingUp, CheckCircle, Calendar, X } from 'lucide-react';
 
 const ChangeReadinessWorkshopModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;

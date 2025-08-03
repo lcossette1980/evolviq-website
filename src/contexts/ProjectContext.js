@@ -100,7 +100,7 @@ export const ProjectProvider = ({ children }) => {
         assessments: {},
         guides: {},
         actionItems: [],
-        timeline: []
+        timelineEvents: []
       };
       
       await setDoc(doc(db, 'projects', projectId), newProject);

@@ -5,7 +5,6 @@ import {
   Target, 
   CheckCircle, 
   Clock, 
-  AlertCircle, 
   TrendingUp, 
   Building, 
   Lightbulb,
@@ -13,21 +12,15 @@ import {
   RefreshCw,
   Download,
   ArrowRight,
-  Award,
   BookOpen,
   MessageSquare,
   BarChart3,
   Settings,
   Zap,
-  Eye,
   FileText,
   Home,
   Brain,
-  Layers,
-  PieChart,
-  Crown,
-  ChevronDown,
-  Briefcase
+  PieChart
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';

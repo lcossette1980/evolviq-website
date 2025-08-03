@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Lightbulb } from 'lucide-react';
-import { colors } from '../../../../utils/colors';
 import './ConversationInput.css';
 
 /**

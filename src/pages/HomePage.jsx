@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, Users, Target, Zap, Shield, CheckCircle, Phone } from 'lucide-react';
+import { Users, Target, Zap, Shield, CheckCircle, Phone } from 'lucide-react';
 
 const HomePage = () => {
   const navigate = useNavigate();

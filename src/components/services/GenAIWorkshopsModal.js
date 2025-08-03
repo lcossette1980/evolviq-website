@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Lightbulb, Users, Target, Clock, Brain, Shield, CheckCircle, Calendar, FileText, X } from 'lucide-react';
+import React from 'react';
+import { Lightbulb, Users, Target, Clock, Brain, Shield, CheckCircle, Calendar, X } from 'lucide-react';
 
 const GenAIWorkshopsModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;

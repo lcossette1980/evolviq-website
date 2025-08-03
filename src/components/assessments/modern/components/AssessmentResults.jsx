@@ -2,16 +2,13 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { 
   Trophy, 
-  TrendingUp, 
   Target, 
   BookOpen, 
   RefreshCw, 
   Home,
   CheckCircle,
-  ArrowRight,
-  Star
+  ArrowRight
 } from 'lucide-react';
-import { colors } from '../../../../utils/colors';
 import './AssessmentResults.css';
 
 /**

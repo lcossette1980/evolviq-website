@@ -188,49 +188,114 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // 🚨 SECURITY FIX: Removed client-side premium upgrade bypass
+  // Premium upgrades must go through proper payment flow
   const upgradeToPremium = async (subscriptionType = 'monthly') => {
+    throw new Error('Premium upgrades must be processed through the payment system. Please use the proper checkout flow.');
+  };
+
+  // Proper payment flow initiation (replaces the security hole)
+  const initiatePremiumUpgrade = async (planId) => {
     if (!user || user.isAnonymous) {
-      console.error('Cannot upgrade: user is not authenticated or is anonymous');
-      return false;
+      throw new Error('Must be logged in to upgrade to premium');
     }
-    
+
     try {
-      const userDocRef = doc(db, 'users', user.uid);
-      const updateData = {
-        isPremium: true,
-        subscriptionType,
-        subscriptionStatus: 'active',
-        upgradedAt: new Date().toISOString()
-      };
+      // Create checkout session through secure backend
+      const response = await fetch('/api/payments/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await user.getIdToken()}`
+        },
+        body: JSON.stringify({ 
+          planId, 
+          userId: user.uid,
+          returnUrl: window.location.origin + '/payment-success',
+          cancelUrl: window.location.origin + '/membership'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create checkout session');
+      }
+
+      const { checkoutUrl } = await response.json();
       
-      await setDoc(userDocRef, updateData, { merge: true });
-      console.log('Premium upgrade successful');
-      
-      // Update local state
-      setUser(prev => ({
-        ...prev,
-        isPremium: true,
-        subscriptionType,
-        subscriptionStatus: 'active'
-      }));
-      
-      return true;
+      // Redirect to Stripe checkout
+      window.location.href = checkoutUrl;
     } catch (error) {
-      console.error('Error upgrading to premium:', error);
-      
-      // If it's a permissions error, still update local state for demo purposes
-      if (error.code === 'permission-denied') {
-        console.warn('Permissions error - updating local state for demo');
+      console.error('Failed to initiate premium upgrade:', error);
+      throw error;
+    }
+  };
+
+  // 🚨 SECURITY: Server-side premium verification (replaces client-side bypass)
+  const verifyPremiumStatus = async () => {
+    try {
+      if (!user || user.isAnonymous) {
+        return false;
+      }
+
+      const token = await user.getIdToken();
+      const response = await fetch('/api/auth/premium-status', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const premiumStatus = data.premium_status;
+        
+        // Update local state with server-verified premium status
         setUser(prev => ({
           ...prev,
-          isPremium: true,
-          subscriptionType,
-          subscriptionStatus: 'active'
+          isPremium: premiumStatus.is_premium,
+          subscriptionType: premiumStatus.subscription_type,
+          subscriptionStatus: premiumStatus.subscription_status,
+          subscriptionExpiresAt: premiumStatus.expires_at,
+          stripeCustomerId: premiumStatus.stripe_customer_id,
+          premiumVerifiedAt: data.verified_at
         }));
-        return true;
+        
+        return premiumStatus.is_premium;
       }
       
       return false;
+    } catch (error) {
+      console.error('Premium status verification failed:', error);
+      return false;
+    }
+  };
+
+  // 🚨 SECURITY: Verify premium access before accessing protected features
+  const verifyPremiumAccess = async () => {
+    try {
+      if (!user || user.isAnonymous) {
+        throw new Error('Authentication required');
+      }
+
+      const token = await user.getIdToken();
+      const response = await fetch('/api/auth/verify-premium-access', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.status === 402) {
+        throw new Error('Premium subscription required');
+      }
+
+      if (!response.ok) {
+        throw new Error('Access verification failed');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Premium access verification failed:', error);
+      throw error;
     }
   };
 
@@ -240,23 +305,8 @@ export const AuthProvider = ({ children }) => {
         return;
       }
       
-      // Fetch latest user data from Firestore
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDocSnap = await getDoc(userDocRef);
-      
-      if (userDocSnap.exists()) {
-        const userData = userDocSnap.data();
-        
-        // Update local state with fresh data
-        setUser(prev => ({
-          ...prev,
-          isPremium: userData.isPremium || false,
-          subscriptionType: userData.subscriptionType || null,
-          subscriptionStatus: userData.subscriptionStatus || null,
-          currentPeriodEnd: userData.currentPeriodEnd,
-          cancelAtPeriodEnd: userData.cancelAtPeriodEnd
-        }));
-      }
+      // Use secure server-side premium verification instead of Firestore
+      await verifyPremiumStatus();
     } catch (error) {
       console.error('Error refreshing user data:', error);
     }
@@ -270,7 +320,10 @@ export const AuthProvider = ({ children }) => {
       signup,
       logout,
       upgradeToAnonymous,
-      upgradeToPremium,
+      upgradeToPremium, // Now throws error - forces proper payment flow
+      initiatePremiumUpgrade, // New secure payment initiation
+      verifyPremiumStatus, // 🚨 SECURITY: Server-side premium verification
+      verifyPremiumAccess, // 🚨 SECURITY: Verify access before premium features
       refreshUserData,
       isLoading,
       isLoginModalOpen,

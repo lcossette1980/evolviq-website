@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Brain, User, Zap } from 'lucide-react';
-import { colors } from '../../../../utils/colors';
+import { Brain } from 'lucide-react';
 import './ConversationHeader.css';
 
 /**

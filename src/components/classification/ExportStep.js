@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Home, RotateCcw, FileText, BarChart3, Share, Brain } from 'lucide-react';
+import { Home, RotateCcw, FileText, BarChart3, Share, Brain } from 'lucide-react';
 
 const ExportStep = ({ 
   trainingResults, 

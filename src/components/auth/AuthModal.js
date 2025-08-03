@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import ErrorBoundary from '../common/ErrorBoundary';
 
 const AuthModal = ({ isOpen, onClose, type, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -30,7 +31,8 @@ const AuthModal = ({ isOpen, onClose, type, onSubmit }) => {
           </button>
         </div>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <ErrorBoundary level="component">
+          <form onSubmit={handleSubmit} className="space-y-4">
           {type === 'signup' && (
             <div>
               <label className="block text-charcoal mb-2">Name</label>
@@ -70,6 +72,7 @@ const AuthModal = ({ isOpen, onClose, type, onSubmit }) => {
             {type === 'login' ? 'Login' : 'Create Account'}
           </button>
         </form>
+        </ErrorBoundary>
 
         <div className="mt-4 text-center">
           <span className="text-charcoal/70 text-sm">

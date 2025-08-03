@@ -4,9 +4,6 @@ import {
   Database,
   Shield,
   Bell,
-  Mail,
-  Globe,
-  Key,
   Server,
   Zap,
   AlertCircle,
@@ -15,15 +12,12 @@ import {
   RefreshCw,
   Eye,
   EyeOff,
-  Copy,
   Download
 } from 'lucide-react';
-import AdminModal from './AdminModal';
 import StatsCard from './StatsCard';
 import { 
   getStoredData, 
   setStoredData, 
-  exportToCSV,
   formatDateTime 
 } from '../../utils/adminHelpers';
 

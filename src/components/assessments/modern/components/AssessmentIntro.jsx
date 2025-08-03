@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Brain, MessageSquare, TrendingUp, Zap, ArrowRight } from 'lucide-react';
-import { colors } from '../../../../utils/colors';
 import './AssessmentIntro.css';
 
 /**

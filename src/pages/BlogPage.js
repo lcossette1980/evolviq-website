@@ -3,11 +3,22 @@ import { Search, Filter, Star, ArrowRight, BookOpen } from 'lucide-react';
 import { blogPosts, categories } from '../data/blogData';
 import BlogCard from '../components/blog/BlogCard';
 import BlogPost from '../components/blog/BlogPost';
+import { BlogListSkeleton } from '../components/blog/BlogSkeleton';
 
 const BlogPage = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPost, setSelectedPost] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simulate loading state
+  useEffect(() => {
+    // In a real app, this would be where you fetch blog data
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   const filteredPosts = blogPosts.filter(post => {
     const matchesCategory = selectedCategory === "All" || post.category === selectedCategory;
@@ -26,6 +37,10 @@ const BlogPage = () => {
 
   if (selectedPost) {
     return <BlogPost post={selectedPost} onBack={() => setSelectedPost(null)} onPostSelect={setSelectedPost} />;
+  }
+
+  if (isLoading) {
+    return <BlogListSkeleton />;
   }
 
   return (

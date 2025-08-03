@@ -1,14 +1,40 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Lock, CreditCard } from 'lucide-react';
 import { PREMIUM_FEATURES, PREMIUM_CTA, PREMIUM_MESSAGING } from '../../config/premiumConfig';
 
 const ProtectedRoute = ({ children, requiresPremium = false }) => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, verifyPremiumAccess } = useAuth();
+  const [premiumVerified, setPremiumVerified] = useState(null);
+  const [premiumLoading, setPremiumLoading] = useState(true);
+
+  // 🚨 SECURITY: Server-side premium verification when premium is required
+  useEffect(() => {
+    const checkPremiumAccess = async () => {
+      if (!requiresPremium || !user || user.isAnonymous) {
+        setPremiumLoading(false);
+        return;
+      }
+
+      try {
+        await verifyPremiumAccess();
+        setPremiumVerified(true);
+      } catch (error) {
+        console.error('Premium access verification failed:', error);
+        setPremiumVerified(false);
+      } finally {
+        setPremiumLoading(false);
+      }
+    };
+
+    if (!isLoading) {
+      checkPremiumAccess();
+    }
+  }, [user, isLoading, requiresPremium, verifyPremiumAccess]);
 
   // Show loading while checking authentication
-  if (isLoading) {
+  if (isLoading || (requiresPremium && premiumLoading)) {
     return (
       <div className="min-h-screen bg-bone py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -26,8 +52,8 @@ const ProtectedRoute = ({ children, requiresPremium = false }) => {
     return <Navigate to="/membership" replace />;
   }
 
-  // If route requires premium but user is not premium, show upgrade page
-  if (requiresPremium && !user.isPremium) {
+  // If route requires premium but server verification failed, show upgrade page
+  if (requiresPremium && premiumVerified === false) {
     return (
       <div className="min-h-screen bg-bone py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">

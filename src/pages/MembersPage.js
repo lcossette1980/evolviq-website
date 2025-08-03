@@ -1,36 +1,15 @@
 import React, { useState } from 'react';
 import { 
   Target, 
-  CheckCircle, 
-  Download, 
   BookOpen, 
-  FileText, 
-  Play, 
-  Lock, 
-  User, 
-  Settings, 
-  TrendingUp, 
   Brain, 
   Zap,
-  Crown,
   Users,
   Shield,
-  BarChart3,
-  ArrowRight,
   Star,
   CheckCircle2,
   X,
-  Sparkles,
-  Rocket,
-  Award,
-  Clock,
-  DollarSign,
-  Briefcase,
-  PlayCircle,
-  Layers,
-  Filter,
-  Search,
-  ChevronRight
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -45,9 +24,8 @@ const colors = {
 };
 
 const MembersPage = () => {
-  const { user, setIsLoginModalOpen, isPremium, upgradeToAnonymous, upgradeToPremium } = useAuth();
+  const { user, setIsLoginModalOpen, isPremium, initiatePremiumUpgrade } = useAuth();
   const navigate = useNavigate();
-  const [selectedPlan, setSelectedPlan] = useState('premium');
   const [paywall, setPaywall] = useState({
     isOpen: false,
     guideTitle: '',
@@ -58,17 +36,13 @@ const MembersPage = () => {
   const handleUpgrade = async (plan) => {
     setIsUpgrading(true);
     try {
-      const success = await upgradeToPremium(plan);
-      if (success) {
-        console.log('Successfully upgraded to premium');
-        setPaywall({ ...paywall, isOpen: false });
-        navigate('/dashboard');
-      } else {
-        console.error('Failed to upgrade to premium');
-      }
+      // Use secure payment flow instead of client-side bypass
+      await initiatePremiumUpgrade(plan);
+      // User will be redirected to Stripe checkout
     } catch (error) {
-      console.error('Error upgrading:', error);
-    } finally {
+      console.error('Failed to initiate payment:', error);
+      // Show user-friendly error message
+      alert('Failed to start payment process. Please try again.');
       setIsUpgrading(false);
     }
   };

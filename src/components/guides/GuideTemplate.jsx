@@ -232,7 +232,7 @@ const GuideTemplate = ({
               </button>
               <div className="relative">
                 <button 
-                  className="flex items-center space-x-2 px-4 py-2 rounded-lg text-white transition-colors hover:opacity-90 disabled:opacity-50"
+                  className="export-btn flex items-center space-x-2 px-4 py-2 rounded-lg text-white transition-colors hover:opacity-90 disabled:opacity-50"
                   style={{ backgroundColor: '#A44A3F' }}
                   onClick={async () => {
                     if (!user) return;
@@ -265,7 +265,6 @@ const GuideTemplate = ({
                       }
                     }
                   }}
-                  className="export-btn"
                 >
                   <Download size={16} />
                   <span>Export Plan</span>

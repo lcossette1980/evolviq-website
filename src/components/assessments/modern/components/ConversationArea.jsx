@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
-import { colors } from '../../../../utils/colors';
 import './ConversationArea.css';
 
 /**

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Brain, Target, BarChart3, Play } from 'lucide-react';
+import { Play } from 'lucide-react';
 import StepContainer from '../shared/StepContainer';
 
 const ClusterAnalysisStep = ({ config, validationResults, onAnalyze, isLoading }) => {

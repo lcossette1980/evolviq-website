@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Brain, Target, Users, Clock, Lightbulb, Map, CheckCircle, ArrowRight, Calendar, Video, FileText, TrendingUp, Zap, Building, ChevronDown, ChevronRight, Eye, Play, X } from 'lucide-react';
+import { Brain, Target, Users, Clock, Lightbulb, Map, CheckCircle, Calendar, Video, FileText, TrendingUp, Building, ChevronDown, ChevronRight, X } from 'lucide-react';
 
 const HalfDayStrategySessionModal = ({ isOpen, onClose }) => {
   const [activeWorkshop, setActiveWorkshop] = useState(null);

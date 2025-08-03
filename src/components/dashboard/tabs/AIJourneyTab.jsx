@@ -262,7 +262,12 @@ const AIJourneyTab = () => {
               </div>
             ))}
           </div>
-        ) : (
+        </div>
+      )}
+
+      {/* Empty State for No Assessments */}
+      {completedAssessments.length === 0 && (
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="text-center py-8">
             <Target className="w-12 h-12 mx-auto mb-4 text-gray-400" />
             <p className="text-gray-500">No assessments completed yet.</p>
@@ -270,8 +275,9 @@ const AIJourneyTab = () => {
               Start your first assessment to track your AI journey.
             </p>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
     </div>
   );
 };

@@ -494,5 +494,218 @@ class StripeIntegration:
             
         except Exception as e:
             logger.error(f"Error updating user subscription status: {e}")
+    
+    # Webhook event handlers
+    async def process_webhook_event(self, event_type: str, event_data: Dict[str, Any]):
+        """Process a Stripe webhook event"""
+        event_handlers = {
+            'customer.subscription.created': self.handle_subscription_created,
+            'customer.subscription.updated': self.handle_subscription_updated,
+            'customer.subscription.deleted': self.handle_subscription_deleted,
+            'customer.subscription.trial_will_end': self.handle_trial_ending,
+            'invoice.payment_succeeded': self.handle_payment_succeeded,
+            'invoice.payment_failed': self.handle_payment_failed,
+            'customer.created': self.handle_customer_created,
+            'customer.updated': self.handle_customer_updated,
+            'payment_method.attached': self.handle_payment_method_attached,
+            'checkout.session.completed': self.handle_checkout_completed
+        }
+        
+        handler = event_handlers.get(event_type)
+        if handler:
+            try:
+                await handler(event_data)
+                logger.info(f"Successfully processed {event_type}")
+            except Exception as e:
+                logger.error(f"Error processing {event_type}: {e}")
+                raise
+        else:
+            logger.info(f"No handler for event type: {event_type}")
+    
+    async def handle_subscription_created(self, subscription: Dict[str, Any]):
+        """Handle new subscription creation"""
+        await self.update_user_subscription_status(subscription, 'customer.subscription.created')
+    
+    async def handle_subscription_updated(self, subscription: Dict[str, Any]):
+        """Handle subscription updates"""
+        await self.update_user_subscription_status(subscription, 'customer.subscription.updated')
+    
+    async def handle_subscription_deleted(self, subscription: Dict[str, Any]):
+        """Handle subscription cancellation"""
+        customer_id = subscription['customer']
+        
+        # Get user by customer ID
+        user_id = await self._get_user_id_by_customer(customer_id)
+        if not user_id:
+            return
+        
+        # Remove premium status
+        premium_data = {
+            'isPremium': False,
+            'subscriptionStatus': 'canceled',
+            'canceledAt': datetime.utcnow(),
+            'previousSubscriptionId': subscription['id'],
+            'updated_at': datetime.utcnow()
+        }
+        
+        self.db.collection('users').document(user_id).update(premium_data)
+        logger.info(f"Canceled subscription for user {user_id}")
+    
+    async def handle_trial_ending(self, subscription: Dict[str, Any]):
+        """Handle trial ending notification"""
+        customer_id = subscription['customer']
+        trial_end = datetime.fromtimestamp(subscription['trial_end'])
+        
+        # Get user by customer ID
+        user_id = await self._get_user_id_by_customer(customer_id)
+        if not user_id:
+            return
+        
+        # Create notification
+        notification = {
+            'user_id': user_id,
+            'type': 'trial_ending',
+            'title': 'Your trial is ending soon',
+            'message': f'Your trial will end on {trial_end.strftime("%B %d, %Y")}. Add a payment method to continue.',
+            'created_at': datetime.utcnow(),
+            'read': False,
+            'subscription_id': subscription['id']
+        }
+        
+        self.db.collection('notifications').add(notification)
+        logger.info(f"Trial ending notification sent for user {user_id}")
+    
+    async def handle_payment_succeeded(self, invoice: Dict[str, Any]):
+        """Handle successful payment"""
+        customer_id = invoice['customer']
+        
+        # Get user by customer ID
+        user_id = await self._get_user_id_by_customer(customer_id)
+        if not user_id:
+            return
+        
+        # Record payment
+        payment_record = {
+            'user_id': user_id,
+            'invoice_id': invoice['id'],
+            'amount': invoice['amount_paid'] / 100,  # Convert from cents
+            'currency': invoice['currency'],
+            'status': 'succeeded',
+            'payment_date': datetime.fromtimestamp(invoice['created']),
+            'description': invoice.get('description', 'Subscription payment')
+        }
+        
+        self.db.collection('payments').add(payment_record)
+        logger.info(f"Payment succeeded for user {user_id}: ${payment_record['amount']}")
+    
+    async def handle_payment_failed(self, invoice: Dict[str, Any]):
+        """Handle failed payment"""
+        customer_id = invoice['customer']
+        
+        # Get user by customer ID
+        user_id = await self._get_user_id_by_customer(customer_id)
+        if not user_id:
+            return
+        
+        # Create notification
+        notification = {
+            'user_id': user_id,
+            'type': 'payment_failed',
+            'title': 'Payment failed',
+            'message': 'We were unable to process your payment. Please update your payment method.',
+            'created_at': datetime.utcnow(),
+            'read': False,
+            'invoice_id': invoice['id']
+        }
+        
+        self.db.collection('notifications').add(notification)
+        
+        # Update user status
+        self.db.collection('users').document(user_id).update({
+            'payment_status': 'failed',
+            'payment_failed_at': datetime.utcnow()
+        })
+        
+        logger.info(f"Payment failed for user {user_id}")
+    
+    async def handle_customer_created(self, customer: Dict[str, Any]):
+        """Handle new Stripe customer creation"""
+        email = customer.get('email')
+        if not email:
+            return
+        
+        # Find user by email
+        users = self.db.collection('users').where('email', '==', email).limit(1).get()
+        if not users:
+            logger.warning(f"No user found for email {email}")
+            return
+        
+        user_id = users[0].id
+        
+        # Store customer ID
+        self.db.collection('users').document(user_id).update({
+            'stripeCustomerId': customer['id'],
+            'stripe_customer_created': datetime.utcnow()
+        })
+        
+        logger.info(f"Linked Stripe customer {customer['id']} to user {user_id}")
+    
+    async def handle_customer_updated(self, customer: Dict[str, Any]):
+        """Handle customer updates"""
+        # Update customer information if needed
+        pass
+    
+    async def handle_payment_method_attached(self, payment_method: Dict[str, Any]):
+        """Handle payment method attachment"""
+        customer_id = payment_method['customer']
+        
+        # Get user by customer ID
+        user_id = await self._get_user_id_by_customer(customer_id)
+        if not user_id:
+            return
+        
+        # Update user's payment method info
+        self.db.collection('users').document(user_id).update({
+            'has_payment_method': True,
+            'payment_method_type': payment_method['type'],
+            'payment_method_last4': payment_method.get('card', {}).get('last4'),
+            'payment_method_updated': datetime.utcnow()
+        })
+        
+        logger.info(f"Payment method attached for user {user_id}")
+    
+    async def handle_checkout_completed(self, session: Dict[str, Any]):
+        """Handle completed checkout session"""
+        customer_id = session.get('customer')
+        if not customer_id:
+            return
+        
+        # Get user by customer ID
+        user_id = await self._get_user_id_by_customer(customer_id)
+        if not user_id:
+            # Try to link by client_reference_id (usually user_id)
+            client_ref = session.get('client_reference_id')
+            if client_ref:
+                user_id = client_ref
+                # Store customer ID
+                self.db.collection('users').document(user_id).update({
+                    'stripeCustomerId': customer_id
+                })
+        
+        if user_id:
+            # Record checkout completion
+            self.db.collection('users').document(user_id).update({
+                'last_checkout_completed': datetime.utcnow(),
+                'checkout_session_id': session['id']
+            })
+            
+            logger.info(f"Checkout completed for user {user_id}")
+    
+    async def _get_user_id_by_customer(self, customer_id: str) -> Optional[str]:
+        """Get user ID by Stripe customer ID"""
+        users = self.db.collection('users').where('stripeCustomerId', '==', customer_id).limit(1).get()
+        if users:
+            return users[0].id
+        return None
 
 # Global instance will be created in main.py with proper error handling

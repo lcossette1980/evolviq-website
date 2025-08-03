@@ -1,5 +1,5 @@
 import React from 'react';
-import { Linkedin, Facebook, Mail, Calendar, MapPin, Brain, Target, Users, BookOpen, Shield } from 'lucide-react';
+import { Linkedin, Facebook, Mail, Calendar, MapPin, Brain, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Footer = () => {

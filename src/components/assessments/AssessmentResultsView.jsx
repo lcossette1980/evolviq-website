@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, Clock, Target, TrendingUp, Download } from 'lucide-react';
+import { ArrowLeft, Clock, Target, Download } from 'lucide-react';
 import assessmentAPI from '../../services/assessmentAPI';
 import { useAuth } from '../../contexts/AuthContext';
 import { colors } from '../../utils/colors';
@@ -17,13 +17,8 @@ const AssessmentResultsView = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
 
-  useEffect(() => {
-    if (user && assessmentId) {
-      loadAssessmentDetails();
-    }
-  }, [user, assessmentId]);
-
-  const loadAssessmentDetails = async () => {
+  const loadAssessmentDetails = useCallback(async () => {
+    if (!user || !assessmentId) return;
     try {
       const assessments = await assessmentAPI.getUserAssessments(user.uid);
       const found = assessments.find(a => a.id === assessmentId || a.assessmentType === assessmentId);
@@ -33,7 +28,11 @@ const AssessmentResultsView = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, assessmentId]);
+
+  useEffect(() => {
+    loadAssessmentDetails();
+  }, [loadAssessmentDetails]);
 
   const getReadinessLevel = (score) => {
     if (score >= 4) return { text: 'Ready to Lead', color: 'text-green-600', bg: 'bg-green-50' };

@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
-  FileText,
   Brain,
   BookOpen,
   Edit3,
   Eye,
   BarChart3,
   Users,
-  Calendar,
   CheckCircle,
   Clock,
   AlertCircle
@@ -15,8 +13,7 @@ import {
 import AdminTable from './AdminTable';
 import AdminModal from './AdminModal';
 import StatsCard from './StatsCard';
-import { formatDate, formatDateTime, exportToCSV } from '../../utils/adminHelpers';
-import guidesAPI from '../../services/guidesAPI';
+import { formatDate, exportToCSV } from '../../utils/adminHelpers';
 
 /**
  * Content Management Module

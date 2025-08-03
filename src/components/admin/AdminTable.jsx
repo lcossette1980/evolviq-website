@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronUp, ChevronDown, MoreHorizontal, Search } from 'lucide-react';
+import { ChevronUp, ChevronDown, Search } from 'lucide-react';
 
 /**
  * Reusable admin table component with sorting, filtering, and pagination

@@ -8,9 +8,7 @@ import logger from '../../utils/logger';
 // Modern conversational assessment
 import ConversationalAssessment from './modern/ConversationalAssessment';
 
-// Legacy components for fallback
-import AssessmentIntro from './components/AssessmentIntro';
-import AssessmentResults from './components/AssessmentResults';
+// Legacy components for fallback (kept for potential use)
 import { colors } from '../../utils/colors';
 import './AIKnowledgeNavigator.v2.css';
 

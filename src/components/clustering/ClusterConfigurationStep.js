@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Target, Info } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import StepContainer from '../shared/StepContainer';
 
 const ClusterConfigurationStep = ({ validationResults, onConfigure, isLoading }) => {

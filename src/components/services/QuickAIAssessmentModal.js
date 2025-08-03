@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, CheckCircle, Target, Clock, Users, FileText, TrendingUp, Zap, Building, Award, ArrowRight, Phone, Calendar, Eye, X } from 'lucide-react';
+import { Search, CheckCircle, Target, Clock, Users, FileText, TrendingUp, Zap, Award, ArrowRight, Phone, Calendar, Eye, X } from 'lucide-react';
 
 const QuickAIAssessmentModal = ({ isOpen, onClose }) => {
   const [activeSection, setActiveSection] = useState(null);

@@ -1,22 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  ChevronRight, 
   Users, 
   Target, 
   Zap, 
-  Shield, 
   CheckCircle, 
-  Phone,
   ShoppingBag,
   Heart,
   Briefcase,
-  Home,
   Utensils,
   Stethoscope,
   GraduationCap,
-  Palette,
-  Building,
   TrendingUp,
   Clock,
   DollarSign,

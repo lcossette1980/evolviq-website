@@ -1,5 +1,5 @@
 import React from 'react';
-import { Brain, Type, MessageCircle, Play } from 'lucide-react';
+import { Play } from 'lucide-react';
 import StepContainer from '../shared/StepContainer';
 
 const NLPAnalysisStep = ({ config, validationResults, onAnalyze, isLoading }) => {

@@ -1,0 +1,146 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 🚨 CRITICAL SECURITY FIX: Proper authentication and authorization rules
+    
+    // Users can only access their own user document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Prevent clients from setting premium status directly
+      allow update: if request.auth != null 
+        && request.auth.uid == userId
+        && !('isPremium' in request.resource.data.diff(resource.data).affectedKeys())
+        && !('subscriptionType' in request.resource.data.diff(resource.data).affectedKeys())
+        && !('subscriptionStatus' in request.resource.data.diff(resource.data).affectedKeys());
+    }
+    
+    // Projects owned by authenticated users
+    match /projects/{projectId} {
+      allow read, write: if request.auth != null 
+        && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null 
+        && request.resource.data.userId == request.auth.uid;
+    }
+    
+    // Assessment data protected by user ownership
+    match /assessments/{assessmentId} {
+      allow read, write: if request.auth != null 
+        && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null 
+        && request.resource.data.userId == request.auth.uid;
+    }
+    
+    // Guide progress data
+    match /guide-progress/{userId}/guides/{guideId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // User sessions for tools (temporary data)
+    match /tool-sessions/{sessionId} {
+      allow read, write: if request.auth != null 
+        && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null 
+        && request.resource.data.userId == request.auth.uid;
+    }
+    
+    // Action items owned by users
+    match /action-items/{itemId} {
+      allow read, write: if request.auth != null 
+        && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null 
+        && request.resource.data.userId == request.auth.uid;
+    }
+    
+    // Learning plans owned by users
+    match /learning-plans/{planId} {
+      allow read, write: if request.auth != null 
+        && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null 
+        && request.resource.data.userId == request.auth.uid;
+    }
+    
+    // Public content (readonly for users, admin write access)
+    match /blog-posts/{postId} {
+      allow read: if true;
+      allow write: if request.auth != null 
+        && request.auth.token.email in ['lorentcossette@gmail.com'];
+    }
+    
+    match /public-content/{contentId} {
+      allow read: if true;
+      allow write: if request.auth != null 
+        && request.auth.token.email in ['lorentcossette@gmail.com'];
+    }
+    
+    // Analytics data (admin only)
+    match /analytics/{document=**} {
+      allow read, write: if request.auth != null 
+        && request.auth.token.email in ['lorentcossette@gmail.com'];
+    }
+    
+    // System configuration (admin only)
+    match /config/{document=**} {
+      allow read, write: if request.auth != null 
+        && request.auth.token.email in ['lorentcossette@gmail.com'];
+    }
+    
+    // Service intake forms (server-side only)
+    match /service-intakes/{intakeId} {
+      allow read, write: if false; // Only server-side access
+    }
+    
+    // Subscription data (server-side only, synced from Stripe)
+    match /subscriptions/{subscriptionId} {
+      allow read: if request.auth != null 
+        && resource.data.userId == request.auth.uid;
+      allow write: if false; // Only server-side updates from Stripe webhooks
+    }
+    
+    // Payment data (server-side only)
+    match /payments/{paymentId} {
+      allow read, write: if false; // Only server-side access
+    }
+    
+    // DENY ALL OTHER ACCESS
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+// 🚨 CRITICAL: Storage rules for file uploads
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // User profile images
+    match /profile-images/{userId}/{fileName} {
+      allow read: if true; // Profile images can be public
+      allow write: if request.auth != null 
+        && request.auth.uid == userId
+        && resource.size < 5 * 1024 * 1024 // 5MB limit
+        && resource.contentType.matches('image/.*');
+    }
+    
+    // Tool data uploads (temporary, authenticated users only)
+    match /tool-uploads/{userId}/{sessionId}/{fileName} {
+      allow read, write: if request.auth != null 
+        && request.auth.uid == userId
+        && resource.size < 50 * 1024 * 1024 // 50MB limit
+        && resource.contentType.matches('(text/csv|application/json|application/vnd\\.ms-excel|application/vnd\\.openxmlformats-officedocument\\.spreadsheetml\\.sheet)');
+    }
+    
+    // Assessment exports
+    match /assessment-exports/{userId}/{fileName} {
+      allow read, write: if request.auth != null 
+        && request.auth.uid == userId
+        && resource.size < 10 * 1024 * 1024; // 10MB limit
+    }
+    
+    // Deny all other storage access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

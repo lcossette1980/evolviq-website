@@ -1,21 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   BarChart3,
   TrendingUp,
   Users,
   Activity,
   DollarSign,
-  Brain,
   BookOpen,
   Target,
-  Calendar,
   Download,
-  Filter,
   RefreshCw
 } from 'lucide-react';
 import StatsCard from './StatsCard';
 import AdminTable from './AdminTable';
-import { formatDate, exportToCSV } from '../../utils/adminHelpers';
+import { exportToCSV } from '../../utils/adminHelpers';
 
 /**
  * Analytics Management Module
@@ -41,11 +38,7 @@ const AnalyticsManager = () => {
     { value: '1y', label: 'Last year' }
   ];
 
-  useEffect(() => {
-    loadAnalyticsData();
-  }, [dateRange]);
-
-  const loadAnalyticsData = async () => {
+  const loadAnalyticsData = useCallback(async () => {
     setLoading(true);
     try {
       // Simulate API call - replace with actual analytics service
@@ -56,7 +49,11 @@ const AnalyticsManager = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateRange]);
+
+  useEffect(() => {
+    loadAnalyticsData();
+  }, [loadAnalyticsData]);
 
   const generateAnalyticsData = () => {
     return {
