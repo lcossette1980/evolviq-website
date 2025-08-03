@@ -51,6 +51,7 @@ psutil==5.9.6
 
 # AI/LLM Support (for assessments)
 openai>=1.13.3
+litellm>=1.0.0
 crewai
 crewai-tools
 langchain
