@@ -45,7 +45,25 @@ from pathlib import Path
 import tempfile
 import stripe
 
-# Import security modules
+# Import Firebase Admin FIRST
+import firebase_admin
+from firebase_admin import credentials
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Initialize Firebase Admin SDK BEFORE other imports
+if not firebase_admin._apps:
+    cred_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS', 'path/to/serviceAccount.json')
+    if os.path.exists(cred_path):
+        cred = credentials.Certificate(cred_path)
+        firebase_admin.initialize_app(cred)
+        logger.info("✅ Firebase Admin SDK initialized")
+    else:
+        logger.warning("⚠️ Firebase credentials not found - authentication disabled")
+
+# Import security modules AFTER Firebase is initialized
 from admin_auth import admin_auth, verify_admin_access, get_current_user
 from premium_verification import premium_verification, verify_premium_access, get_premium_status
 from rate_limiting import (
@@ -60,30 +78,12 @@ from security_utils import (
 from memory_utils import MemoryManager, memory_manager, df_processor
 from session_storage import session_storage, SessionMetadata, session_cleanup_task
 
-# Import Firebase Admin
-import firebase_admin
-from firebase_admin import credentials
-
-# Initialize Firebase Admin SDK
-if not firebase_admin._apps:
-    cred_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS', 'path/to/serviceAccount.json')
-    if os.path.exists(cred_path):
-        cred = credentials.Certificate(cred_path)
-        firebase_admin.initialize_app(cred)
-        logger.info("✅ Firebase Admin SDK initialized")
-    else:
-        logger.warning("⚠️ Firebase credentials not found - authentication disabled")
-
 # Import all ML frameworks
 from regression.enhanced_regression_framework import RegressionWorkflow, RegressionConfig
 from eda.enhanced_eda_framework import EDAWorkflow, EDAConfig
 from classification.enhanced_classification_framework import ClassificationWorkflow, ClassificationConfig
 from clustering.enhanced_clustering_framework import ClusteringWorkflow, ClusteringConfig
 from nlp.enhanced_nlp_framework import NLPWorkflow, NLPConfig
-
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # Import Stripe integration
 stripe_integration = None
@@ -890,4 +890,5 @@ async def stripe_webhook(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

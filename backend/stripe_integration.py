@@ -39,7 +39,16 @@ class StripeIntegration:
                 cred = credentials.Certificate(json.loads(firebase_service_account))
                 firebase_admin.initialize_app(cred)
         
-        self.db = firestore.client()
+        self.db = None
+    
+    def get_db(self):
+        if self.db is None:
+            try:
+                self.db = firestore.client()
+            except Exception as e:
+                logger.error(f"Failed to initialize Firestore: {e}")
+                return None
+        return self.db
         
         # Price mapping from your config
         self.price_mapping = {

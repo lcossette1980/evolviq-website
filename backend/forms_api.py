@@ -18,8 +18,18 @@ import json
 
 logger = logging.getLogger(__name__)
 
-# Initialize Firestore
-db = firestore.client()
+# Firestore client (lazy initialization)
+db = None
+
+def get_db():
+    global db
+    if db is None:
+        try:
+            db = firestore.client()
+        except Exception as e:
+            logger.error(f"Failed to initialize Firestore: {e}")
+            return None
+    return db
 
 # Email configuration
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
@@ -172,7 +182,9 @@ class FormsAPI:
         
         # Store in Firestore
         try:
-            db.collection(self.collection).document(submission_id).set(submission.dict())
+            db = get_db()
+            if db:
+                db.collection(self.collection).document(submission_id).set(submission.dict())
             logger.info(f"Contact form submission stored: {submission_id}")
         except Exception as e:
             logger.error(f"Failed to store contact form: {e}")
@@ -224,7 +236,9 @@ class FormsAPI:
         # Store in Firestore
         try:
             # Store main submission
-            db.collection(self.collection).document(submission_id).set(submission.dict())
+            db = get_db()
+            if db:
+                db.collection(self.collection).document(submission_id).set(submission.dict())
             
             # Create a separate lead record for easier tracking
             lead_data = {
@@ -242,11 +256,13 @@ class FormsAPI:
                 "score": self._calculate_lead_score(form_data)
             }
             
-            db.collection('leads').document(submission_id).set(lead_data)
+            if db:
+                db.collection('leads').document(submission_id).set(lead_data)
             
             # Add to newsletter if requested
             if form_data.subscribe_to_newsletter:
-                db.collection('newsletter_subscribers').document(form_data.email).set({
+                if db:
+                    db.collection('newsletter_subscribers').document(form_data.email).set({
                     "email": form_data.email,
                     "name": form_data.contact_name,
                     "company": form_data.company_name,
@@ -326,6 +342,10 @@ class FormsAPI:
         offset: int = 0
     ) -> List[Dict[str, Any]]:
         """Get form submissions with filtering"""
+        db = get_db()
+        if not db:
+            return {"submissions": [], "total": 0, "page": 1, "limit": limit}
+        
         query = db.collection(self.collection)
         
         if form_type:
@@ -353,6 +373,10 @@ class FormsAPI:
     ) -> Dict[str, Any]:
         """Update form submission status"""
         try:
+            db = get_db()
+            if not db:
+                return {"success": False, "message": "Database not available"}
+            
             doc_ref = db.collection(self.collection).document(submission_id)
             doc = doc_ref.get()
             
@@ -378,7 +402,8 @@ class FormsAPI:
             
             # Also update lead status if it's a service intake
             if doc.to_dict().get("form_type") == "service_intake":
-                lead_ref = db.collection('leads').document(submission_id)
+                if db:
+                    lead_ref = db.collection('leads').document(submission_id)
                 if lead_ref.get().exists:
                     lead_ref.update({
                         "status": status,

@@ -21,8 +21,18 @@ stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 if not stripe.api_key:
     logger.error("⚠️  STRIPE_SECRET_KEY not configured!")
 
-# Initialize Firestore
-db = firestore.client()
+# Firestore client (lazy initialization)
+db = None
+
+def get_db():
+    global db
+    if db is None:
+        try:
+            db = firestore.client()
+        except Exception as e:
+            logger.error(f"Failed to initialize Firestore: {e}")
+            return None
+    return db
 
 # Cache for premium verification (with TTL)
 premium_cache = {}
@@ -76,6 +86,9 @@ class PremiumVerification:
         """Get Stripe customer ID for a user"""
         try:
             # First check Firestore for stored customer ID
+            db = get_db()
+            if not db:
+                return None
             user_doc = db.collection('users').document(user_id).get()
             if user_doc.exists:
                 data = user_doc.to_dict()
@@ -87,7 +100,8 @@ class PremiumVerification:
             if customers.data:
                 customer_id = customers.data[0].id
                 # Store in Firestore for future use
-                db.collection('users').document(user_id).set({
+                if db:
+                    db.collection('users').document(user_id).set({
                     'stripe_customer_id': customer_id
                 }, merge=True)
                 return customer_id
@@ -180,11 +194,13 @@ class PremiumVerification:
         
         # Update Firestore with current status (for frontend reference only)
         try:
-            db.collection('users').document(user_id).set({
-                'premium_status': status.dict(),
-                'premium_verified_at': datetime.now().isoformat(),
-                'premium_verified_by': 'server'
-            }, merge=True)
+            db = get_db()
+            if db:
+                db.collection('users').document(user_id).set({
+                    'premium_status': status.dict(),
+                    'premium_verified_at': datetime.now().isoformat(),
+                    'premium_verified_by': 'server'
+                }, merge=True)
         except Exception as e:
             logger.error(f"Error updating Firestore: {e}")
         
@@ -230,6 +246,9 @@ class PremiumVerification:
             customer_id = event_data.get('customer')
             if customer_id:
                 # Find user by customer ID
+                db = get_db()
+                if not db:
+                    return False
                 users = db.collection('users').where('stripe_customer_id', '==', customer_id).get()
                 for user in users:
                     user_id = user.id
