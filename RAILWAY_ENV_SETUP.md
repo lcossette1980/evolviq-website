@@ -1,78 +1,86 @@
 # Railway Environment Variables Setup
 
-This guide helps you configure the necessary environment variables for Railway deployment.
+This guide documents the environment variables configured for the EvolvIQ Railway deployment.
 
-## Required Environment Variables
+## Current Environment Variables
 
 ### 1. Firebase Configuration
 ```bash
-# Firebase service account credentials (JSON string)
-GOOGLE_APPLICATION_CREDENTIALS={"type":"service_account","project_id":"your-project",...}
+# Firebase service account credentials (JSON string) - ALREADY SET ✅
+FIREBASE_SERVICE_ACCOUNT_KEY={"type":"service_account","project_id":"evolviq-795b7",...}
 
-# Or alternatively, use a path (if you're mounting the file)
-# GOOGLE_APPLICATION_CREDENTIALS=/app/serviceAccount.json
+# Note: The app expects GOOGLE_APPLICATION_CREDENTIALS, but you have FIREBASE_SERVICE_ACCOUNT_KEY
+# The code needs to be updated to use FIREBASE_SERVICE_ACCOUNT_KEY
 ```
 
 ### 2. Admin Configuration
 ```bash
-# Comma-separated list of admin email addresses
-ADMIN_EMAILS=admin@yourcompany.com,admin2@yourcompany.com
+# Comma-separated list of admin email addresses - NOT SET ❌
+ADMIN_EMAILS=admin@evolviq.com,your-email@evolviq.com
+# ACTION REQUIRED: Add this variable with your admin email addresses
 ```
 
-### 3. Stripe Configuration
+### 3. Stripe Configuration (TEST MODE) ✅
 ```bash
-# Your Stripe secret key
-STRIPE_SECRET_KEY=sk_live_xxxxxxxxxxxxx
+# All Stripe variables are configured for TEST mode
+STRIPE_SECRET_KEY="sk_test_..." # ✅ SET
+STRIPE_WEBHOOK_SECRET="whsec_..." # ✅ SET
+STRIPE_PRICE_MONTHLY="price_1RoRszAVsMNYP0TtfIvcKmck" # ✅ SET
+STRIPE_PRICE_ANNUAL="price_1RoRuAAVsMNYP0TtLu7NJJox" # ✅ SET
+STRIPE_PRICE_BUSINESS="price_1RoRugAVsMNYP0TtHRYn83az" # ✅ SET
+REACT_APP_STRIPE_PUBLISHABLE_K="pk_test_..." # ✅ SET (for frontend)
 
-# Stripe webhook secret for verifying webhook signatures
-STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxx
-
-# Stripe price IDs (create these in Stripe Dashboard)
-STRIPE_PRICE_MONTHLY=price_xxxxxxxxxxxxx
-STRIPE_PRICE_ANNUAL=price_xxxxxxxxxxxxx
-STRIPE_PRICE_BUSINESS=price_xxxxxxxxxxxxx
+# WARNING: These are TEST keys. For production, update to live keys:
+# STRIPE_SECRET_KEY="sk_live_..."
+# STRIPE_WEBHOOK_SECRET="whsec_live_..."
 ```
 
-### 4. CORS Configuration
+### 4. OpenAI Configuration ✅
 ```bash
-# Allowed origins for CORS (comma-separated)
-CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+OPENAI_API_KEY="sk-proj-..." # ✅ SET
+# Note: Make sure this key has sufficient credits/quota
 ```
 
-### 5. Optional Email Configuration
+### 5. Railway System Variables ✅
 ```bash
-# SMTP settings for sending emails
+PORT="8000" # ✅ SET
+PYTHONPATH="/app" # ✅ SET
+```
+
+### 6. Missing Variables That Should Be Added
+
+```bash
+# CORS Configuration (currently allows all origins)
+CORS_ALLOWED_ORIGINS=https://evolviq.com,https://www.evolviq.com,http://localhost:3000
+
+# Admin emails for the admin system
+ADMIN_EMAILS=your-admin@evolviq.com
+
+# Optional Email Configuration (if you need email features)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASSWORD=your-app-password
-ADMIN_EMAIL=admin@yourcompany.com
+ADMIN_EMAIL=admin@evolviq.com
 ```
 
-### 6. OpenAI Configuration (for assessments)
-```bash
-# Your OpenAI API key
-OPENAI_API_KEY=sk-xxxxxxxxxxxxx
+## Code Updates Required
+
+The code currently looks for `GOOGLE_APPLICATION_CREDENTIALS` but you have `FIREBASE_SERVICE_ACCOUNT_KEY`. Update main.py to use your variable name:
+
+```python
+# In main.py, change this:
+cred_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS', 'path/to/serviceAccount.json')
+
+# To this:
+firebase_service_account = os.getenv('FIREBASE_SERVICE_ACCOUNT_KEY')
+if firebase_service_account:
+    cred = credentials.Certificate(json.loads(firebase_service_account))
+    firebase_admin.initialize_app(cred)
 ```
 
-## Setting Variables in Railway
+## Summary
 
-1. Go to your Railway project
-2. Click on your service
-3. Go to "Variables" tab
-4. Click "Raw Editor"
-5. Paste your environment variables in KEY=VALUE format
-
-## Example Configuration
-```
-ADMIN_EMAILS=admin@evolviq.com
-STRIPE_SECRET_KEY=sk_live_xxxxxxxxxxxxx
-CORS_ALLOWED_ORIGINS=https://evolviq.com,https://www.evolviq.com
-OPENAI_API_KEY=sk-xxxxxxxxxxxxx
-```
-
-## Notes
-- The application will start without these variables but some features will be disabled
-- Firebase credentials can be passed as a JSON string or file path
-- Make sure to use production keys for Stripe in production
-- CORS origins should match your frontend domain(s)
+✅ **Working**: Firebase, Stripe (test mode), OpenAI, Railway system vars
+❌ **Missing**: ADMIN_EMAILS, CORS_ALLOWED_ORIGINS
+⚠️  **Code Update Needed**: Use FIREBASE_SERVICE_ACCOUNT_KEY instead of GOOGLE_APPLICATION_CREDENTIALS

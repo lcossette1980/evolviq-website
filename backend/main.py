@@ -55,13 +55,24 @@ logger = logging.getLogger(__name__)
 
 # Initialize Firebase Admin SDK BEFORE other imports
 if not firebase_admin._apps:
-    cred_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS', 'path/to/serviceAccount.json')
-    if os.path.exists(cred_path):
-        cred = credentials.Certificate(cred_path)
-        firebase_admin.initialize_app(cred)
-        logger.info("✅ Firebase Admin SDK initialized")
+    # Try FIREBASE_SERVICE_ACCOUNT_KEY first (Railway uses this)
+    firebase_service_account = os.getenv('FIREBASE_SERVICE_ACCOUNT_KEY')
+    if firebase_service_account:
+        try:
+            cred = credentials.Certificate(json.loads(firebase_service_account))
+            firebase_admin.initialize_app(cred)
+            logger.info("✅ Firebase Admin SDK initialized from FIREBASE_SERVICE_ACCOUNT_KEY")
+        except Exception as e:
+            logger.error(f"Failed to initialize Firebase from FIREBASE_SERVICE_ACCOUNT_KEY: {e}")
     else:
-        logger.warning("⚠️ Firebase credentials not found - authentication disabled")
+        # Fallback to GOOGLE_APPLICATION_CREDENTIALS (file path)
+        cred_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+        if cred_path and os.path.exists(cred_path):
+            cred = credentials.Certificate(cred_path)
+            firebase_admin.initialize_app(cred)
+            logger.info("✅ Firebase Admin SDK initialized from file")
+        else:
+            logger.warning("⚠️ Firebase credentials not found - authentication disabled")
 
 # Import security modules AFTER Firebase is initialized
 from admin_auth import admin_auth, verify_admin_access, get_current_user
