@@ -51,11 +51,11 @@ psutil==5.9.6
 
 # AI/LLM Support (for assessments)
 openai>=1.13.3
-crewai==0.16.0
-crewai-tools==0.1.0
-langchain==0.0.340
-langchain-openai==0.0.5
-langchain-community==0.0.13
+crewai
+crewai-tools
+langchain
+langchain-openai
+langchain-community
 
 # Additional
 aiofiles==23.2.1
