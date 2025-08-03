@@ -61,3 +61,6 @@ langchain-community
 # Additional
 aiofiles==23.2.1
 kneed==0.8.5
+
+# File type detection (required by security_utils.py)
+python-magic==0.4.27
