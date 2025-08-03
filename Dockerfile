@@ -7,6 +7,9 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
+    libmagic1 \
+    libgomp1 \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install dependencies from backend directory
