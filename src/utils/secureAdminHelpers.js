@@ -212,6 +212,54 @@ export const setSessionData = (key, data) => {
   }
 };
 
+// Local storage helpers for admin UI preferences (not for authentication)
+export const getStoredData = (key) => {
+  try {
+    const data = localStorage.getItem(`admin_ui_${key}`);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error(`Error reading ${key} from local storage:`, error);
+    return null;
+  }
+};
+
+export const setStoredData = (key, data) => {
+  try {
+    localStorage.setItem(`admin_ui_${key}`, JSON.stringify(data));
+    return true;
+  } catch (error) {
+    console.error(`Error saving ${key} to local storage:`, error);
+    return false;
+  }
+};
+
+// Helper functions for managing stored data arrays
+export const addToStoredData = (key, newItem) => {
+  const existingData = getStoredData(key) || [];
+  const updatedData = [...existingData, { 
+    ...newItem, 
+    id: generateId(), 
+    createdAt: new Date().toISOString() 
+  }];
+  return setStoredData(key, updatedData);
+};
+
+export const removeFromStoredData = (key, itemId) => {
+  const existingData = getStoredData(key) || [];
+  const updatedData = existingData.filter(item => item.id !== itemId);
+  return setStoredData(key, updatedData);
+};
+
+export const updateStoredData = (key, itemId, updates) => {
+  const existingData = getStoredData(key) || [];
+  const updatedData = existingData.map(item => 
+    item.id === itemId 
+      ? { ...item, ...updates, updatedAt: new Date().toISOString() } 
+      : item
+  );
+  return setStoredData(key, updatedData);
+};
+
 export default {
   verifyAdminAccess,
   adminApiCall,
@@ -227,5 +275,10 @@ export default {
   validateEmail,
   generateId,
   getSessionData,
-  setSessionData
+  setSessionData,
+  getStoredData,
+  setStoredData,
+  addToStoredData,
+  removeFromStoredData,
+  updateStoredData
 };
