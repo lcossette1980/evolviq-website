@@ -19,7 +19,7 @@ import {
   getStoredData, 
   setStoredData, 
   formatDateTime 
-} from '../../utils/adminHelpers';
+} from '../../utils/secureAdminHelpers';
 
 /**
  * Settings Management Module

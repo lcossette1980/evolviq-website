@@ -33,18 +33,17 @@ const AuthModal = ({ isOpen, onClose, type, onSubmit }) => {
         
         <ErrorBoundary level="component">
           <form onSubmit={handleSubmit} className="space-y-4">
-          {type === 'signup' && (
-            <div>
-              <label className="block text-charcoal mb-2">Name</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                className="w-full border border-pearl rounded-lg px-4 py-3 focus:outline-none focus:border-chestnut"
-                required
-              />
-            </div>
-          )}
+          <div>
+            <label className="block text-charcoal mb-2">Name</label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              className="w-full border border-pearl rounded-lg px-4 py-3 focus:outline-none focus:border-chestnut"
+              placeholder={type === 'login' ? 'Optional - for new users' : 'Your name'}
+              required={type === 'signup'}
+            />
+          </div>
           <div>
             <label className="block text-charcoal mb-2">Email</label>
             <input

@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import StatsCard from './StatsCard';
 import AdminTable from './AdminTable';
-import { exportToCSV } from '../../utils/adminHelpers';
+import { exportToCSV } from '../../utils/secureAdminHelpers';
 
 /**
  * Analytics Management Module

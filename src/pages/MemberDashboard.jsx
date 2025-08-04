@@ -16,10 +16,11 @@ import DashboardSkeleton from '../components/dashboard/DashboardSkeleton';
 import OverviewTab from '../components/dashboard/tabs/OverviewTab';
 
 // Lazy load heavy components for better performance
-const AIJourneyTab = React.lazy(() => import('../components/dashboard/tabs/AIJourneyTab'));
+const AssessmentsTab = React.lazy(() => import('../components/dashboard/tabs/AssessmentsTab'));
 const ProjectsTab = React.lazy(() => import('../components/dashboard/tabs/ProjectsTab'));
 const InteractiveToolsTab = React.lazy(() => import('../components/dashboard/tabs/InteractiveToolsTab'));
 const ActionItemsTab = React.lazy(() => import('../components/dashboard/tabs/ActionItemsTab'));
+const LearningPlanTab = React.lazy(() => import('../components/dashboard/tabs/LearningPlanTab'));
 
 /**
  * Refactored Member Dashboard - Version 2.0
@@ -66,11 +67,11 @@ const MemberDashboard = () => {
             <OverviewTab />
           </ErrorBoundary>
         );
-      case 'journey':
+      case 'assessments':
         return (
           <ErrorBoundary level="component">
-            <React.Suspense fallback={<LoadingSpinner message="Loading AI Journey..." />}>
-              <AIJourneyTab />
+            <React.Suspense fallback={<LoadingSpinner message="Loading Assessments..." />}>
+              <AssessmentsTab />
             </React.Suspense>
           </ErrorBoundary>
         );
@@ -87,6 +88,14 @@ const MemberDashboard = () => {
           <ErrorBoundary level="component">
             <React.Suspense fallback={<LoadingSpinner message="Loading Interactive Tools..." />}>
               <InteractiveToolsTab />
+            </React.Suspense>
+          </ErrorBoundary>
+        );
+      case 'learning':
+        return (
+          <ErrorBoundary level="component">
+            <React.Suspense fallback={<LoadingSpinner message="Loading Learning Plan..." />}>
+              <LearningPlanTab />
             </React.Suspense>
           </ErrorBoundary>
         );

@@ -8,12 +8,18 @@ import {
   Users,
   CheckCircle,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Plus,
+  FileText,
+  FolderOpen
 } from 'lucide-react';
 import AdminTable from './AdminTable';
 import AdminModal from './AdminModal';
 import StatsCard from './StatsCard';
-import { formatDate, exportToCSV } from '../../utils/adminHelpers';
+import BlogEditor from './BlogEditor';
+import { formatDate, exportToCSV } from '../../utils/secureAdminHelpers';
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '../../services/firebase';
 
 /**
  * Content Management Module
@@ -24,6 +30,8 @@ const ContentManager = () => {
   const [loading, setLoading] = useState(true);
 
   const tabs = [
+    { id: 'blog', label: 'Blog Posts', icon: <FileText className="w-4 h-4" /> },
+    { id: 'projects', label: 'Projects', icon: <FolderOpen className="w-4 h-4" /> },
     { id: 'guides', label: 'Guides', icon: <BookOpen className="w-4 h-4" /> },
     { id: 'assessments', label: 'Assessments', icon: <Brain className="w-4 h-4" /> },
     { id: 'analytics', label: 'Content Analytics', icon: <BarChart3 className="w-4 h-4" /> }
@@ -52,6 +60,8 @@ const ContentManager = () => {
       </div>
 
       {/* Tab Content */}
+      {activeTab === 'blog' && <BlogManager />}
+      {activeTab === 'projects' && <ProjectsManager />}
       {activeTab === 'guides' && <GuidesManager />}
       {activeTab === 'assessments' && <AssessmentsManager />}
       {activeTab === 'analytics' && <ContentAnalytics />}
@@ -659,6 +669,626 @@ const getStatusColor = (status) => {
     case 'review': return 'bg-yellow-100 text-yellow-800';
     default: return 'bg-red-100 text-red-800';
   }
+};
+
+// Blog Manager Component
+const BlogManager = () => {
+  const [posts, setPosts] = useState([]);
+  const [filteredPosts, setFilteredPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedPost, setSelectedPost] = useState(null);
+  const [showEditor, setShowEditor] = useState(false);
+  const [sortKey, setSortKey] = useState('publishDate');
+  const [sortDirection, setSortDirection] = useState('desc');
+
+  useEffect(() => {
+    loadPosts();
+  }, []);
+
+  useEffect(() => {
+    filterPosts();
+  }, [posts, searchTerm, statusFilter]);
+
+  const loadPosts = async () => {
+    setLoading(true);
+    try {
+      const postsRef = collection(db, 'blog_posts');
+      const snapshot = await getDocs(postsRef);
+      const postsList = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setPosts(postsList);
+    } catch (error) {
+      console.error('Error loading posts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filterPosts = () => {
+    let filtered = [...posts];
+
+    if (searchTerm) {
+      filtered = filtered.filter(post =>
+        post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.category.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(post => post.status === statusFilter);
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+      let aVal = sortKey.split('.').reduce((obj, key) => obj?.[key], a);
+      let bVal = sortKey.split('.').reduce((obj, key) => obj?.[key], b);
+
+      if (sortKey.includes('Date')) {
+        aVal = new Date(aVal || 0).getTime();
+        bVal = new Date(bVal || 0).getTime();
+      }
+
+      if (sortDirection === 'asc') {
+        return aVal > bVal ? 1 : -1;
+      } else {
+        return aVal < bVal ? 1 : -1;
+      }
+    });
+
+    setFilteredPosts(filtered);
+  };
+
+  const handleSort = (key, direction) => {
+    setSortKey(key);
+    setSortDirection(direction);
+  };
+
+  const handleSavePost = (postData) => {
+    setShowEditor(false);
+    setSelectedPost(null);
+    loadPosts();
+  };
+
+  const handleDeletePost = async (post) => {
+    if (window.confirm(`Are you sure you want to delete "${post.title}"?`)) {
+      try {
+        await deleteDoc(doc(db, 'blog_posts', post.id));
+        loadPosts();
+      } catch (error) {
+        console.error('Error deleting post:', error);
+        alert('Failed to delete post');
+      }
+    }
+  };
+
+  const tableColumns = [
+    {
+      key: 'title',
+      title: 'Post',
+      sortable: true,
+      render: (post) => (
+        <div>
+          <div className="font-medium text-charcoal">{post.title}</div>
+          <div className="text-sm text-gray-500">{post.excerpt}</div>
+          <div className="flex items-center mt-1 space-x-2">
+            <span className="text-xs text-gray-400">{post.category}</span>
+            <span className="text-xs text-gray-400">•</span>
+            <span className="text-xs text-gray-400">{post.readTime}</span>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'status',
+      title: 'Status',
+      sortable: true,
+      render: (post) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+          post.status === 'published' ? 'bg-green-100 text-green-800' :
+          post.status === 'draft' ? 'bg-gray-100 text-gray-800' :
+          'bg-yellow-100 text-yellow-800'
+        }`}>
+          {post.status}
+        </span>
+      )
+    },
+    {
+      key: 'author',
+      title: 'Author',
+      sortable: true,
+      render: (post) => post.author
+    },
+    {
+      key: 'views',
+      title: 'Views',
+      sortable: true,
+      render: (post) => post.views || 0
+    },
+    {
+      key: 'publishDate',
+      title: 'Publish Date',
+      sortable: true,
+      render: (post) => formatDate(post.publishDate)
+    }
+  ];
+
+  const tableActions = [
+    {
+      icon: <Eye className="w-4 h-4" />,
+      title: 'View Post',
+      onClick: (post) => {
+        window.open(`/blog/${post.slug}`, '_blank');
+      },
+      className: 'text-blue-600 hover:text-blue-800'
+    },
+    {
+      icon: <Edit3 className="w-4 h-4" />,
+      title: 'Edit Post',
+      onClick: (post) => {
+        setSelectedPost(post);
+        setShowEditor(true);
+      },
+      className: 'text-chestnut hover:text-chestnut/80'
+    }
+  ];
+
+  const stats = {
+    total: posts.length,
+    published: posts.filter(p => p.status === 'published').length,
+    draft: posts.filter(p => p.status === 'draft').length,
+    totalViews: posts.reduce((sum, p) => sum + (p.views || 0), 0)
+  };
+
+  if (showEditor) {
+    return (
+      <BlogEditor
+        post={selectedPost}
+        onSave={handleSavePost}
+        onCancel={() => {
+          setShowEditor(false);
+          setSelectedPost(null);
+        }}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <StatsCard
+          title="Total Posts"
+          value={stats.total}
+          icon={FileText}
+          color="chestnut"
+          loading={loading}
+        />
+        <StatsCard
+          title="Published"
+          value={stats.published}
+          icon={CheckCircle}
+          color="green"
+          loading={loading}
+        />
+        <StatsCard
+          title="Drafts"
+          value={stats.draft}
+          icon={Edit3}
+          color="yellow"
+          loading={loading}
+        />
+        <StatsCard
+          title="Total Views"
+          value={stats.totalViews}
+          icon={Eye}
+          color="blue"
+          loading={loading}
+        />
+      </div>
+
+      {/* Actions Bar */}
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex flex-col sm:flex-row gap-4 flex-1">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-chestnut focus:border-transparent"
+            >
+              <option value="all">All Status</option>
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
+              <option value="scheduled">Scheduled</option>
+            </select>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                setSelectedPost(null);
+                setShowEditor(true);
+              }}
+              className="flex items-center px-4 py-2 bg-chestnut text-white rounded-lg hover:bg-chestnut/90 transition-colors"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Post
+            </button>
+            <button
+              onClick={() => exportToCSV(filteredPosts, 'blog_posts')}
+              className="px-4 py-2 border border-chestnut text-chestnut rounded-lg hover:bg-chestnut/10 transition-colors"
+            >
+              Export Posts
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Posts Table */}
+      <AdminTable
+        columns={tableColumns}
+        data={filteredPosts}
+        loading={loading}
+        sortKey={sortKey}
+        sortDirection={sortDirection}
+        onSort={handleSort}
+        searchTerm={searchTerm}
+        onSearch={setSearchTerm}
+        searchPlaceholder="Search posts by title, excerpt, or category..."
+        emptyStateTitle="No posts found"
+        emptyStateDescription="Create your first blog post to get started"
+        emptyStateIcon={FileText}
+        actions={tableActions}
+      />
+    </div>
+  );
+};
+
+// Projects Manager Component
+const ProjectsManager = () => {
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [showProjectModal, setShowProjectModal] = useState(false);
+
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  const loadProjects = async () => {
+    setLoading(true);
+    try {
+      const projectsRef = collection(db, 'projects');
+      const snapshot = await getDocs(projectsRef);
+      const projectsList = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setProjects(projectsList);
+    } catch (error) {
+      console.error('Error loading projects:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredProjects = projects.filter(project =>
+    searchTerm === '' ||
+    project.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    project.organization?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    project.userId?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const stats = {
+    total: projects.length,
+    active: projects.filter(p => p.status === 'active').length,
+    archived: projects.filter(p => p.status === 'archived').length,
+    assessments: projects.reduce((sum, p) => {
+      const assessmentCount = Object.values(p.assessments || {}).reduce((count, list) => count + list.length, 0);
+      return sum + assessmentCount;
+    }, 0)
+  };
+
+  const tableColumns = [
+    {
+      key: 'name',
+      title: 'Project',
+      render: (project) => (
+        <div>
+          <div className="font-medium text-charcoal">{project.name}</div>
+          <div className="text-sm text-gray-500">{project.organization?.name || 'No organization'}</div>
+          <div className="text-xs text-gray-400">User: {project.userId}</div>
+        </div>
+      )
+    },
+    {
+      key: 'type',
+      title: 'Type',
+      render: (project) => (
+        <span className="capitalize">{project.type || 'general'}</span>
+      )
+    },
+    {
+      key: 'status',
+      title: 'Status',
+      render: (project) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+          project.status === 'active' ? 'bg-green-100 text-green-800' :
+          'bg-gray-100 text-gray-800'
+        }`}>
+          {project.status}
+        </span>
+      )
+    },
+    {
+      key: 'assessments',
+      title: 'Assessments',
+      render: (project) => {
+        const count = Object.values(project.assessments || {}).reduce((sum, list) => sum + list.length, 0);
+        return count;
+      }
+    },
+    {
+      key: 'guides',
+      title: 'Guides',
+      render: (project) => {
+        const guideCount = Object.keys(project.guides || {}).length;
+        const completedCount = Object.values(project.guides || {}).filter(g => g.status === 'completed').length;
+        return `${completedCount}/${guideCount}`;
+      }
+    },
+    {
+      key: 'lastUpdated',
+      title: 'Last Updated',
+      render: (project) => formatDate(project.lastUpdated)
+    }
+  ];
+
+  const tableActions = [
+    {
+      icon: <Eye className="w-4 h-4" />,
+      title: 'View Details',
+      onClick: (project) => {
+        setSelectedProject(project);
+        setShowProjectModal(true);
+      },
+      className: 'text-blue-600 hover:text-blue-800'
+    }
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <StatsCard
+          title="Total Projects"
+          value={stats.total}
+          icon={FolderOpen}
+          color="chestnut"
+          loading={loading}
+        />
+        <StatsCard
+          title="Active Projects"
+          value={stats.active}
+          icon={CheckCircle}
+          color="green"
+          loading={loading}
+        />
+        <StatsCard
+          title="Archived"
+          value={stats.archived}
+          icon={Clock}
+          color="gray"
+          loading={loading}
+        />
+        <StatsCard
+          title="Total Assessments"
+          value={stats.assessments}
+          icon={Brain}
+          color="blue"
+          loading={loading}
+        />
+      </div>
+
+      {/* Actions Bar */}
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="flex justify-end">
+          <button
+            onClick={() => exportToCSV(filteredProjects, 'projects')}
+            className="px-4 py-2 border border-chestnut text-chestnut rounded-lg hover:bg-chestnut/10 transition-colors"
+          >
+            Export Projects
+          </button>
+        </div>
+      </div>
+
+      {/* Projects Table */}
+      <AdminTable
+        columns={tableColumns}
+        data={filteredProjects}
+        loading={loading}
+        searchTerm={searchTerm}
+        onSearch={setSearchTerm}
+        searchPlaceholder="Search projects by name, organization, or user ID..."
+        emptyStateTitle="No projects found"
+        emptyStateDescription="Users haven't created any projects yet"
+        emptyStateIcon={FolderOpen}
+        actions={tableActions}
+      />
+
+      {/* Project Detail Modal */}
+      <AdminModal
+        isOpen={showProjectModal}
+        onClose={() => setShowProjectModal(false)}
+        title={selectedProject ? selectedProject.name : 'Project Details'}
+        size="large"
+      >
+        {selectedProject && <ProjectDetailView project={selectedProject} />}
+      </AdminModal>
+    </div>
+  );
+};
+
+// Project Detail View Component
+const ProjectDetailView = ({ project }) => {
+  const assessmentCount = Object.values(project.assessments || {}).reduce((sum, list) => sum + list.length, 0);
+  const actionItemCount = project.actionItems?.length || 0;
+  const guideStats = getProjectGuideStats(project.guides || {});
+
+  return (
+    <div className="space-y-6">
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <h4 className="font-semibold text-charcoal">Project Information</h4>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Organization:</span>
+              <span className="font-medium">{project.organization?.name || 'Not specified'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Type:</span>
+              <span className="font-medium capitalize">{project.type || 'general'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Status:</span>
+              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                project.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+              }`}>
+                {project.status}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Stage:</span>
+              <span className="font-medium capitalize">{project.stage || 'exploring'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Timeline:</span>
+              <span className="font-medium">{project.timeline?.replace('_', ' ') || 'Not set'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Budget:</span>
+              <span className="font-medium">{project.budget?.replace('_', '-') || 'Not set'}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h4 className="font-semibold text-charcoal">Progress Metrics</h4>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Assessments Completed:</span>
+              <span className="font-medium">{assessmentCount}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Action Items:</span>
+              <span className="font-medium">{actionItemCount}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Guides Progress:</span>
+              <span className="font-medium">{guideStats.overallProgress}%</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Guides Completed:</span>
+              <span className="font-medium">{guideStats.completed}/{guideStats.total}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Created:</span>
+              <span className="font-medium">{formatDate(project.created)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Last Updated:</span>
+              <span className="font-medium">{formatDate(project.lastUpdated)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {project.objective && (
+        <div className="border-t pt-6">
+          <h4 className="font-semibold text-charcoal mb-2">Project Objective</h4>
+          <p className="text-gray-600">{project.objective}</p>
+        </div>
+      )}
+
+      {project.description && (
+        <div className="border-t pt-6">
+          <h4 className="font-semibold text-charcoal mb-2">Description</h4>
+          <p className="text-gray-600">{project.description}</p>
+        </div>
+      )}
+
+      {/* Guide Progress */}
+      {project.guides && Object.keys(project.guides).length > 0 && (
+        <div className="border-t pt-6">
+          <h4 className="font-semibold text-charcoal mb-4">Guide Progress</h4>
+          <div className="space-y-2">
+            {Object.entries(project.guides).map(([guideId, guide]) => (
+              <div key={guideId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex-1">
+                  <div className="font-medium text-sm">{guide.title || guideId}</div>
+                  <div className="flex items-center mt-1">
+                    <div className="flex-1 bg-gray-200 rounded-full h-2 mr-3">
+                      <div
+                        className="bg-chestnut h-2 rounded-full"
+                        style={{ width: `${guide.progress || 0}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-gray-600">{guide.progress || 0}%</span>
+                  </div>
+                </div>
+                <span className={`ml-3 px-2 py-1 rounded text-xs font-medium ${
+                  guide.status === 'completed' ? 'bg-green-100 text-green-800' :
+                  guide.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                  'bg-gray-100 text-gray-600'
+                }`}>
+                  {guide.status?.replace('_', ' ') || 'not started'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Helper function for project guide stats
+const getProjectGuideStats = (guides) => {
+  const stats = {
+    total: 0,
+    completed: 0,
+    inProgress: 0,
+    notStarted: 0,
+    overallProgress: 0
+  };
+  
+  if (!guides) return stats;
+  
+  Object.values(guides).forEach(guide => {
+    stats.total++;
+    
+    switch (guide.status) {
+      case 'completed':
+        stats.completed++;
+        break;
+      case 'in_progress':
+        stats.inProgress++;
+        break;
+      default:
+        stats.notStarted++;
+    }
+  });
+  
+  if (stats.total > 0) {
+    const totalProgress = Object.values(guides).reduce((sum, guide) => sum + (guide.progress || 0), 0);
+    stats.overallProgress = Math.round(totalProgress / stats.total);
+  }
+  
+  return stats;
 };
 
 export default ContentManager;

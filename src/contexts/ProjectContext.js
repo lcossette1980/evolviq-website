@@ -14,6 +14,7 @@ import {
   updateDoc 
 } from 'firebase/firestore';
 import logger from '../utils/logger';
+import { initializeProjectGuides, getProjectGuides } from '../utils/projectGuideUtils';
 
 const ProjectContext = createContext();
 
@@ -47,6 +48,7 @@ export const ProjectProvider = ({ children }) => {
     
     setLoading(true);
     try {
+      // Load from both old structure (for backward compatibility) and new structure
       const projectsRef = collection(db, 'projects');
       const q = query(
         projectsRef, 
@@ -55,10 +57,25 @@ export const ProjectProvider = ({ children }) => {
       );
       
       const snapshot = await getDocs(q);
-      const projectsList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const projectsList = [];
+      
+      for (const doc of snapshot.docs) {
+        const projectData = {
+          id: doc.id,
+          ...doc.data()
+        };
+        
+        // Load guides from new nested structure
+        try {
+          const guides = await getProjectGuides(user.uid, doc.id);
+          projectData.guides = guides;
+        } catch (error) {
+          console.warn(`Could not load guides for project ${doc.id}:`, error);
+          projectData.guides = {};
+        }
+        
+        projectsList.push(projectData);
+      }
       
       setProjects(projectsList);
       
@@ -105,8 +122,17 @@ export const ProjectProvider = ({ children }) => {
       
       await setDoc(doc(db, 'projects', projectId), newProject);
       
+      // Initialize guides in the new nested structure
+      const guides = await initializeProjectGuides(user.uid, projectId);
+      
       // Add to local state
-      const projectWithId = { ...newProject, id: projectId, created: new Date(), lastUpdated: new Date() };
+      const projectWithId = { 
+        ...newProject, 
+        id: projectId, 
+        guides,
+        created: new Date(), 
+        lastUpdated: new Date() 
+      };
       setProjects([projectWithId, ...projects]);
       setCurrentProject(projectWithId);
       

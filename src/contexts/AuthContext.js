@@ -149,13 +149,30 @@ export const AuthProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (email, password, name) => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       setIsLoginModalOpen(false);
     } catch (error) {
       console.error('Login error:', error);
-      throw error;
+      
+      // Auto-create account if user doesn't exist
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+        console.log('User not found, creating new account...');
+        try {
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          if (name) {
+            await updateProfile(userCredential.user, { displayName: name });
+          }
+          setIsLoginModalOpen(false);
+          console.log('Account created successfully');
+        } catch (signupError) {
+          console.error('Auto-signup error:', signupError);
+          throw signupError;
+        }
+      } else {
+        throw error;
+      }
     }
   };
 

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, User, ChevronDown, Crown, Settings, LogOut, Shield } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { checkAdminAccess } from '../../utils/adminHelpers';
+import { verifyAdminAccess } from '../../utils/secureAdminHelpers';
 import Logo from '../common/Logo';
 
 const Navigation = () => {
@@ -10,8 +10,20 @@ const Navigation = () => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { user, setIsLoginModalOpen, logout } = useAuth();
-  const isAdmin = checkAdminAccess(user);
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (user && !user.isAnonymous) {
+        const adminData = await verifyAdminAccess(user);
+        setIsAdmin(!!adminData);
+      } else {
+        setIsAdmin(false);
+      }
+    };
+    checkAdmin();
+  }, [user]);
 
   const navItems = [
     { id: 'home', label: 'Home', path: '/' },

@@ -20,7 +20,7 @@ import {
   exportToCSV,
   validateEmail,
   formatDate
-} from '../../utils/adminHelpers';
+} from '../../utils/secureAdminHelpers';
 
 const BlogSubscriberManager = () => {
   const [subscribers, setSubscribers] = useState([]);

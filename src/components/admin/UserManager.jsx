@@ -12,7 +12,7 @@ import { db } from '../../services/firebase';
 import AdminTable from './AdminTable';
 import AdminModal from './AdminModal';
 import StatsCard from './StatsCard';
-import { formatDate, exportToCSV } from '../../utils/adminHelpers';
+import { formatDate, exportToCSV } from '../../utils/secureAdminHelpers';
 
 /**
  * Users Management Module

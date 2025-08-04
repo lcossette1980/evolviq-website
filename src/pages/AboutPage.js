@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Target, Zap, Users, Shield, User, Linkedin, Mail, CheckCircle, X, ArrowRight, Layers, Rocket, BarChart3, TrendingUp } from 'lucide-react';
+import { Target, Zap, Users, Shield, User, Linkedin, Mail, CheckCircle, X, ArrowRight, Layers, Rocket, BarChart3, TrendingUp, Github } from 'lucide-react';
 import InteractiveResume from '../components/about/InteractiveResume';
+import ImageWithFallback from '../components/shared/ImageWithFallback';
 
 const AboutPage = () => {
   const [selectedTab, setSelectedTab] = useState('mission');
@@ -16,25 +17,14 @@ const AboutPage = () => {
               To make AI transformation accessible and practical for small businesses, nonprofits, and service organizations. 
               We believe every organization—regardless of size—deserves the competitive advantages that thoughtful AI implementation can provide.
             </p>
-            <div className="relative">
-              <div className="rounded-lg h-48 overflow-hidden">
-                <img 
-                  src="/images/about/mission-image.jpg" 
-                  alt="Our Mission"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'flex';
-                  }}
-                />
-                <div className="bg-pearl/30 rounded-lg h-48 flex items-center justify-center" style={{display: 'none'}}>
-                  <div className="text-center">
-                    <Target className="w-12 h-12 text-chestnut mx-auto mb-2" />
-                    <div className="text-charcoal/60 text-sm">mission-image.jpg</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <ImageWithFallback
+              src="/images/about/mission-image.jpg"
+              alt="Our Mission - Making AI accessible for small businesses"
+              fallbackIcon={Target}
+              fallbackText="Mission Image"
+              className="w-full h-48 object-cover rounded-lg"
+              containerClassName="rounded-lg overflow-hidden h-48"
+            />
           </div>
           <div className="bg-white p-8 rounded-xl">
             <h3 className="font-serif font-bold text-2xl text-charcoal mb-4">Our Vision</h3>
@@ -42,25 +32,14 @@ const AboutPage = () => {
               A world where small and medium-sized organizations thrive alongside and compete with larger competitors by leveraging AI that 
               enhances their unique strengths—personal service, agility, and deep community connections.
             </p>
-            <div className="relative">
-              <div className="rounded-lg h-48 overflow-hidden">
-                <img 
-                  src="/images/about/vision-image.jpg" 
-                  alt="Our Vision"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'flex';
-                  }}
-                />
-                <div className="bg-pearl/30 rounded-lg h-48 flex items-center justify-center" style={{display: 'none'}}>
-                  <div className="text-center">
-                    <Zap className="w-12 h-12 text-chestnut mx-auto mb-2" />
-                    <div className="text-charcoal/60 text-sm">vision-image.jpg</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <ImageWithFallback
+              src="/images/about/vision-image.jpg"
+              alt="Our Vision - Empowering organizations with AI"
+              fallbackIcon={Zap}
+              fallbackText="Vision Image"
+              className="w-full h-48 object-cover rounded-lg"
+              containerClassName="rounded-lg overflow-hidden h-48"
+            />
           </div>
         </div>
       )
@@ -90,13 +69,14 @@ const AboutPage = () => {
                   </div>
                 </div>
               </div>
-              <div className="bg-white rounded-lg h-64 overflow-hidden">
-                <img 
-                  src="/images/about/approach/ai-success-statistics-infographic.jpg" 
-                  alt="AI Success Statistics - 85% of projects fail vs our 95% success rate"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              <ImageWithFallback
+                src="/images/about/approach/ai-success-statistics-infographic.jpg"
+                alt="AI Success Statistics - 85% of projects fail vs our 95% success rate"
+                fallbackIcon={BarChart3}
+                fallbackText="Success Statistics"
+                className="w-full h-full object-cover"
+                containerClassName="bg-white rounded-lg h-64 overflow-hidden"
+              />
             </div>
           </div>
 
@@ -137,14 +117,15 @@ const AboutPage = () => {
               </div>
             </div>
 
-            {/* Image placeholder for process */}
-            <div className="bg-gray-100 rounded-lg h-32 overflow-hidden">
-              <img 
-                src="/images/about/approach/ai-transformation-process-diagram.jpg" 
-                alt="AI Transformation Process - Step-by-step methodology"
-                className="w-full h-full object-cover"
-              />
-            </div>
+            {/* Process diagram */}
+            <ImageWithFallback
+              src="/images/about/approach/ai-transformation-process-diagram.jpg"
+              alt="AI Transformation Process - Step-by-step methodology"
+              fallbackIcon={Layers}
+              fallbackText="Process Diagram"
+              className="w-full h-full object-cover"
+              containerClassName="rounded-lg h-48 overflow-hidden"
+            />
           </div>
 
           {/* Three Pillars - Enhanced */}
@@ -169,13 +150,13 @@ const AboutPage = () => {
                 </div>
                 <h4 className="font-bold text-lg text-charcoal mb-2">Strategy</h4>
                 <p className="text-sm text-charcoal/80 mb-4">Clear roadmap with measurable outcomes</p>
-                <div className="bg-gray-100 rounded h-24 overflow-hidden">
-                  <img 
-                    src="/images/about/approach/strategy-session-visual.jpg" 
-                    alt="Diverse team strategy session"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                <ImageWithFallback
+                  src="/images/about/approach/strategy-session-visual.jpg"
+                  alt="Diverse team strategy session"
+                  fallbackIcon={Target}
+                  className="w-full h-full object-cover"
+                  containerClassName="rounded h-24 overflow-hidden"
+                />
               </div>
               <div className="bg-white p-6 rounded-lg shadow-sm">
                 <div className="w-12 h-12 bg-chestnut/20 rounded-full flex items-center justify-center mb-4">
@@ -183,13 +164,13 @@ const AboutPage = () => {
                 </div>
                 <h4 className="font-bold text-lg text-charcoal mb-2">Culture</h4>
                 <p className="text-sm text-charcoal/80 mb-4">Team alignment and change readiness</p>
-                <div className="bg-gray-100 rounded h-24 overflow-hidden">
-                  <img 
-                    src="/images/about/approach/culture-transformation-visual.jpg" 
-                    alt="Culture transformation visual"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                <ImageWithFallback
+                  src="/images/about/approach/culture-transformation-visual.jpg"
+                  alt="Culture transformation visual"
+                  fallbackIcon={Users}
+                  className="w-full h-full object-cover"
+                  containerClassName="rounded h-24 overflow-hidden"
+                />
               </div>
               <div className="bg-white p-6 rounded-lg shadow-sm">
                 <div className="w-12 h-12 bg-chestnut/20 rounded-full flex items-center justify-center mb-4">
@@ -197,13 +178,13 @@ const AboutPage = () => {
                 </div>
                 <h4 className="font-bold text-lg text-charcoal mb-2">Technology</h4>
                 <p className="text-sm text-charcoal/80 mb-4">AI tools that actually integrate</p>
-                <div className="bg-gray-100 rounded h-24 overflow-hidden">
-                  <img 
-                    src="/images/about/approach/technology-implementation-visual.jpg" 
-                    alt="Technology implementation visual"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                <ImageWithFallback
+                  src="/images/about/approach/technology-implementation-visual.jpg"
+                  alt="Technology implementation visual"
+                  fallbackIcon={Zap}
+                  className="w-full h-full object-cover"
+                  containerClassName="rounded h-24 overflow-hidden"
+                />
               </div>
             </div>
 
@@ -267,20 +248,22 @@ const AboutPage = () => {
               </div>
               
               <div className="space-y-4">
-                <div className="bg-white border rounded-lg h-48 overflow-hidden">
-                  <img 
-                    src="/images/about/approach/human-ai-collaboration.jpg" 
-                    alt="Human-AI Collaboration - Team empowerment"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="bg-gray-100 rounded-lg h-32 overflow-hidden">
-                  <img 
-                    src="/images/about/approach/productivity-gains-chart.jpg" 
-                    alt="Productivity gains chart"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                <ImageWithFallback
+                  src="/images/about/approach/human-ai-collaboration.jpg"
+                  alt="Human-AI Collaboration - Team empowerment"
+                  fallbackIcon={Users}
+                  fallbackText="Human-AI Collaboration"
+                  className="w-full h-full object-cover"
+                  containerClassName="bg-white border rounded-lg h-48 overflow-hidden"
+                />
+                <ImageWithFallback
+                  src="/images/about/approach/productivity-gains-chart.jpg"
+                  alt="Productivity gains chart"
+                  fallbackIcon={TrendingUp}
+                  fallbackText="Productivity Gains"
+                  className="w-full h-full object-cover"
+                  containerClassName="bg-gray-100 rounded-lg h-32 overflow-hidden"
+                />
               </div>
             </div>
           </div>
@@ -326,13 +309,14 @@ const AboutPage = () => {
                   We're not here to sell you promises. We're here to deliver results you can bank on.
                 </p>
               </div>
-              <div className="bg-gray-100 rounded-lg h-40 overflow-hidden">
-                <img 
-                  src="/images/about/business-transformation-meeting.jpg" 
-                  alt="Business transformation meeting - team presenting growth metrics and results"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              <ImageWithFallback
+                src="/images/about/business-transformation-meeting.jpg"
+                alt="Business transformation meeting - team presenting growth metrics and results"
+                fallbackIcon={BarChart3}
+                fallbackText="Transformation Results"
+                className="w-full h-full object-cover"
+                containerClassName="bg-gray-100 rounded-lg h-40 overflow-hidden"
+              />
             </div>
           </div>
         </div>
@@ -346,23 +330,14 @@ const AboutPage = () => {
           <div className="bg-white p-12 rounded-2xl">
             <div className="grid lg:grid-cols-2 gap-8 items-center">
               <div className="relative">
-                <div className="rounded-2xl h-96 overflow-hidden">
-                  <img 
-                    src="/images/about/loren-cossette-photo.jpg" 
-                    alt="Loren Cossette, Founder & Principal Consultant"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'flex';
-                    }}
-                  />
-                  <div className="bg-pearl/30 rounded-2xl h-96 flex items-center justify-center" style={{display: 'none'}}>
-                    <div className="text-center">
-                      <User className="w-20 h-20 text-chestnut mx-auto mb-4" />
-                      <div className="text-charcoal/60 text-sm">loren-cossette-photo.jpg</div>
-                    </div>
-                  </div>
-                </div>
+                <ImageWithFallback
+                  src="/images/about/loren-cossette-photo.jpg"
+                  alt="Loren Cossette, Founder & Principal Consultant"
+                  fallbackIcon={User}
+                  fallbackText="Loren Cossette"
+                  className="w-full h-full object-cover object-top"
+                  containerClassName="rounded-2xl h-96 overflow-hidden bg-gray-100"
+                />
               </div>
               <div>
                 <h3 className="font-serif font-bold text-2xl text-charcoal mb-4">Loren Cossette</h3>
@@ -399,7 +374,7 @@ const AboutPage = () => {
                     rel="noopener noreferrer"
                     className="text-chestnut hover:text-chestnut/80 transition-colors"
                   >
-                    <Mail className="w-6 h-6" />
+                    <Github className="w-6 h-6" />
                   </a>
                 </div>
               </div>
@@ -415,15 +390,16 @@ const AboutPage = () => {
       title: "Our Values",
       content: (
         <div className="space-y-12">
-          {/* Hero Image Placeholder */}
+          {/* Hero Image */}
           <div className="relative bg-gradient-to-r from-khaki/20 to-pearl/30 rounded-xl overflow-hidden">
-            <div className="aspect-video bg-gray-200 overflow-hidden">
-              <img 
-                src="/images/about/values/team-collaboration-diversity.jpg" 
-                alt="Values in Action - Team collaboration & diversity"
-                className="w-full h-full object-cover"
-              />
-            </div>
+            <ImageWithFallback
+              src="/images/about/values/team-collaboration-diversity.jpg"
+              alt="Values in Action - Team collaboration & diversity"
+              fallbackIcon={Users}
+              fallbackText="Team Collaboration"
+              className="w-full h-full object-cover"
+              containerClassName="aspect-video overflow-hidden"
+            />
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
@@ -440,14 +416,13 @@ const AboutPage = () => {
                   </p>
                 </div>
               </div>
-              {/* Image placeholder for this value */}
-              <div className="bg-gray-100 rounded-lg h-32 overflow-hidden">
-                <img 
-                  src="/images/about/values/inclusive-workspace.jpg" 
-                  alt="Inclusive workspace environment"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              <ImageWithFallback
+                src="/images/about/values/inclusive-workspace.jpg"
+                alt="Inclusive workspace environment"
+                fallbackIcon={Users}
+                className="w-full h-full object-cover"
+                containerClassName="rounded-lg h-32 overflow-hidden"
+              />
             </div>
 
             <div className="bg-white p-8 rounded-xl shadow-sm">
@@ -463,14 +438,13 @@ const AboutPage = () => {
                   </p>
                 </div>
               </div>
-              {/* Image placeholder for this value */}
-              <div className="bg-gray-100 rounded-lg h-32 overflow-hidden">
-                <img 
-                  src="/images/about/values/trust-transparency.jpg" 
-                  alt="Trust and transparency in action"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              <ImageWithFallback
+                src="/images/about/values/trust-transparency.jpg"
+                alt="Trust and transparency in action"
+                fallbackIcon={Shield}
+                className="w-full h-full object-cover"
+                containerClassName="rounded-lg h-32 overflow-hidden"
+              />
             </div>
 
             <div className="bg-white p-8 rounded-xl shadow-sm">
@@ -486,14 +460,13 @@ const AboutPage = () => {
                   </p>
                 </div>
               </div>
-              {/* Image placeholder for this value */}
-              <div className="bg-gray-100 rounded-lg h-32 overflow-hidden">
-                <img 
-                  src="/images/about/values/results-metrics.jpg" 
-                  alt="Results and metrics tracking"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              <ImageWithFallback
+                src="/images/about/values/results-metrics.jpg"
+                alt="Results and metrics tracking"
+                fallbackIcon={Target}
+                className="w-full h-full object-cover"
+                containerClassName="rounded-lg h-32 overflow-hidden"
+              />
             </div>
 
             <div className="bg-white p-8 rounded-xl shadow-sm">
@@ -509,14 +482,13 @@ const AboutPage = () => {
                   </p>
                 </div>
               </div>
-              {/* Image placeholder for this value */}
-              <div className="bg-gray-100 rounded-lg h-32 overflow-hidden">
-                <img 
-                  src="/images/about/values/growth-learning.jpg" 
-                  alt="Growth and learning culture"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              <ImageWithFallback
+                src="/images/about/values/growth-learning.jpg"
+                alt="Growth and learning culture"
+                fallbackIcon={Zap}
+                className="w-full h-full object-cover"
+                containerClassName="rounded-lg h-32 overflow-hidden"
+              />
             </div>
           </div>
 
@@ -542,13 +514,14 @@ const AboutPage = () => {
                   </div>
                 </div>
               </div>
-              <div className="bg-white rounded-lg h-64 overflow-hidden">
-                <img 
-                  src="/images/about/impact-story-transformation.jpg" 
-                  alt="Impact Story - Client success transformation results"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              <ImageWithFallback
+                src="/images/about/impact-story-transformation.jpg"
+                alt="Impact Story - Client success transformation results"
+                fallbackIcon={TrendingUp}
+                fallbackText="Impact Story"
+                className="w-full h-full object-cover"
+                containerClassName="bg-white rounded-lg h-64 overflow-hidden"
+              />
             </div>
           </div>
         </div>

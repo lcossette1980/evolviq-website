@@ -1,22 +1,36 @@
 import React from 'react';
-import { BarChart3, Target, BookOpen, CheckCircle, Wrench } from 'lucide-react';
+import { BarChart3, Target, BookOpen, CheckCircle, Wrench, Lock } from 'lucide-react';
 import { useDashboardStore } from '../../store/dashboardStore';
 import { colors } from '../../utils/colors';
+import { useUserTier } from '../../hooks/useUserTier';
+import { useAuth } from '../../contexts/AuthContext';
 
 /**
  * Dashboard Navigation Tabs Component
  * Provides tabbed navigation for different dashboard sections
+ * Respects tier-based access restrictions
  */
 const DashboardTabs = () => {
   const { activeTab, setActiveTab } = useDashboardStore();
+  const { setIsLoginModalOpen } = useAuth();
+  const { tierConfig, canAccess, isFreeTier } = useUserTier();
 
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: BarChart3 },
-    { id: 'journey', label: 'AI Journey', icon: Target },
-    { id: 'projects', label: 'Projects & Guides', icon: BookOpen },
-    { id: 'tools', label: 'Interactive Tools', icon: Wrench },
-    { id: 'actions', label: 'Action Items', icon: CheckCircle }
+  const allTabs = [
+    { id: 'overview', label: 'Overview', icon: BarChart3, alwaysShow: true },
+    { id: 'assessments', label: 'Assessments', icon: Target, alwaysShow: true },
+    { id: 'tools', label: 'Interactive Tools', icon: Wrench, alwaysShow: true },
+    { id: 'learning', label: 'Learning Plan', icon: BookOpen, alwaysShow: true },
+    { id: 'projects', label: 'Projects', icon: BookOpen, requiresAccess: 'projects' },
+    { id: 'actions', label: 'Action Items', icon: CheckCircle, requiresPremium: true }
   ];
+
+  // Filter tabs based on user's tier
+  const tabs = allTabs.filter(tab => {
+    if (tab.alwaysShow) return true;
+    if (tab.requiresAccess && !canAccess(tab.requiresAccess)) return false;
+    if (tab.requiresPremium && isFreeTier) return false;
+    return true;
+  });
 
   return (
     <div className="mb-8">
@@ -40,6 +54,32 @@ const DashboardTabs = () => {
               </button>
             );
           })}
+          
+          {/* Show locked tabs for free users */}
+          {isFreeTier && (
+            <>
+              {!canAccess('projects') && (
+                <button
+                  onClick={() => setIsLoginModalOpen(true)}
+                  className="flex items-center py-2 px-1 border-b-2 border-transparent text-gray-400 font-medium text-sm cursor-pointer hover:text-gray-600"
+                  title="Upgrade to access Projects"
+                >
+                  <Lock className="w-4 h-4 mr-2" />
+                  Projects & Guides
+                  <span className="ml-2 text-xs bg-chestnut text-white px-2 py-0.5 rounded-full">PRO</span>
+                </button>
+              )}
+              <button
+                onClick={() => setIsLoginModalOpen(true)}
+                className="flex items-center py-2 px-1 border-b-2 border-transparent text-gray-400 font-medium text-sm cursor-pointer hover:text-gray-600"
+                title="Upgrade to access Action Items"
+              >
+                <Lock className="w-4 h-4 mr-2" />
+                Action Items
+                <span className="ml-2 text-xs bg-chestnut text-white px-2 py-0.5 rounded-full">PRO</span>
+              </button>
+            </>
+          )}
         </nav>
       </div>
     </div>
