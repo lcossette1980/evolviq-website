@@ -22,14 +22,25 @@ const AssessmentsTab = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { tier, canAccess, upgradeMessage } = useUserTier();
-  const { userAssessments, loadUserAssessments } = useDashboardStore();
+  const { userAssessments } = useDashboardStore();
   const [assessmentStatus, setAssessmentStatus] = useState({});
 
   useEffect(() => {
-    if (user) {
-      loadUserAssessments(user.uid);
+    if (user && userAssessments) {
+      // Process user assessments to get completion status
+      const status = {};
+      userAssessments.forEach(assessment => {
+        if (assessment.isComplete) {
+          status[assessment.type] = {
+            completed: true,
+            score: assessment.results?.overallScore || 0,
+            date: assessment.lastUpdated
+          };
+        }
+      });
+      setAssessmentStatus(status);
     }
-  }, [user, loadUserAssessments]);
+  }, [user, userAssessments]);
 
   const assessments = [
     {

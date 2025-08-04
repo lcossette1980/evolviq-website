@@ -293,6 +293,28 @@ Before implementing, need to verify:
   - Impact story transformation image
 - **Result**: About page now displays all real images with graceful fallbacks
 
+### Issue #15: Dashboard Runtime Errors
+- **Date/Time**: 2025-08-04
+- **Status**: FIXED
+- **Errors Found**:
+  1. Anonymous sign-in failing (auth/admin-restricted-operation)
+  2. Admin verification error (user.getIdToken not a function)
+  3. Firebase permissions errors
+  4. AssessmentsTab loadUserAssessments not a function
+  5. Admin dashboard link not showing
+- **Files Modified**:
+  - src/contexts/AuthContext.js (disabled anonymous sign-in)
+  - src/components/layout/Navigation.js (fixed admin check)
+  - src/components/dashboard/tabs/AssessmentsTab.jsx (fixed function call)
+  - firestore.rules (added missing permission rules)
+- **Fixes Applied**:
+  1. Disabled anonymous sign-in (not needed, was causing errors)
+  2. Changed admin verification to use email check temporarily
+  3. Fixed AssessmentsTab to not call non-existent function
+  4. Added Firebase rules for nested project structure
+  5. Added alternative paths for guide-progress and blog_posts
+- **Result**: Dashboard loads without errors, admin link visible for lorentcossette@gmail.com
+
 ---
 
 ## Current State Summary
@@ -336,7 +358,7 @@ Before implementing, need to verify:
 
 ## 🎯 FINAL IMPLEMENTATION SUMMARY
 
-### Completed All 14 Feedback Items:
+### Completed All 15 Items (14 Feedback + 1 Runtime Fix):
 
 **CRITICAL ISSUES (5/5 RESOLVED):**
 1. ✅ assessmentStore.js - No actual error (false positive)

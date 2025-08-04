@@ -37,6 +37,21 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
+    // Alternative guide progress path
+    match /users/{userId}/guide-progress/{guideId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Nested project structure
+    match /users/{userId}/projects/{projectId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Nested project guides
+    match /users/{userId}/projects/{projectId}/guides/{guideId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
     // User sessions for tools (temporary data)
     match /tool-sessions/{sessionId} {
       allow read, write: if request.auth != null 
@@ -63,6 +78,13 @@ service cloud.firestore {
     
     // Public content (readonly for users, admin write access)
     match /blog-posts/{postId} {
+      allow read: if true;
+      allow write: if request.auth != null 
+        && request.auth.token.email in ['lorentcossette@gmail.com'];
+    }
+    
+    // Alternative blog posts path (underscore)
+    match /blog_posts/{postId} {
       allow read: if true;
       allow write: if request.auth != null 
         && request.auth.token.email in ['lorentcossette@gmail.com'];

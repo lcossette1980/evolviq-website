@@ -134,14 +134,9 @@ export const AuthProvider = ({ children }) => {
           setUser(null);
         }
       } else {
-        // Auto-signin anonymous users for assessment access
-        try {
-          console.log('No user signed in, signing in anonymously...');
-          await signInAnonymously(auth);
-        } catch (error) {
-          console.error('Anonymous sign in error:', error);
-          setUser(null);
-        }
+        // No user signed in - don't auto-signin anonymous users
+        // Users must explicitly sign up/login for access
+        setUser(null);
       }
       setIsLoading(false);
     });

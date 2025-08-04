@@ -16,8 +16,10 @@ const Navigation = () => {
   useEffect(() => {
     const checkAdmin = async () => {
       if (user && !user.isAnonymous) {
-        const adminData = await verifyAdminAccess(user);
-        setIsAdmin(!!adminData);
+        // For now, check admin status based on email
+        // TODO: Implement proper server-side admin verification
+        const adminEmails = ['lorentcossette@gmail.com'];
+        setIsAdmin(adminEmails.includes(user.email));
       } else {
         setIsAdmin(false);
       }
