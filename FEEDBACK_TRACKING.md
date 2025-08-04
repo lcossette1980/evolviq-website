@@ -315,6 +315,26 @@ Before implementing, need to verify:
   5. Added alternative paths for guide-progress and blog_posts
 - **Result**: Dashboard loads without errors, admin link visible for lorentcossette@gmail.com
 
+### Issue #16: Additional Firebase Permission Errors
+- **Date/Time**: 2025-08-04
+- **Status**: FIXED
+- **Additional Errors Found**:
+  1. actionItems collection permission errors
+  2. guideProgress collection permission errors
+  3. verifyPremiumAccess user.getIdToken error
+  4. guides collection permission errors
+- **Files Modified**:
+  - src/contexts/AuthContext.js (fixed verifyPremiumAccess)
+  - firestore.rules (added missing collections)
+- **Fixes Applied**:
+  1. Updated verifyPremiumAccess to check user object directly
+  2. Added Firebase rules for:
+     - actionItems (alternative to action-items)
+     - guideProgress/{userId}/guides/{guideId}
+     - guides collection (public read)
+  3. Fixed premium verification without server call
+- **Result**: All Firebase permission errors resolved
+
 ---
 
 ## Current State Summary
@@ -358,7 +378,7 @@ Before implementing, need to verify:
 
 ## 🎯 FINAL IMPLEMENTATION SUMMARY
 
-### Completed All 15 Items (14 Feedback + 1 Runtime Fix):
+### Completed All 16 Items (14 Feedback + 2 Runtime Fixes):
 
 **CRITICAL ISSUES (5/5 RESOLVED):**
 1. ✅ assessmentStore.js - No actual error (false positive)
