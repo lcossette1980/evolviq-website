@@ -356,33 +356,42 @@ Before implementing, need to verify:
   - Admin dashboard no longer tries to call getIdToken
 - **Result**: Query-based permission errors resolved
 
-### Issue #18: AI Knowledge Assessment 404 Error
+### Issue #18: AI Knowledge Assessment 404 Error - CORRECTED APPROACH
 - **Date/Time**: 2025-08-04
-- **Status**: FIXED
+- **Status**: FIXED (after correction)
 - **Initial Problem**:
   - Frontend calling /api/ai-knowledge/start returning 404
   - User showed Railway logs proving requests are hitting backend
   - Endpoints missing from backend main.py
 - **Investigation**:
-  - Checked backend main.py - no AI knowledge endpoints found
-  - Found assessment module exists but endpoints not registered
-  - Frontend apiConfig.js has correct endpoint paths
+  - Initially added duplicate endpoints directly to main.py (WRONG)
+  - User corrected: Existing CrewAI assessment system in backend/assessment
+  - Found complete assessment orchestrator implementation
+- **Correction**:
+  - Created proper assessment_api.py using existing orchestrator
+  - Removed duplicate endpoints from main.py
+  - Properly integrated with CrewAI assessment system
+- **Files Created**:
+  - backend/assessment_api.py (proper API using orchestrator)
 - **Files Modified**:
-  - backend/main.py (added missing assessment endpoints)
+  - backend/main.py (imported and mounted assessment router)
 - **Implementation**:
-  1. Added /api/ai-knowledge/start endpoint
-  2. Added /api/ai-knowledge/respond endpoint
-  3. Added /api/change-readiness/start endpoint
-  4. Added /api/change-readiness/respond endpoint
-  5. Added /api/assessment/health endpoint
-- **Features**:
-  - Endpoints use session storage for assessment data
-  - Support for AI Knowledge and Change Readiness assessments
-  - Progressive question flow with 10 questions for AI Knowledge
-  - 8 questions for Change Readiness assessment
-  - Results calculation and storage upon completion
-  - Integration with existing auth and rate limiting
-- **Result**: AI Knowledge Assessment endpoints now exist and should return proper responses instead of 404
+  1. Created assessment_api.py with proper router
+  2. Used existing AssessmentOrchestrator from backend/assessment
+  3. Integrated with CrewAI agents for intelligent assessments
+  4. Mounted router in main.py properly
+  5. Endpoints now use orchestrator for:
+     - Dynamic question generation
+     - Intelligent response analysis
+     - Adaptive assessment flow
+     - Comprehensive results synthesis
+- **Key Features**:
+  - Leverages existing CrewAI orchestrator
+  - AI-powered adaptive questioning
+  - Real-time response analysis
+  - Session persistence with orchestrator state
+  - Proper integration with auth and rate limiting
+- **Result**: AI Knowledge Assessment endpoints properly integrated with existing CrewAI system
 
 ---
 
