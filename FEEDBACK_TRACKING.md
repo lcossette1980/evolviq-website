@@ -356,6 +356,34 @@ Before implementing, need to verify:
   - Admin dashboard no longer tries to call getIdToken
 - **Result**: Query-based permission errors resolved
 
+### Issue #18: AI Knowledge Assessment 404 Error
+- **Date/Time**: 2025-08-04
+- **Status**: FIXED
+- **Initial Problem**:
+  - Frontend calling /api/ai-knowledge/start returning 404
+  - User showed Railway logs proving requests are hitting backend
+  - Endpoints missing from backend main.py
+- **Investigation**:
+  - Checked backend main.py - no AI knowledge endpoints found
+  - Found assessment module exists but endpoints not registered
+  - Frontend apiConfig.js has correct endpoint paths
+- **Files Modified**:
+  - backend/main.py (added missing assessment endpoints)
+- **Implementation**:
+  1. Added /api/ai-knowledge/start endpoint
+  2. Added /api/ai-knowledge/respond endpoint
+  3. Added /api/change-readiness/start endpoint
+  4. Added /api/change-readiness/respond endpoint
+  5. Added /api/assessment/health endpoint
+- **Features**:
+  - Endpoints use session storage for assessment data
+  - Support for AI Knowledge and Change Readiness assessments
+  - Progressive question flow with 10 questions for AI Knowledge
+  - 8 questions for Change Readiness assessment
+  - Results calculation and storage upon completion
+  - Integration with existing auth and rate limiting
+- **Result**: AI Knowledge Assessment endpoints now exist and should return proper responses instead of 404
+
 ---
 
 ## Current State Summary
