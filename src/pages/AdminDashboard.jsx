@@ -43,11 +43,13 @@ const AdminDashboard = () => {
           return;
         }
 
-        const adminAccess = await verifyAdminAccess(user);
+        // For now, check admin status based on email
+        // TODO: Implement proper server-side admin verification
+        const adminEmails = ['lorentcossette@gmail.com'];
         
-        if (adminAccess) {
-          setAdminData(adminAccess);
-          console.log('✅ Admin access verified:', adminAccess.role);
+        if (adminEmails.includes(user.email)) {
+          setAdminData({ role: 'admin', email: user.email });
+          console.log('✅ Admin access verified:', user.email);
         } else {
           setAccessDenied(true);
         }

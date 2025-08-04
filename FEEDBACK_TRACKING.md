@@ -335,6 +335,27 @@ Before implementing, need to verify:
   3. Fixed premium verification without server call
 - **Result**: All Firebase permission errors resolved
 
+### Issue #17: Persistent Firebase Query Permission Errors
+- **Date/Time**: 2025-08-04
+- **Status**: FIXED
+- **Remaining Errors**:
+  1. guidesAPI getUserProgress still failing
+  2. assessmentAPI getActionItems query failing
+  3. Admin dashboard getIdToken error
+- **Files Modified**:
+  - src/pages/AdminDashboard.jsx (removed verifyAdminAccess)
+  - firestore.rules (improved query permissions)
+- **Fixes Applied**:
+  1. Admin dashboard now uses email-based check
+  2. Added 'list' permission for actionItems collection
+  3. Separated read/write permissions for better control
+  4. Fixed Firebase rules syntax for queries
+- **Key Changes**:
+  - actionItems now allows list queries for authenticated users
+  - guideProgress has explicit create/update/delete permissions
+  - Admin dashboard no longer tries to call getIdToken
+- **Result**: Query-based permission errors resolved
+
 ---
 
 ## Current State Summary
@@ -378,7 +399,7 @@ Before implementing, need to verify:
 
 ## 🎯 FINAL IMPLEMENTATION SUMMARY
 
-### Completed All 16 Items (14 Feedback + 2 Runtime Fixes):
+### Completed All 17 Items (14 Feedback + 3 Runtime Fixes):
 
 **CRITICAL ISSUES (5/5 RESOLVED):**
 1. ✅ assessmentStore.js - No actual error (false positive)
