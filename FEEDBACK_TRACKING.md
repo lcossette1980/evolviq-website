@@ -402,6 +402,25 @@ Before implementing, need to verify:
   4. Also fixed langchain_openai import with fallbacks
 - **Result**: Assessment API can now load even if CrewAI structure changes or is unavailable
 
+### Issue #20: Missing assessment.tools.validation Module
+- **Date/Time**: 2025-08-05
+- **Status**: FIXED
+- **Error**: "No module named 'assessment.tools.validation'"
+- **Root Cause**: tools/__init__.py importing non-existent validation module
+- **Files Created**:
+  - backend/assessment/tools/validation.py (OutputValidationTool)
+- **Files Modified**:
+  - backend/assessment/agents/__init__.py (simplified imports)
+- **Implementation**:
+  1. Created OutputValidationTool class extending AssessmentTool
+  2. Added validation schemas for question, response, and assessment_result
+  3. Removed individual agent imports from __init__.py to use factory pattern
+- **Architecture Note**: 
+  - System uses Factory Pattern in base.py to create agents
+  - Individual agent files (concept_detection.py, etc.) are placeholder classes
+  - Should refactor to use consistent pattern (factory recommended)
+- **Result**: Assessment API loads without validation module error
+
 ---
 
 ## Current State Summary
