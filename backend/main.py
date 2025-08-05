@@ -106,14 +106,14 @@ except Exception as e:
     logger.error(f"❌ Failed to load Stripe integration: {e}")
     stripe_integration = None
 
-# Import Assessment API
-assessment_router = None
+# Import New Assessment API
+new_assessment_router = None
 try:
-    from assessment_api import assessment_router
-    logger.info("✅ Assessment API loaded successfully")
+    from new_assessment_api import assessment_router as new_assessment_router
+    logger.info("✅ New Assessment API loaded successfully")
 except Exception as e:
-    logger.error(f"❌ Failed to load Assessment API: {e}")
-    assessment_router = None
+    logger.error(f"❌ Failed to load New Assessment API: {e}")
+    new_assessment_router = None
 
 # Import WebSocket server
 websocket_app = None
@@ -192,10 +192,10 @@ if websocket_app:
     app.mount("/socket.io", websocket_app)
     logger.info("✅ WebSocket server mounted at /socket.io")
 
-# Mount Assessment router
-if assessment_router:
-    app.include_router(assessment_router)
-    logger.info("✅ Assessment router mounted")
+# Mount New Assessment router
+if new_assessment_router:
+    app.include_router(new_assessment_router)
+    logger.info("✅ New Assessment router mounted")
 
 # Startup Events
 @app.on_event("startup")

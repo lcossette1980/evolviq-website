@@ -423,6 +423,55 @@ Before implementing, need to verify:
 
 ---
 
+## Major Architecture Change: New Assessment System (2025-08-05)
+### Replacing CrewAI Assessment System with Standalone Assessments
+
+**Decision**: Remove the entire CrewAI-based assessment system and replace with new standalone Python assessment modules that generate visualizations and reports.
+
+**Changes Made**:
+1. **Archived Old System**:
+   - Moved `/backend/assessment/` to `/archived/old_assessment_system/`
+   - Moved `/backend/assessment_api.py` to archive
+   - Removed assessment router imports from main.py
+
+2. **New Assessment System**:
+   - Located in `/new_assessments/` folder
+   - Two assessments: AI Knowledge (personal) and Organizational AI Readiness
+   - Generate visualizations using matplotlib, seaborn, plotly
+   - Produce downloadable reports and dashboards
+
+3. **Frontend Integration Started**:
+   - Created `AIKnowledgeAssessment.jsx` component
+   - Created `assessmentService.js` for Firebase integration
+   - Using existing theme colors and typography
+
+4. **Firebase Schema Design**:
+   ```
+   users/
+     {userId}/
+       assessments/
+         {assessmentId}/
+           - type: 'ai-knowledge' | 'org-readiness'
+           - responses: {}
+           - results: {}
+           - createdAt: timestamp
+           - version: '2.0'
+       assessmentSummaries/
+         {assessmentType}/
+           - lastCompleted: ISO string
+           - score: number
+           - readinessLevel: string
+           - assessmentId: string
+   ```
+
+**Next Steps**:
+- Create backend API endpoints for new assessments
+- Integrate visualization generation
+- Build results display components
+- Create downloadable report functionality
+
+---
+
 ## Current State Summary
 - **Frontend**: React SPA with lazy loading, Firebase auth
 - **Backend**: FastAPI with ML frameworks, Stripe subscriptions
