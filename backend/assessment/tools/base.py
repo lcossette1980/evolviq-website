@@ -69,6 +69,19 @@ class AssessmentTool(BaseTool, ABC):
     - Proper logging
     """
     
+    # Abstract properties that subclasses must define
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """Tool name"""
+        pass
+    
+    @property
+    @abstractmethod
+    def description(self) -> str:
+        """Tool description"""
+        pass
+    
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.config = get_config()

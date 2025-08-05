@@ -18,8 +18,13 @@ class OutputValidationTool(AssessmentTool):
     Tool for validating assessment outputs against expected schemas
     """
     
-    name = "output_validation"
-    description = "Validates assessment outputs for consistency and completeness"
+    @property
+    def name(self) -> str:
+        return "output_validation"
+    
+    @property
+    def description(self) -> str:
+        return "Validates assessment outputs for consistency and completeness"
     
     def __init__(self):
         super().__init__()
@@ -38,16 +43,21 @@ class OutputValidationTool(AssessmentTool):
             }
         }
     
-    def _execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _process_query(self, query: str) -> Dict[str, Any]:
         """
         Validate output data against schema
         
         Args:
-            input_data: Must contain 'output_type' and 'data' keys
+            query: JSON string containing 'output_type' and 'data' keys
             
         Returns:
             Validation result with issues if any
         """
+        try:
+            input_data = json.loads(query)
+        except json.JSONDecodeError as e:
+            raise ToolValidationError(f"Invalid JSON input: {e}")
+        
         output_type = input_data.get("output_type")
         data = input_data.get("data")
         
@@ -83,23 +93,44 @@ class OutputValidationTool(AssessmentTool):
             "validated_fields": list(data.keys()) if isinstance(data, dict) else []
         }
     
-    def _validate_input(self, input_data: Dict[str, Any]) -> ValidationResult:
+    def _validate_input(self, query: str) -> ValidationResult:
         """Validate tool input"""
         issues = []
         
-        if not isinstance(input_data, dict):
+        if not query or not query.strip():
             issues.append(
                 ValidationIssue(
-                    field="input_data",
-                    message="Input must be a dictionary",
+                    field="query",
+                    message="Query cannot be empty",
                     severity=ValidationSeverity.ERROR
                 )
             )
-        elif "output_type" not in input_data:
+            return ValidationResult(is_valid=False, issues=issues)
+        
+        try:
+            input_data = json.loads(query)
+            
+            if not isinstance(input_data, dict):
+                issues.append(
+                    ValidationIssue(
+                        field="input_data",
+                        message="Input must be a JSON object",
+                        severity=ValidationSeverity.ERROR
+                    )
+                )
+            elif "output_type" not in input_data:
+                issues.append(
+                    ValidationIssue(
+                        field="output_type",
+                        message="output_type is required",
+                        severity=ValidationSeverity.ERROR
+                    )
+                )
+        except json.JSONDecodeError:
             issues.append(
                 ValidationIssue(
-                    field="output_type",
-                    message="output_type is required",
+                    field="query",
+                    message="Query must be valid JSON",
                     severity=ValidationSeverity.ERROR
                 )
             )
