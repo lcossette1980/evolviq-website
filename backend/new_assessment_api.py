@@ -133,15 +133,14 @@ async def calculate_ai_knowledge_results(
         # Process user responses properly
         # The frontend sends responses as {question_id: answer_choice}
         # We need to convert this to the format the assessment expects
+        
+        # Create lookup dict for O(1) access
+        question_lookup = {str(q['id']): idx for idx, q in enumerate(assessment.questions)}
+        
         for question_id, answer in submission.responses.items():
-            # Find the question by ID
-            question_index = None
-            for idx, q in enumerate(assessment.questions):
-                if str(q['id']) == str(question_id):
-                    question_index = idx
-                    break
-            
-            if question_index is not None:
+            # Find the question by ID using O(1) lookup
+            if str(question_id) in question_lookup:
+                question_index = question_lookup[str(question_id)]
                 # Get the question
                 question = assessment.questions[question_index]
                 
@@ -227,14 +226,31 @@ async def calculate_ai_knowledge_results(
         except:
             pass
         
+        # Process category scores properly
+        category_scores_dict = {}
+        category_scores_raw = scores.get("category_scores", {})
+        for cat, score_data in category_scores_raw.items():
+            if isinstance(score_data, dict):
+                # Handle dict with score/max_score structure
+                if 'score' in score_data and 'max_score' in score_data:
+                    percentage = (score_data['score'] / score_data['max_score']) * 100 if score_data['max_score'] > 0 else 0
+                    category_scores_dict[cat] = round(percentage)
+                elif 'percentage' in score_data:
+                    category_scores_dict[cat] = round(score_data['percentage'])
+                else:
+                    # Fallback - try to extract any numeric value
+                    category_scores_dict[cat] = 0
+            elif isinstance(score_data, (int, float)):
+                category_scores_dict[cat] = round(score_data)
+            else:
+                category_scores_dict[cat] = 0
+        
         # Prepare response
         response_data = {
             "overall_score": round(scores.get("overall_percentage", 0)),
             "readiness_level": readiness_level.get('title', 'Beginner'),
             "readiness_description": readiness_level.get('description', ''),
-            "category_scores": {
-                cat: round(score) for cat, score in scores.get("category_scores", {}).items()
-            },
+            "category_scores": category_scores_dict,
             "strengths": strengths,
             "growth_areas": growth_areas,
             "recommendations": recommendations,
@@ -350,15 +366,14 @@ async def calculate_org_readiness_results(
         # Process user responses properly
         # The frontend sends responses as {question_id: answer_choice}
         # We need to convert this to the format the assessment expects
+        
+        # Create lookup dict for O(1) access
+        question_lookup = {str(q['id']): idx for idx, q in enumerate(assessment.questions)}
+        
         for question_id, answer in submission.responses.items():
-            # Find the question by ID
-            question_index = None
-            for idx, q in enumerate(assessment.questions):
-                if str(q['id']) == str(question_id):
-                    question_index = idx
-                    break
-            
-            if question_index is not None:
+            # Find the question by ID using O(1) lookup
+            if str(question_id) in question_lookup:
+                question_index = question_lookup[str(question_id)]
                 # Get the question
                 question = assessment.questions[question_index]
                 
@@ -400,8 +415,21 @@ async def calculate_org_readiness_results(
         
         # Extract dimension scores
         dimension_scores = {}
-        for dim, score in scores.get("dimension_scores", {}).items():
-            dimension_scores[dim] = round(score)
+        dimension_scores_raw = scores.get("dimension_scores", {})
+        for dim, score_data in dimension_scores_raw.items():
+            if isinstance(score_data, dict):
+                # Handle dict with score/max_score structure
+                if 'score' in score_data and 'max_score' in score_data:
+                    percentage = (score_data['score'] / score_data['max_score']) * 100 if score_data['max_score'] > 0 else 0
+                    dimension_scores[dim] = round(percentage)
+                elif 'percentage' in score_data:
+                    dimension_scores[dim] = round(score_data['percentage'])
+                else:
+                    dimension_scores[dim] = 0
+            elif isinstance(score_data, (int, float)):
+                dimension_scores[dim] = round(score_data)
+            else:
+                dimension_scores[dim] = 0
         
         # Generate critical gaps and quick wins from scores
         critical_gaps = []
