@@ -17,6 +17,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { auth } from '../../services/firebase';
 import { generateShareableReport } from '../../services/assessmentService';
 import { theme } from '../../styles/theme';
+import API_CONFIG from '../../config/apiConfig';
 import LoadingSpinner from '../shared/LoadingSpinner';
 
 const AIKnowledgeResults = () => {
@@ -44,7 +45,7 @@ const AIKnowledgeResults = () => {
       }
       
       const token = await currentUser.getIdToken();
-      const response = await fetch('/api/assessments/ai-knowledge/report', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/assessments/ai-knowledge/report`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { auth } from '../../services/firebase';
 import { saveAssessmentResults } from '../../services/assessmentService';
 import { theme } from '../../styles/theme';
+import API_CONFIG from '../../config/apiConfig';
 import ProgressBar from '../shared/ProgressBar';
 import LoadingSpinner from '../shared/LoadingSpinner';
 
@@ -34,7 +35,7 @@ const AIKnowledgeAssessment = () => {
       }
       
       const token = await currentUser.getIdToken();
-      const response = await fetch('/api/assessments/ai-knowledge/questions', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/assessments/ai-knowledge/questions`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -84,7 +85,7 @@ const AIKnowledgeAssessment = () => {
       }
       
       const token = await currentUser.getIdToken();
-      const response = await fetch('/api/assessments/ai-knowledge/calculate', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/assessments/ai-knowledge/calculate`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

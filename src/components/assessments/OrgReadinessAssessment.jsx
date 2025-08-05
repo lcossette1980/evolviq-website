@@ -15,6 +15,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { auth } from '../../services/firebase';
 import { saveAssessmentResults } from '../../services/assessmentService';
 import { theme } from '../../styles/theme';
+import API_CONFIG from '../../config/apiConfig';
 import ProgressBar from '../shared/ProgressBar';
 import LoadingSpinner from '../shared/LoadingSpinner';
 
@@ -72,7 +73,7 @@ const OrgReadinessAssessment = () => {
       }
       
       const token = await currentUser.getIdToken();
-      const response = await fetch('/api/assessments/org-readiness/questions', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/assessments/org-readiness/questions`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -129,7 +130,7 @@ const OrgReadinessAssessment = () => {
       }
       
       const token = await currentUser.getIdToken();
-      const response = await fetch('/api/assessments/org-readiness/calculate', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/assessments/org-readiness/calculate`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

@@ -18,27 +18,22 @@ import base64
 from io import BytesIO
 import tempfile
 
-# Add new_assessments to Python path
-new_assessments_path = os.path.join(os.path.dirname(__file__), '..', 'new_assessments')
-if not os.path.exists(new_assessments_path):
-    # Try alternative path for Railway deployment
-    new_assessments_path = os.path.join(os.path.dirname(__file__), 'new_assessments')
-sys.path.append(new_assessments_path)
+# Set up logger first
+logger = logging.getLogger(__name__)
 
+# Import assessment modules directly (they're now in the same directory)
 try:
     from enhanced_ai_assessment import EnhancedAIAssessmentWithInsights
     from enhanced_org_ai_assessment import EnhancedOrganizationalAIReadiness
+    logger.info("✅ Assessment modules loaded successfully")
 except ImportError as e:
     logger.error(f"Failed to import assessment modules: {e}")
-    logger.error(f"Python path: {sys.path}")
     logger.error(f"Current directory: {os.getcwd()}")
-    logger.error(f"Files in parent directory: {os.listdir('..')}")
+    logger.error(f"Files in backend directory: {os.listdir(os.path.dirname(__file__))}")
     raise
 
 from premium_verification import get_current_user
 from rate_limiting import rate_limit_assessment
-
-logger = logging.getLogger(__name__)
 
 # Create router
 assessment_router = APIRouter(prefix="/api/assessments", tags=["assessments"])
