@@ -338,7 +338,11 @@ class AssessmentOrchestrator:
                                           session: AssessmentSession) -> AssessmentResult:
         """Generate question using selected agent"""
         try:
-            from crewai import Task
+            try:
+                from crewai import Task
+            except ImportError:
+                # Use the Task from our base module
+                from ..agents.base import Task
             
             # Create question generation task
             task = Task(

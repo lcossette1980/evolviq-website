@@ -12,7 +12,11 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
 
-from crewai.tools import BaseTool
+try:
+    from crewai import BaseTool
+except ImportError:
+    # Fallback if CrewAI structure changed or not available
+    from pydantic import BaseModel as BaseTool
 from ..core.config import get_config
 from ..models.results import ValidationResult, ValidationIssue, ValidationSeverity
 

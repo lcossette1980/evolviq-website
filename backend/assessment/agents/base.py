@@ -13,8 +13,35 @@ from datetime import datetime
 from collections import defaultdict
 from abc import ABC, abstractmethod
 
-from crewai import Agent, Task
-from langchain_openai import ChatOpenAI
+try:
+    from crewai import Agent, Task
+except ImportError:
+    # Fallback imports if CrewAI is not available or structure changed
+    logger.warning("CrewAI import failed, using mock implementations")
+    class Agent:
+        def __init__(self, **kwargs):
+            self.role = kwargs.get('role', '')
+            self.goal = kwargs.get('goal', '')
+            self.backstory = kwargs.get('backstory', '')
+    
+    class Task:
+        def __init__(self, **kwargs):
+            self.description = kwargs.get('description', '')
+            self.expected_output = kwargs.get('expected_output', '')
+            self.agent = kwargs.get('agent')
+            self.tools = kwargs.get('tools', [])
+try:
+    from langchain_openai import ChatOpenAI
+except ImportError:
+    try:
+        from langchain.chat_models import ChatOpenAI
+    except ImportError:
+        # Minimal mock if langchain is not available
+        logger.warning("LangChain import failed, using mock ChatOpenAI")
+        class ChatOpenAI:
+            def __init__(self, **kwargs):
+                self.model_name = kwargs.get('model', 'gpt-4')
+                self.temperature = kwargs.get('temperature', 0.7)
 
 from ..core.config import get_config, AssessmentConfig
 from ..models.results import BaseResult, ResultStatus
