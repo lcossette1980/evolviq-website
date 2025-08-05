@@ -186,9 +186,18 @@ async def generate_ai_knowledge_report(
         assessment.user_responses = submission.responses
         
         # Generate comprehensive report
-        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmp_file:
+        # TODO: Implement proper PDF generation
+        with tempfile.NamedTemporaryFile(suffix='.txt', delete=False) as tmp_file:
             report_path = tmp_file.name
-            assessment.generate_comprehensive_report(report_path)
+            report_data = assessment.generate_comprehensive_report()
+            
+            # For now, create a simple text report
+            with open(report_path, 'w') as f:
+                f.write(f"AI Knowledge Assessment Report\n")
+                f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"="*50 + "\n\n")
+                f.write(f"Overall Score: {assessment.calculate_scores().get('overall_score', 0)}%\n")
+                f.write(f"\nDetailed results available in the web interface.\n")
         
         # Return file
         return FileResponse(
@@ -349,9 +358,19 @@ async def generate_org_readiness_report(
         assessment.user_responses = submission.responses
         
         # Generate executive report
-        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmp_file:
+        # TODO: Implement proper PDF generation
+        with tempfile.NamedTemporaryFile(suffix='.txt', delete=False) as tmp_file:
             report_path = tmp_file.name
-            assessment.generate_executive_report(report_path)
+            
+            # For now, create a simple text report
+            with open(report_path, 'w') as f:
+                f.write(f"{org_info.name} - AI Readiness Report\n")
+                f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"="*50 + "\n\n")
+                f.write(f"Organization: {org_info.name}\n")
+                f.write(f"Industry: {org_info.industry}\n")
+                f.write(f"Size: {org_info.size}\n")
+                f.write(f"\nDetailed results available in the web interface.\n")
         
         return FileResponse(
             report_path,

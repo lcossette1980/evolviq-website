@@ -77,40 +77,9 @@ class WebSocketServer:
 
     def _initialize_agents(self):
         """Initialize available AI agents"""
-        default_agents = [
-            AgentInfo(
-                agent_id="assessment_coordinator",
-                name="Assessment Coordinator",
-                status=AgentStatus.ONLINE,
-                specialization="Assessment management and coordination",
-                current_sessions=0,
-                max_sessions=10
-            ),
-            AgentInfo(
-                agent_id="ai_knowledge_expert",
-                name="AI Knowledge Expert",
-                status=AgentStatus.ONLINE,
-                specialization="AI concepts, machine learning, and technical knowledge",
-                current_sessions=0,
-                max_sessions=5
-            ),
-            AgentInfo(
-                agent_id="change_readiness_analyst",
-                name="Change Readiness Analyst",
-                status=AgentStatus.ONLINE,
-                specialization="Organizational change and readiness assessment",
-                current_sessions=0,
-                max_sessions=5
-            ),
-            AgentInfo(
-                agent_id="implementation_advisor",
-                name="Implementation Advisor",
-                status=AgentStatus.ONLINE,
-                specialization="AI implementation strategies and best practices",
-                current_sessions=0,
-                max_sessions=3
-            )
-        ]
+        # Note: Assessment agents are deprecated - using new assessment system
+        # Keep empty for now to maintain WebSocket structure
+        default_agents = []
         
         for agent in default_agents:
             self.agents[agent.agent_id] = agent
