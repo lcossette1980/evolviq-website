@@ -130,8 +130,36 @@ async def calculate_ai_knowledge_results(
     try:
         assessment = get_ai_assessment()
         
-        # Set user responses
-        assessment.user_responses = submission.responses
+        # Process user responses properly
+        # The frontend sends responses as {question_id: answer_choice}
+        # We need to convert this to the format the assessment expects
+        for question_id, answer in submission.responses.items():
+            # Find the question by ID
+            question_index = None
+            for idx, q in enumerate(assessment.questions):
+                if str(q['id']) == str(question_id):
+                    question_index = idx
+                    break
+            
+            if question_index is not None:
+                # Get the question
+                question = assessment.questions[question_index]
+                
+                # Process the answer with proper scoring
+                if answer in question['options']:
+                    assessment.user_responses[question_index] = {
+                        'answer': answer,
+                        'question_id': question['id'],
+                        'category': question['category'],
+                        'subcategory': question.get('subcategory', ''),
+                        'weight': question['weight'],
+                        'difficulty': question['difficulty'],
+                        'score': question['options'][answer]['score'],
+                        'level': question['options'][answer]['level'],
+                        'explanation': question['options'][answer]['explanation'],
+                        'insight': question['options'][answer]['insight'],
+                        'timestamp': datetime.now()
+                    }
         
         # Calculate scores
         scores = assessment.calculate_scores()
@@ -319,8 +347,35 @@ async def calculate_org_readiness_results(
             org_info.current_ai_usage
         )
         
-        # Set responses
-        assessment.user_responses = submission.responses
+        # Process user responses properly
+        # The frontend sends responses as {question_id: answer_choice}
+        # We need to convert this to the format the assessment expects
+        for question_id, answer in submission.responses.items():
+            # Find the question by ID
+            question_index = None
+            for idx, q in enumerate(assessment.questions):
+                if str(q['id']) == str(question_id):
+                    question_index = idx
+                    break
+            
+            if question_index is not None:
+                # Get the question
+                question = assessment.questions[question_index]
+                
+                # Process the answer with proper scoring
+                if answer in question['options']:
+                    assessment.user_responses[question_index] = {
+                        'answer': answer,
+                        'question_id': question['id'],
+                        'category': question['category'],
+                        'dimension': question['dimension'],
+                        'weight': question['weight'],
+                        'score': question['options'][answer]['score'],
+                        'level': question['options'][answer]['level'],
+                        'maturity_indicator': question['options'][answer].get('maturity_indicator', 'developing'),
+                        'risk_factor': question['options'][answer].get('risk_factor', 0.5),
+                        'timestamp': datetime.now()
+                    }
         
         # Calculate comprehensive scores
         scores = assessment.calculate_comprehensive_scores()
