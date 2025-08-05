@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, Check, Brain, Target, TrendingUp, Award } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { auth } from '../../services/firebase';
 import { saveAssessmentResults } from '../../services/assessmentService';
 import { theme } from '../../styles/theme';
 import ProgressBar from '../shared/ProgressBar';
@@ -27,7 +28,12 @@ const AIKnowledgeAssessment = () => {
     try {
       setIsLoading(true);
       // Load assessment questions from the Python module
-      const token = await user.getIdToken();
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('User not authenticated');
+      }
+      
+      const token = await currentUser.getIdToken();
       const response = await fetch('/api/assessments/ai-knowledge/questions', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -72,7 +78,12 @@ const AIKnowledgeAssessment = () => {
       setIsSaving(true);
       
       // Calculate results
-      const token = await user.getIdToken();
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('User not authenticated');
+      }
+      
+      const token = await currentUser.getIdToken();
       const response = await fetch('/api/assessments/ai-knowledge/calculate', {
         method: 'POST',
         headers: { 

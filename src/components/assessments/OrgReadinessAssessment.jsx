@@ -12,6 +12,7 @@ import {
   Info
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { auth } from '../../services/firebase';
 import { saveAssessmentResults } from '../../services/assessmentService';
 import { theme } from '../../styles/theme';
 import ProgressBar from '../shared/ProgressBar';
@@ -65,7 +66,12 @@ const OrgReadinessAssessment = () => {
   const loadAssessment = async () => {
     try {
       setIsLoading(true);
-      const token = await user.getIdToken();
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('User not authenticated');
+      }
+      
+      const token = await currentUser.getIdToken();
       const response = await fetch('/api/assessments/org-readiness/questions', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -117,7 +123,12 @@ const OrgReadinessAssessment = () => {
       setIsSaving(true);
       
       // Calculate results
-      const token = await user.getIdToken();
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('User not authenticated');
+      }
+      
+      const token = await currentUser.getIdToken();
       const response = await fetch('/api/assessments/org-readiness/calculate', {
         method: 'POST',
         headers: { 

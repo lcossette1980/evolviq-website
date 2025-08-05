@@ -19,10 +19,22 @@ from io import BytesIO
 import tempfile
 
 # Add new_assessments to Python path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'new_assessments'))
+new_assessments_path = os.path.join(os.path.dirname(__file__), '..', 'new_assessments')
+if not os.path.exists(new_assessments_path):
+    # Try alternative path for Railway deployment
+    new_assessments_path = os.path.join(os.path.dirname(__file__), 'new_assessments')
+sys.path.append(new_assessments_path)
 
-from enhanced_ai_assessment import EnhancedAIAssessmentWithInsights
-from enhanced_org_ai_assessment import EnhancedOrganizationalAIReadiness
+try:
+    from enhanced_ai_assessment import EnhancedAIAssessmentWithInsights
+    from enhanced_org_ai_assessment import EnhancedOrganizationalAIReadiness
+except ImportError as e:
+    logger.error(f"Failed to import assessment modules: {e}")
+    logger.error(f"Python path: {sys.path}")
+    logger.error(f"Current directory: {os.getcwd()}")
+    logger.error(f"Files in parent directory: {os.listdir('..')}")
+    raise
+
 from premium_verification import get_current_user
 from rate_limiting import rate_limit_assessment
 

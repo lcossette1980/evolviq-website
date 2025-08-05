@@ -14,6 +14,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { auth } from '../../services/firebase';
 import { generateShareableReport } from '../../services/assessmentService';
 import { theme } from '../../styles/theme';
 import LoadingSpinner from '../shared/LoadingSpinner';
@@ -37,7 +38,12 @@ const AIKnowledgeResults = () => {
   const handleDownloadReport = async () => {
     try {
       setIsLoading(true);
-      const token = await user.getIdToken();
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('User not authenticated');
+      }
+      
+      const token = await currentUser.getIdToken();
       const response = await fetch('/api/assessments/ai-knowledge/report', {
         method: 'POST',
         headers: { 
