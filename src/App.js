@@ -1,5 +1,5 @@
 import React, { lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ProjectProvider } from './contexts/ProjectContext';
 import ErrorProvider from './contexts/ErrorContext';
@@ -50,9 +50,13 @@ const AIUseCaseROIToolkit = lazy(() => import('./components/guides/ai-use-case-r
 const AIStrategyStarterKit = lazy(() => import('./components/guides/ai-strategy-starter-kit.tsx'));
 
 // Lazy load assessments
-const AIKnowledgeNavigator = lazy(() => import('./components/assessments/AIKnowledgeNavigator.v2.jsx'));
-const ChangeReadinessAssessment = lazy(() => import('./components/assessments/ChangeReadinessAssessment.jsx'));
 const AssessmentResultsView = lazy(() => import('./components/assessments/AssessmentResultsView.jsx'));
+
+// New assessment components
+const AIKnowledgeAssessment = lazy(() => import('./components/assessments/AIKnowledgeAssessment.jsx'));
+const AIKnowledgeResults = lazy(() => import('./components/assessments/AIKnowledgeResults.jsx'));
+const OrgReadinessAssessment = lazy(() => import('./components/assessments/OrgReadinessAssessment.jsx'));
+const OrgReadinessResults = lazy(() => import('./components/assessments/OrgReadinessResults.jsx'));
 
 const AppContent = () => {
   const { 
@@ -147,26 +151,14 @@ const AppContent = () => {
           <Route path="/payment-success" element={<PageSuspense><PaymentSuccess /></PageSuspense>} />
           <Route path="/payment-cancelled" element={<PageSuspense><PaymentCancelled /></PageSuspense>} />
           
-          {/* Assessment Tool Routes */}
+          {/* Assessment Tool Routes - Redirect old routes to new ones */}
           <Route 
             path="/tools/ai-knowledge-navigator" 
-            element={
-              <ProtectedRoute requiresPremium={false}>
-                <PageSuspense>
-                  <AIKnowledgeNavigator />
-                </PageSuspense>
-              </ProtectedRoute>
-            } 
+            element={<Navigate to="/dashboard/assessments/ai-knowledge" replace />}
           />
           <Route 
             path="/tools/change-readiness-assessment" 
-            element={
-              <ProtectedRoute requiresPremium={true}>
-                <PageSuspense>
-                  <ChangeReadinessAssessment />
-                </PageSuspense>
-              </ProtectedRoute>
-            } 
+            element={<Navigate to="/dashboard/assessments/org-readiness" replace />}
           />
           <Route 
             path="/assessment-results/:assessmentId" 
@@ -174,6 +166,48 @@ const AppContent = () => {
               <ProtectedRoute requiresPremium={false}>
                 <PageSuspense>
                   <AssessmentResultsView />
+                </PageSuspense>
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* New Assessment Routes */}
+          <Route 
+            path="/dashboard/assessments/ai-knowledge" 
+            element={
+              <ProtectedRoute requiresPremium={false}>
+                <PageSuspense>
+                  <AIKnowledgeAssessment />
+                </PageSuspense>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/dashboard/assessments/ai-knowledge/results" 
+            element={
+              <ProtectedRoute requiresPremium={false}>
+                <PageSuspense>
+                  <AIKnowledgeResults />
+                </PageSuspense>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/dashboard/assessments/org-readiness" 
+            element={
+              <ProtectedRoute requiresPremium={true}>
+                <PageSuspense>
+                  <OrgReadinessAssessment />
+                </PageSuspense>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/dashboard/assessments/org-readiness/results" 
+            element={
+              <ProtectedRoute requiresPremium={true}>
+                <PageSuspense>
+                  <OrgReadinessResults />
                 </PageSuspense>
               </ProtectedRoute>
             } 

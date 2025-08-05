@@ -27,7 +27,17 @@ const AIKnowledgeAssessment = () => {
     try {
       setIsLoading(true);
       // Load assessment questions from the Python module
-      const response = await fetch('/api/assessments/ai-knowledge/questions');
+      const token = await user.getIdToken();
+      const response = await fetch('/api/assessments/ai-knowledge/questions', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
       setAssessment(data);
     } catch (err) {
@@ -62,11 +72,27 @@ const AIKnowledgeAssessment = () => {
       setIsSaving(true);
       
       // Calculate results
-      const results = await fetch('/api/assessments/ai-knowledge/calculate', {
+      const token = await user.getIdToken();
+      const response = await fetch('/api/assessments/ai-knowledge/calculate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ responses })
-      }).then(res => res.json());
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          responses,
+          user_info: {
+            name: user.displayName,
+            email: user.email
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const results = await response.json();
 
       // Save to Firebase
       await saveAssessmentResults(user.uid, {
@@ -78,7 +104,7 @@ const AIKnowledgeAssessment = () => {
 
       // Navigate to results
       navigate('/dashboard/assessments/ai-knowledge/results', { 
-        state: { results } 
+        state: { results, responses } 
       });
     } catch (err) {
       setError('Failed to save assessment');

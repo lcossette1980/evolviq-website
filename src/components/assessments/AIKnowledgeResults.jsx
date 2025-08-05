@@ -37,14 +37,22 @@ const AIKnowledgeResults = () => {
   const handleDownloadReport = async () => {
     try {
       setIsLoading(true);
+      const token = await user.getIdToken();
       const response = await fetch('/api/assessments/ai-knowledge/report', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ 
           responses: location.state?.responses || {},
           user_info: { name: user.displayName, email: user.email }
         })
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);

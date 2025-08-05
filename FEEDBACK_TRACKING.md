@@ -464,11 +464,60 @@ Before implementing, need to verify:
            - assessmentId: string
    ```
 
-**Next Steps**:
-- Create backend API endpoints for new assessments
-- Integrate visualization generation
-- Build results display components
-- Create downloadable report functionality
+### Issue #21: New Assessment System Implementation (2025-08-05)
+- **Date/Time**: 2025-08-05
+- **Status**: COMPLETED (Core Implementation)
+- **Files Created**:
+  - backend/new_assessment_api.py (new API endpoints)
+  - src/components/assessments/AIKnowledgeAssessment.jsx
+  - src/components/assessments/AIKnowledgeResults.jsx
+  - src/components/assessments/OrgReadinessAssessment.jsx
+  - src/components/assessments/OrgReadinessResults.jsx
+  - src/services/assessmentService.js (Firebase integration)
+- **Files Modified**:
+  - backend/main.py (mounted new assessment router)
+  - src/components/dashboard/tabs/AssessmentsTab.jsx (updated to show new assessments)
+  - src/App.js (added routes for new assessment components)
+  - src/services/assessmentService.js (added getUserAssessmentSummaries function)
+- **Implementation Complete**:
+  1. ✅ Created new assessment API with all endpoints
+  2. ✅ Built AI Knowledge assessment flow component
+  3. ✅ Built AI Knowledge results display with visualizations
+  4. ✅ Built Organizational Readiness assessment flow
+  5. ✅ Built Organizational Readiness results with executive dashboard
+  6. ✅ Updated AssessmentsTab to show completion status and scores
+  7. ✅ Added Firebase integration for storing/retrieving results
+  8. ✅ Added routes for new assessment components
+  9. ✅ Dashboard displays assessment cards with status/scores
+  10. ✅ Results pages show visualizations and download options
+
+**Remaining Tasks**:
+- Test complete assessment flow with backend API
+- Style PDF reports to match brand (backend task)
+- Add email notifications for completed assessments (optional enhancement)
+
+### Issue #22: Assessment Components Cleanup (2025-08-05)
+- **Date/Time**: 2025-08-05
+- **Status**: COMPLETED
+- **Issue**: Discovered old assessment components still exist that call non-existent CrewAI endpoints
+- **Analysis**:
+  - Old components: AIKnowledgeNavigator.v2.jsx, ChangeReadinessAssessment.jsx
+  - These components call old endpoints: /api/ai-knowledge/start, /api/change-readiness/start
+  - Backend now uses new endpoints: /api/assessments/ai-knowledge/questions, etc.
+- **Actions Taken**:
+  1. Updated App.js routes to redirect old paths to new assessment paths
+  2. Removed imports for old assessment components
+  3. Archived old assessment components to /archived/old_assessment_components/
+  4. Kept AssessmentResultsView.jsx and TieredAssessmentResults.jsx for potential reuse
+- **Files Archived**:
+  - AIKnowledgeNavigator.v2.jsx and .css
+  - ChangeReadinessAssessment.jsx
+  - /modern folder (conversational assessment)
+  - /components folder (legacy components)
+- **Route Redirects**:
+  - /tools/ai-knowledge-navigator → /dashboard/assessments/ai-knowledge
+  - /tools/change-readiness-assessment → /dashboard/assessments/org-readiness
+- **Result**: Clean assessment structure with only new components in use
 
 ---
 

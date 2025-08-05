@@ -10,7 +10,7 @@ import {
   limit,
   serverTimestamp 
 } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { db } from './firebase';
 
 /**
  * Save assessment results to Firebase
@@ -38,9 +38,11 @@ export const saveAssessmentResults = async (userId, assessmentData) => {
       const assessmentSummaries = userDoc.data().assessmentSummaries || {};
       assessmentSummaries[assessmentData.type] = {
         lastCompleted: new Date().toISOString(),
-        score: assessmentData.results.overall_score,
-        readinessLevel: assessmentData.results.readiness_level,
-        assessmentId
+        score: assessmentData.results?.overall_score || assessmentData.results?.overall_readiness,
+        readinessLevel: assessmentData.results?.readiness_level || assessmentData.results?.maturity_level,
+        assessmentId,
+        // Store org info for org-readiness assessments
+        ...(assessmentData.orgInfo && { orgInfo: assessmentData.orgInfo })
       };
       
       await setDoc(userRef, { assessmentSummaries }, { merge: true });
@@ -217,5 +219,27 @@ export const clearAssessmentProgress = async (userId, type) => {
   } catch (error) {
     console.error('Error clearing assessment progress:', error);
     throw error;
+  }
+};
+
+/**
+ * Get user's assessment summaries from their user document
+ * @param {string} userId - User ID
+ * @returns {Promise<Object>} - Object with assessment summaries
+ */
+export const getUserAssessmentSummaries = async (userId) => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userRef);
+    
+    if (userDoc.exists()) {
+      const summaries = userDoc.data().assessmentSummaries || {};
+      return summaries;
+    }
+    
+    return {};
+  } catch (error) {
+    console.error('Error getting assessment summaries:', error);
+    return {};
   }
 };

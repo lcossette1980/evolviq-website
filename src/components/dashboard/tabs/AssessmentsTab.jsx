@@ -2,16 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Brain, 
-  Users, 
+  Building2, 
   ArrowRight, 
   CheckCircle, 
   Clock,
   Lock,
-  TrendingUp
+  TrendingUp,
+  FileText,
+  Eye,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useUserTier } from '../../../hooks/useUserTier';
 import { useDashboardStore } from '../../../store/dashboardStore';
+import { getUserAssessmentSummaries } from '../../../services/assessmentService';
 import { colors } from '../../../utils/colors';
 
 /**
@@ -24,80 +28,96 @@ const AssessmentsTab = () => {
   const { tier, canAccess, upgradeMessage } = useUserTier();
   const { userAssessments } = useDashboardStore();
   const [assessmentStatus, setAssessmentStatus] = useState({});
+  const [summaries, setSummaries] = useState({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user && userAssessments) {
-      // Process user assessments to get completion status
+    loadAssessmentSummaries();
+  }, [user]);
+
+  const loadAssessmentSummaries = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      const userSummaries = await getUserAssessmentSummaries(user.uid);
+      setSummaries(userSummaries);
+      
+      // Update status based on summaries
       const status = {};
-      userAssessments.forEach(assessment => {
-        if (assessment.isComplete) {
-          status[assessment.type] = {
-            completed: true,
-            score: assessment.results?.overallScore || 0,
-            date: assessment.lastUpdated
-          };
-        }
+      Object.entries(userSummaries).forEach(([type, summary]) => {
+        status[type] = {
+          completed: true,
+          score: summary.score || summary.overall_readiness,
+          date: summary.lastCompleted,
+          readinessLevel: summary.readinessLevel || summary.maturity_level,
+          assessmentId: summary.assessmentId
+        };
       });
       setAssessmentStatus(status);
+    } catch (error) {
+      console.error('Error loading assessment summaries:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [user, userAssessments]);
+  };
 
   const assessments = [
     {
-      id: 'ai_knowledge_assessment',
+      id: 'ai-knowledge',
       title: 'AI Knowledge Assessment',
       description: 'Evaluate your current understanding of AI concepts and applications',
       icon: Brain,
       duration: '15-20 minutes',
-      questions: 10,
+      questions: 20,
       freeAccess: true,
-      path: '/tools/ai-knowledge-navigator',
+      path: '/dashboard/assessments/ai-knowledge',
+      resultsPath: '/dashboard/assessments/ai-knowledge/results',
       benefits: [
         'Personalized learning path',
         'Identify knowledge gaps',
-        'Get tailored recommendations'
+        'Get tailored recommendations',
+        'Track progress over time'
       ]
     },
     {
-      id: 'change_readiness_assessment',
-      title: 'Change Readiness Assessment',
+      id: 'org-readiness',
+      title: 'Organizational AI Readiness',
       description: 'Assess your organization\'s readiness for AI transformation',
-      icon: Users,
-      duration: '20-25 minutes',
-      questions: 15,
+      icon: Building2,
+      duration: '20-30 minutes',
+      questions: 25,
       freeAccess: false,
       premiumOnly: true,
-      path: '/tools/change-readiness-assessment',
+      path: '/dashboard/assessments/org-readiness',
+      resultsPath: '/dashboard/assessments/org-readiness/results',
       benefits: [
-        'Organizational readiness score',
-        'Culture transformation insights',
-        'Implementation roadmap'
+        'Executive readiness report',
+        'Industry benchmarking',
+        'Strategic roadmap',
+        'Investment guidance'
       ]
     }
   ];
 
-  useEffect(() => {
-    // Check completion status for each assessment
-    const status = {};
-    assessments.forEach(assessment => {
-      const completed = userAssessments.find(
-        ua => ua.type === assessment.id && ua.isComplete
-      );
-      status[assessment.id] = {
-        completed: !!completed,
-        completedAt: completed?.completedAt,
-        score: completed?.overallScore
-      };
-    });
-    setAssessmentStatus(status);
-  }, [userAssessments]);
 
-  const handleAssessmentClick = (assessment) => {
+  const handleAssessmentClick = (assessment, viewResults = false) => {
     if (!assessment.freeAccess && !canAccess('assessments', assessment.id)) {
       // Show upgrade prompt
       navigate('/membership');
     } else {
-      navigate(assessment.path);
+      const status = assessmentStatus[assessment.id];
+      if (viewResults && status?.completed) {
+        // Navigate to results with stored data
+        navigate(assessment.resultsPath, { 
+          state: { 
+            results: summaries[assessment.id],
+            orgInfo: assessment.id === 'org-readiness' ? summaries[assessment.id]?.orgInfo : null
+          } 
+        });
+      } else {
+        navigate(assessment.path);
+      }
     }
   };
 
@@ -119,15 +139,19 @@ const AssessmentsTab = () => {
 
     if (status?.completed) {
       return (
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center text-green-600">
-            <CheckCircle className="w-5 h-5 mr-2" />
-            <span className="font-medium">Completed</span>
-          </div>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => handleAssessmentClick(assessment, true)}
+            className="flex items-center text-chestnut hover:text-chestnut/80 font-medium"
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            View Results
+          </button>
           <button
             onClick={() => handleAssessmentClick(assessment)}
-            className="text-chestnut hover:text-chestnut/80 font-medium"
+            className="flex items-center text-gray-600 hover:text-gray-800 font-medium"
           >
+            <RefreshCw className="w-4 h-4 mr-2" />
             Retake
           </button>
         </div>
@@ -144,6 +168,14 @@ const AssessmentsTab = () => {
       </button>
     );
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-chestnut"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -220,11 +252,16 @@ const AssessmentsTab = () => {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-sm font-medium text-green-800">
-                              Completed on {new Date(status.completedAt).toLocaleDateString()}
+                              Completed on {new Date(status.date).toLocaleDateString()}
                             </p>
-                            {status.score && (
+                            {status.score !== undefined && (
                               <p className="text-sm text-green-700">
                                 Score: {status.score}%
+                              </p>
+                            )}
+                            {status.readinessLevel && (
+                              <p className="text-sm text-green-700">
+                                Level: {status.readinessLevel}
                               </p>
                             )}
                           </div>
