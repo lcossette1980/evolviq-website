@@ -32,8 +32,20 @@ except ImportError as e:
     logger.error(f"Files in backend directory: {os.listdir(os.path.dirname(__file__))}")
     raise
 
-from premium_verification import get_current_user
+from premium_verification import premium_verification
 from rate_limiting import rate_limit_assessment
+from fastapi import Request
+
+# Create a dependency for getting current user
+async def get_current_user(request: Request) -> dict:
+    """Get current user from Firebase token"""
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        raise HTTPException(status_code=401, detail="Authorization required")
+    
+    # Verify Firebase token
+    user_data = await premium_verification.verify_firebase_token(auth_header)
+    return user_data
 
 # Create router
 assessment_router = APIRouter(prefix="/api/assessments", tags=["assessments"])
