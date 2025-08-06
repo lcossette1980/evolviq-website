@@ -57,16 +57,17 @@ async def create_checkout_session(
         
         # Create checkout session
         session = await stripe_integration.create_checkout_session(
-            plan_id=checkout_data.plan_id,
-            success_url=checkout_data.success_url,
-            cancel_url=checkout_data.cancel_url,
-            customer_email=customer_email,
-            metadata=metadata
+            current_user['uid'],  # user_id
+            customer_email,       # email
+            checkout_data.plan_id,
+            checkout_data.success_url,
+            checkout_data.cancel_url,
+            current_user.get('displayName') or current_user.get('name')  # name
         )
         
         return {
-            "session_id": session.id,
-            "checkout_url": session.url
+            "session_id": session['session_id'],
+            "checkout_url": session['session_url']
         }
         
     except Exception as e:

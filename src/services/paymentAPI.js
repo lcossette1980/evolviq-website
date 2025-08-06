@@ -184,7 +184,7 @@ class PaymentAPI {
       );
 
       // Redirect to Stripe Checkout
-      window.location.href = session.session_url;
+      window.location.href = session.checkout_url;
 
     } catch (error) {
       console.error('Error redirecting to checkout:', error);
