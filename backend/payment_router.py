@@ -32,6 +32,15 @@ async def get_current_user(request: Request) -> dict:
     
     # Verify Firebase token
     user_data = await premium_verification.verify_firebase_token(auth_header)
+    
+    # Ensure we have required fields
+    if not user_data.get('uid'):
+        raise HTTPException(status_code=401, detail="Invalid user token")
+    
+    # Add email if not present (Firebase tokens might not always include it)
+    if not user_data.get('email'):
+        logger.warning(f"No email in token for user {user_data['uid']}")
+    
     return user_data
 
 @payment_router.post("/create-checkout-session")
@@ -57,14 +66,21 @@ async def create_checkout_session(
         metadata['user_email'] = customer_email
         
         # Create checkout session
-        session = await stripe_integration.create_checkout_session(
-            current_user['uid'],  # user_id
-            customer_email,       # email
-            checkout_data.plan_id,
-            checkout_data.success_url,
-            checkout_data.cancel_url,
-            current_user.get('displayName') or current_user.get('name')  # name
-        )
+        try:
+            # Log the current user data for debugging
+            logger.info(f"Creating checkout session for user: {current_user['uid']}, email: {customer_email}, plan: {checkout_data.plan_id}")
+            
+            session = await stripe_integration.create_checkout_session(
+                current_user['uid'],  # user_id
+                customer_email,       # email
+                checkout_data.plan_id,
+                checkout_data.success_url,
+                checkout_data.cancel_url,
+                current_user.get('displayName') or current_user.get('name')  # name
+            )
+        except Exception as session_error:
+            logger.error(f"Error in create_checkout_session call: {str(session_error)}")
+            raise
         
         return {
             "session_id": session['session_id'],
