@@ -9,6 +9,8 @@ import os
 import sys
 import json
 import logging
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
@@ -210,28 +212,59 @@ async def calculate_ai_knowledge_results(
         # Generate visualizations
         visualizations = {}
         
-        # Try to create visualizations (these methods might not exist)
+        # Create a simple category performance visualization
         try:
-            # Score progression chart
-            score_chart = assessment.create_score_progression_chart()
-            if score_chart:
+            import matplotlib.pyplot as plt
+            import numpy as np
+            
+            # Category performance bar chart
+            if category_scores_dict:
+                plt.figure(figsize=(10, 6))
+                categories = list(category_scores_dict.keys())
+                scores_values = list(category_scores_dict.values())
+                
+                # Create color map based on scores
+                colors = ['#FF4444' if s < 40 else '#FFA500' if s < 60 else '#FFD700' if s < 80 else '#4CAF50' for s in scores_values]
+                
+                bars = plt.bar(categories, scores_values, color=colors)
+                plt.ylim(0, 100)
+                plt.ylabel('Score (%)', fontsize=12)
+                plt.title('AI Knowledge by Category', fontsize=14, fontweight='bold')
+                plt.xticks(rotation=45, ha='right')
+                
+                # Add value labels on bars
+                for bar, score in zip(bars, scores_values):
+                    plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1, 
+                            f'{score}%', ha='center', va='bottom', fontsize=10)
+                
+                plt.tight_layout()
+                
+                # Save to buffer
                 buffer = BytesIO()
-                score_chart.savefig(buffer, format='png', dpi=300, bbox_inches='tight')
-                buffer.seek(0)
-                visualizations['score_progression'] = base64.b64encode(buffer.getvalue()).decode()
-                buffer.close()
-        except:
-            pass
-        
-        try:
-            # Category performance radar
-            radar_chart = assessment.create_category_performance_radar()
-            if radar_chart:
-                buffer = BytesIO()
-                radar_chart.savefig(buffer, format='png', dpi=300, bbox_inches='tight')
+                plt.savefig(buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
                 buffer.seek(0)
                 visualizations['category_radar'] = base64.b64encode(buffer.getvalue()).decode()
                 buffer.close()
+                plt.close()
+        except Exception as e:
+            logger.info(f"Could not create category visualization: {e}")
+        
+        # Create a simple progress gauge
+        try:
+            # Simple text-based gauge data
+            overall_score = scores.get("overall_percentage", 0)
+            gauge_data = {
+                "type": "gauge",
+                "value": overall_score,
+                "title": "AI Readiness",
+                "ranges": [
+                    {"min": 0, "max": 40, "color": "#FF4444", "label": "Beginner"},
+                    {"min": 40, "max": 60, "color": "#FFA500", "label": "Developing"},
+                    {"min": 60, "max": 80, "color": "#FFD700", "label": "Intermediate"},
+                    {"min": 80, "max": 100, "color": "#4CAF50", "label": "Advanced"}
+                ]
+            }
+            visualizations['readiness_gauge'] = json.dumps(gauge_data)
         except:
             pass
         
@@ -487,8 +520,52 @@ async def calculate_org_readiness_results(
             "Establish AI Center of Excellence or dedicated team"
         ]
         
-        # Generate visualizations (try-except for safety)
+        # Generate visualizations
         visualizations = {}
+        
+        # Create dimension analysis visualization
+        try:
+            import matplotlib.pyplot as plt
+            import numpy as np
+            
+            if dimension_scores:
+                plt.figure(figsize=(12, 8))
+                dimensions = list(dimension_scores.keys())
+                scores_values = list(dimension_scores.values())
+                
+                # Create horizontal bar chart
+                colors = ['#FF4444' if s < 40 else '#FFA500' if s < 60 else '#FFD700' if s < 80 else '#4CAF50' for s in scores_values]
+                
+                y_pos = np.arange(len(dimensions))
+                bars = plt.barh(y_pos, scores_values, color=colors)
+                
+                plt.yticks(y_pos, dimensions)
+                plt.xlabel('Readiness Score (%)', fontsize=12)
+                plt.title(f'{org_info.name} - AI Readiness by Dimension', fontsize=14, fontweight='bold')
+                plt.xlim(0, 100)
+                
+                # Add value labels
+                for i, (bar, score) in enumerate(zip(bars, scores_values)):
+                    plt.text(score + 1, bar.get_y() + bar.get_height()/2, 
+                            f'{score}%', ha='left', va='center', fontsize=10)
+                
+                # Add reference lines
+                plt.axvline(x=40, color='red', linestyle='--', alpha=0.3, label='Critical')
+                plt.axvline(x=60, color='orange', linestyle='--', alpha=0.3, label='Developing')
+                plt.axvline(x=80, color='green', linestyle='--', alpha=0.3, label='Mature')
+                
+                plt.legend(loc='lower right')
+                plt.tight_layout()
+                
+                # Save to buffer
+                buffer = BytesIO()
+                plt.savefig(buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
+                buffer.seek(0)
+                visualizations['dimension_analysis'] = base64.b64encode(buffer.getvalue()).decode()
+                buffer.close()
+                plt.close()
+        except Exception as e:
+            logger.info(f"Could not create dimension visualization: {e}")
         
         # Industry comparison mock data
         industry_comparison = {
