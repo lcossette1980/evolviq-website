@@ -14,6 +14,8 @@ import { useDashboardStore } from '../../../store/dashboardStore';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../../services/firebase';
 import { colors } from '../../../utils/colors';
+import { useNavigate } from 'react-router-dom';
+import { Eye } from 'lucide-react';
 
 /**
  * Learning Plan Tab Component
@@ -21,10 +23,12 @@ import { colors } from '../../../utils/colors';
  */
 const LearningPlanTab = () => {
   const { user } = useAuth();
-  const { userAssessments } = useDashboardStore();
+  const navigate = useNavigate();
+  const { userAssessments, assessmentSummaries } = useDashboardStore();
   const [learningPlan, setLearningPlan] = useState(null);
   const [progress, setProgress] = useState({});
   const [loading, setLoading] = useState(true);
+  const [latestAssessment, setLatestAssessment] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -58,11 +62,27 @@ const LearningPlanTab = () => {
           (a, b) => new Date(b.completedAt) - new Date(a.completedAt)
         )[0];
         
-        if (latestAssessment.learningPlan) {
-          setLearningPlan(latestAssessment.learningPlan);
+        // Check for new assessment format (learning_path) or old format (learningPlan)
+        const learningData = latestAssessment.results?.learning_path || latestAssessment.learningPlan;
+        
+        if (learningData) {
+          // Convert new format to old format if needed
+          const formattedPlan = Array.isArray(learningData) ? {
+            basicRecommendations: learningData.map((item, idx) => ({
+              id: `item-${idx}`,
+              title: item.title || item,
+              description: item.description || '',
+              duration: item.duration || '2-4 weeks',
+              difficulty: item.difficulty || 'progressive'
+            }))
+          } : learningData;
+          
+          setLearningPlan(formattedPlan);
+          setLatestAssessment(latestAssessment);
+          
           // Save to user document
           await updateDoc(doc(db, 'users', user.uid), {
-            learningPlan: latestAssessment.learningPlan,
+            learningPlan: formattedPlan,
             learningPlanProgress: {}
           });
         }
@@ -118,7 +138,7 @@ const LearningPlanTab = () => {
           Complete an assessment to generate your personalized learning plan
         </p>
         <button
-          onClick={() => window.location.href = '/tools/ai-knowledge-navigator'}
+          onClick={() => navigate('/dashboard/assessments/ai-knowledge')}
           className="bg-chestnut text-white px-6 py-2 rounded-lg font-medium hover:bg-chestnut/90"
         >
           Take AI Knowledge Assessment
@@ -132,6 +152,48 @@ const LearningPlanTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Assessment Results Card */}
+      {latestAssessment && (
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-charcoal mb-1">
+                {latestAssessment.type === 'ai-knowledge' ? 'AI Knowledge Assessment' : 
+                 latestAssessment.type === 'org-readiness' ? 'Organizational AI Readiness' : 
+                 'Assessment'} Results
+              </h3>
+              <p className="text-sm text-gray-600">
+                Completed {new Date(latestAssessment.completedAt || latestAssessment.createdAt).toLocaleDateString()}
+              </p>
+              {latestAssessment.results?.overall_score !== undefined && (
+                <p className="text-sm text-chestnut font-medium mt-1">
+                  Score: {latestAssessment.results.overall_score}%
+                </p>
+              )}
+            </div>
+            <button
+              onClick={() => {
+                const path = latestAssessment.type === 'ai-knowledge' 
+                  ? '/dashboard/assessments/ai-knowledge/results'
+                  : '/dashboard/assessments/org-readiness/results';
+                navigate(path, { 
+                  state: { 
+                    results: latestAssessment.results,
+                    responses: latestAssessment.responses,
+                    orgInfo: latestAssessment.orgInfo,
+                    assessmentId: latestAssessment.id
+                  }
+                });
+              }}
+              className="flex items-center text-chestnut hover:text-chestnut/80 font-medium"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              View Full Report
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header with Progress */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">

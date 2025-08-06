@@ -4,6 +4,7 @@ import { useDashboardStore } from '../../store/dashboardStore';
 import { colors } from '../../utils/colors';
 import { useUserTier } from '../../hooks/useUserTier';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * Dashboard Navigation Tabs Component
@@ -12,7 +13,8 @@ import { useAuth } from '../../contexts/AuthContext';
  */
 const DashboardTabs = () => {
   const { activeTab, setActiveTab } = useDashboardStore();
-  const { setIsLoginModalOpen } = useAuth();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const { tierConfig, canAccess, isFreeTier } = useUserTier();
 
   const allTabs = [
@@ -60,7 +62,13 @@ const DashboardTabs = () => {
             <>
               {!canAccess('projects') && (
                 <button
-                  onClick={() => setIsLoginModalOpen(true)}
+                  onClick={() => {
+                    if (user && !user.isAnonymous) {
+                      navigate('/membership');
+                    } else {
+                      navigate('/login');
+                    }
+                  }}
                   className="flex items-center py-2 px-1 border-b-2 border-transparent text-gray-400 font-medium text-sm cursor-pointer hover:text-gray-600"
                   title="Upgrade to access Projects"
                 >
@@ -70,7 +78,13 @@ const DashboardTabs = () => {
                 </button>
               )}
               <button
-                onClick={() => setIsLoginModalOpen(true)}
+                onClick={() => {
+                  if (user && !user.isAnonymous) {
+                    navigate('/membership');
+                  } else {
+                    navigate('/login');
+                  }
+                }}
                 className="flex items-center py-2 px-1 border-b-2 border-transparent text-gray-400 font-medium text-sm cursor-pointer hover:text-gray-600"
                 title="Upgrade to access Action Items"
               >

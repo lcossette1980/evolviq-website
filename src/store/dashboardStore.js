@@ -2,6 +2,7 @@ import React from 'react';
 import { create } from 'zustand';
 import guidesAPI from '../services/guidesAPI';
 import assessmentAPI from '../services/assessmentAPI';
+import { getUserAssessments, getUserAssessmentSummaries } from '../services/assessmentService';
 
 /**
  * Dashboard State Management Store
@@ -20,6 +21,7 @@ export const useDashboardStore = create((set, get) => ({
   actionItems: [],
   actionItemAnalytics: null,
   userAssessments: [],
+  assessmentSummaries: {},
   guideProgress: {},
   newProjectData: {
     name: '',
@@ -81,21 +83,48 @@ export const useDashboardStore = create((set, get) => ({
         guides,
         items,
         analytics,
-        assessments,
+        oldAssessments,
+        newAssessments,
+        assessmentSummaries,
         allGuideProgress
       ] = await Promise.all([
         guidesAPI.getGuidesSummary(user.uid),
         assessmentAPI.getActionItems(user.uid, projectId),
         assessmentAPI.getActionItemAnalytics(user.uid, projectId),
         assessmentAPI.getUserAssessments(user.uid),
+        getUserAssessments(user.uid), // New assessments from subcollection
+        getUserAssessmentSummaries(user.uid), // Assessment summaries
         loadGuideProgress(user.uid)
       ]);
+
+      // Merge old and new assessments
+      const allAssessments = [...oldAssessments];
+      
+      // Add new assessments with proper format
+      newAssessments.forEach(assessment => {
+        allAssessments.push({
+          id: assessment.id,
+          userId: assessment.userId,
+          assessmentType: assessment.type === 'ai-knowledge' ? 'ai_knowledge' : 
+                         assessment.type === 'org-readiness' ? 'change_readiness' : assessment.type,
+          type: assessment.type,
+          results: assessment.results,
+          responses: assessment.responses,
+          completedAt: assessment.completedAt || assessment.createdAt,
+          isComplete: true,
+          orgInfo: assessment.orgInfo,
+          // Add learning plan if available
+          learningPlan: assessment.results?.learning_path || [],
+          actionItems: assessment.results?.recommendations || []
+        });
+      });
 
       set({
         guidesSummary: guides,
         actionItems: items,
         actionItemAnalytics: analytics,
-        userAssessments: assessments,
+        userAssessments: allAssessments,
+        assessmentSummaries,
         guideProgress: allGuideProgress,
         isLoading: false
       });
