@@ -213,7 +213,7 @@ const AIKnowledgeResults = () => {
                     Key Strengths
                   </h3>
                   <ul className="space-y-3">
-                    {results.strengths.map((strength, idx) => (
+                    {(results.strengths || []).map((strength, idx) => (
                       <li key={idx} className="flex items-start">
                         <span className="text-green-600 mr-2">•</span>
                         <span className="text-gray-700">{strength}</span>
@@ -229,7 +229,7 @@ const AIKnowledgeResults = () => {
                     Growth Opportunities
                   </h3>
                   <ul className="space-y-3">
-                    {results.growth_areas.map((area, idx) => (
+                    {(results.growth_areas || []).map((area, idx) => (
                       <li key={idx} className="flex items-start">
                         <span className="text-yellow-600 mr-2">•</span>
                         <span className="text-gray-700">{area}</span>
@@ -289,7 +289,7 @@ const AIKnowledgeResults = () => {
                 animate={{ opacity: 1 }}
                 className="space-y-4"
               >
-                {results.recommendations.map((rec, idx) => (
+                {(results.recommendations || []).map((rec, idx) => (
                   <div key={idx} className={theme.components.card.base + " p-6"}>
                     <div className="flex items-start">
                       <Target className="w-6 h-6 text-chestnut mt-1 mr-3 flex-shrink-0" />
@@ -328,7 +328,7 @@ const AIKnowledgeResults = () => {
                 
                 {results.learning_path && (
                   <div className="space-y-6">
-                    {results.learning_path.map((phase, idx) => (
+                    {(results.learning_path || []).map((phase, idx) => (
                       <div key={idx} className="border-l-4 border-chestnut pl-4">
                         <h4 className="font-semibold text-charcoal mb-2">
                           Phase {idx + 1}: {phase.title}

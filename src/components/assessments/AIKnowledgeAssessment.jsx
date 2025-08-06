@@ -106,17 +106,17 @@ const AIKnowledgeAssessment = () => {
 
       const results = await response.json();
 
-      // Save to Firebase
-      await saveAssessmentResults(user.uid, {
+      // Save to Firebase and get the assessmentId
+      const assessmentId = await saveAssessmentResults(user.uid, {
         type: 'ai-knowledge',
         responses,
         results,
         completedAt: new Date().toISOString()
       });
 
-      // Navigate to results
+      // Navigate to results with assessmentId
       navigate('/dashboard/assessments/ai-knowledge/results', { 
-        state: { results, responses } 
+        state: { results: { ...results, assessmentId }, responses } 
       });
     } catch (err) {
       setError('Failed to save assessment');

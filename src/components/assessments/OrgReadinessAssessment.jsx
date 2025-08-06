@@ -148,8 +148,8 @@ const OrgReadinessAssessment = () => {
       
       const results = await response.json();
 
-      // Save to Firebase
-      await saveAssessmentResults(user.uid, {
+      // Save to Firebase and get the assessmentId
+      const assessmentId = await saveAssessmentResults(user.uid, {
         type: 'org-readiness',
         orgInfo,
         responses,
@@ -157,9 +157,9 @@ const OrgReadinessAssessment = () => {
         completedAt: new Date().toISOString()
       });
 
-      // Navigate to results
+      // Navigate to results with assessmentId
       navigate('/dashboard/assessments/org-readiness/results', { 
-        state: { results, orgInfo, responses } 
+        state: { results: { ...results, assessmentId }, orgInfo, responses } 
       });
     } catch (err) {
       setError('Failed to save assessment');

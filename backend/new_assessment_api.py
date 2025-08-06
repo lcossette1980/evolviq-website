@@ -286,7 +286,29 @@ async def generate_ai_knowledge_report(
     """Generate downloadable PDF report for AI Knowledge assessment"""
     try:
         assessment = get_ai_assessment()
-        assessment.user_responses = submission.responses
+        
+        # Process user responses properly (same as in calculate endpoint)
+        question_lookup = {str(q['id']): idx for idx, q in enumerate(assessment.questions)}
+        
+        for question_id, answer in submission.responses.items():
+            if str(question_id) in question_lookup:
+                question_index = question_lookup[str(question_id)]
+                question = assessment.questions[question_index]
+                
+                if answer in question['options']:
+                    assessment.user_responses[question_index] = {
+                        'answer': answer,
+                        'question_id': question['id'],
+                        'category': question['category'],
+                        'subcategory': question.get('subcategory', ''),
+                        'weight': question['weight'],
+                        'difficulty': question['difficulty'],
+                        'score': question['options'][answer]['score'],
+                        'level': question['options'][answer]['level'],
+                        'explanation': question['options'][answer]['explanation'],
+                        'insight': question['options'][answer]['insight'],
+                        'timestamp': datetime.now()
+                    }
         
         # Generate comprehensive report
         # TODO: Implement proper PDF generation
@@ -299,7 +321,8 @@ async def generate_ai_knowledge_report(
                 f.write(f"AI Knowledge Assessment Report\n")
                 f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
                 f.write(f"="*50 + "\n\n")
-                f.write(f"Overall Score: {assessment.calculate_scores().get('overall_score', 0)}%\n")
+                scores = assessment.calculate_scores()
+                f.write(f"Overall Score: {scores.get('overall_percentage', 0)}%\n")
                 f.write(f"\nDetailed results available in the web interface.\n")
         
         # Return file
