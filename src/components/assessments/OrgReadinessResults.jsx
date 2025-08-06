@@ -272,14 +272,20 @@ const OrgReadinessResults = () => {
 
                 {/* Key Metrics */}
                 <div className="grid md:grid-cols-4 gap-4">
-                  {results.narrative_insights.key_findings.map((finding, idx) => (
-                    <div key={idx} className={theme.components.card.base + " p-4 text-center"}>
-                      <div className="text-2xl font-bold text-chestnut mb-1">
-                        {finding.metric || `${(idx + 1) * 25}%`}
+                  {results.narrative_insights.key_findings.map((finding, idx) => {
+                    // Handle both string and object formats
+                    const metric = typeof finding === 'object' ? (finding.metric || `${(idx + 1) * 25}%`) : `${(idx + 1) * 25}%`;
+                    const label = typeof finding === 'object' ? (finding.label || finding.text || JSON.stringify(finding)) : finding;
+                    
+                    return (
+                      <div key={idx} className={theme.components.card.base + " p-4 text-center"}>
+                        <div className="text-2xl font-bold text-chestnut mb-1">
+                          {metric}
+                        </div>
+                        <p className="text-sm text-gray-600">{label}</p>
                       </div>
-                      <p className="text-sm text-gray-600">{finding.label || finding}</p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </motion.div>
             )}
@@ -367,32 +373,39 @@ const OrgReadinessResults = () => {
                       Implementation Timeline
                     </h4>
                     <div className="relative">
-                      {results.strategic_priorities.map((priority, idx) => (
-                        <div key={idx} className="flex items-start mb-6">
-                          <div className="flex-shrink-0 w-24 text-sm text-gray-500">
-                            Q{idx + 1} 2024
+                      {results.strategic_priorities.map((priority, idx) => {
+                        // Handle both string and object formats
+                        const title = typeof priority === 'object' ? (priority.title || priority.text || JSON.stringify(priority)) : priority;
+                        const description = typeof priority === 'object' ? (priority.description || 'Focus on implementing this strategic priority') : 'Focus on implementing this strategic priority';
+                        const actions = typeof priority === 'object' ? priority.actions : null;
+                        
+                        return (
+                          <div key={idx} className="flex items-start mb-6">
+                            <div className="flex-shrink-0 w-24 text-sm text-gray-500">
+                              Q{idx + 1} 2024
+                            </div>
+                            <div className="flex-shrink-0 w-4 h-4 bg-chestnut rounded-full mt-1 mx-4" />
+                            <div className="flex-grow">
+                              <h5 className="font-semibold text-charcoal mb-1">
+                                {title}
+                              </h5>
+                              <p className="text-gray-600 text-sm mb-2">
+                                {description}
+                              </p>
+                              {actions && (
+                                <div className="mt-2 space-y-1">
+                                  {actions.map((action, actionIdx) => (
+                                    <div key={actionIdx} className="flex items-center text-sm text-gray-500">
+                                      <ChevronRight className="w-4 h-4 mr-1" />
+                                      {action}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex-shrink-0 w-4 h-4 bg-chestnut rounded-full mt-1 mx-4" />
-                          <div className="flex-grow">
-                            <h5 className="font-semibold text-charcoal mb-1">
-                              {priority.title || priority}
-                            </h5>
-                            <p className="text-gray-600 text-sm mb-2">
-                              {priority.description || 'Focus on implementing this strategic priority'}
-                            </p>
-                            {priority.actions && (
-                              <div className="mt-2 space-y-1">
-                                {priority.actions.map((action, actionIdx) => (
-                                  <div key={actionIdx} className="flex items-center text-sm text-gray-500">
-                                    <ChevronRight className="w-4 h-4 mr-1" />
-                                    {action}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -497,14 +510,20 @@ const OrgReadinessResults = () => {
                     Strategic Recommendations
                   </h3>
                   <div className="space-y-4">
-                    {results.narrative_insights.recommendations.map((rec, idx) => (
-                      <div key={idx} className="border-l-4 border-chestnut pl-4 py-2">
-                        <h4 className="font-semibold text-charcoal mb-1">
-                          {rec.title || `Recommendation ${idx + 1}`}
-                        </h4>
-                        <p className="text-gray-700">{rec.description || rec}</p>
-                      </div>
-                    ))}
+                    {results.narrative_insights.recommendations.map((rec, idx) => {
+                      // Handle both string and object formats
+                      const title = typeof rec === 'object' ? (rec.title || `Recommendation ${idx + 1}`) : `Recommendation ${idx + 1}`;
+                      const description = typeof rec === 'object' ? (rec.description || rec.text || JSON.stringify(rec)) : rec;
+                      
+                      return (
+                        <div key={idx} className="border-l-4 border-chestnut pl-4 py-2">
+                          <h4 className="font-semibold text-charcoal mb-1">
+                            {title}
+                          </h4>
+                          <p className="text-gray-700">{description}</p>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -530,16 +549,22 @@ const OrgReadinessResults = () => {
                     Timeline Expectations
                   </h3>
                   <div className="space-y-3">
-                    {results.narrative_insights.timeline_expectations.map((timeline, idx) => (
-                      <div key={idx} className="flex items-start">
-                        <span className="text-blue-600 font-medium mr-2">
-                          {timeline.period || `Phase ${idx + 1}`}:
-                        </span>
-                        <span className="text-gray-700">
-                          {timeline.description || timeline}
-                        </span>
-                      </div>
-                    ))}
+                    {results.narrative_insights.timeline_expectations.map((timeline, idx) => {
+                      // Handle both string and object formats
+                      const period = typeof timeline === 'object' ? (timeline.period || `Phase ${idx + 1}`) : `Phase ${idx + 1}`;
+                      const description = typeof timeline === 'object' ? (timeline.description || timeline.text || JSON.stringify(timeline)) : timeline;
+                      
+                      return (
+                        <div key={idx} className="flex items-start">
+                          <span className="text-blue-600 font-medium mr-2">
+                            {period}:
+                          </span>
+                          <span className="text-gray-700">
+                            {description}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 

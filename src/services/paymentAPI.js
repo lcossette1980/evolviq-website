@@ -1,5 +1,6 @@
 // Payment API service for Stripe integration
 import { buildUrl, createRequestConfig } from '../config/apiConfig';
+import { auth } from '../services/firebase';
 
 class PaymentAPI {
   /**
@@ -7,18 +8,34 @@ class PaymentAPI {
    */
   async createCheckoutSession(user, planId, successUrl, cancelUrl) {
     try {
+      // Get Firebase auth token
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('User not authenticated');
+      }
+      const token = await currentUser.getIdToken();
+
       const requestData = {
-        user_id: user.uid,
-        email: user.email,
         plan_id: planId,
-        name: user.name,
         success_url: successUrl,
-        cancel_url: cancelUrl
+        cancel_url: cancelUrl,
+        customer_email: user.email,
+        metadata: {
+          firebase_uid: user.uid,
+          user_email: user.email
+        }
       };
 
       const response = await fetch(
         buildUrl('/api/payments/create-checkout-session'),
-        createRequestConfig('POST', requestData)
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(requestData)
+        }
       );
 
       if (!response.ok) {
@@ -39,9 +56,22 @@ class PaymentAPI {
    */
   async getSubscriptionStatus(userId) {
     try {
+      // Get Firebase auth token
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('User not authenticated');
+      }
+      const token = await currentUser.getIdToken();
+
       const response = await fetch(
-        buildUrl(`/api/payments/subscription-status/${userId}`),
-        createRequestConfig('GET')
+        buildUrl('/api/payments/subscription-status'),
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
       );
 
       if (!response.ok) {
@@ -62,9 +92,22 @@ class PaymentAPI {
    */
   async syncSubscriptionStatus(userId) {
     try {
+      // Get Firebase auth token
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('User not authenticated');
+      }
+      const token = await currentUser.getIdToken();
+
       const response = await fetch(
         buildUrl(`/api/payments/sync-subscription/${userId}`),
-        createRequestConfig('POST')
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
       );
 
       if (!response.ok) {
@@ -85,6 +128,13 @@ class PaymentAPI {
    */
   async createCustomerPortalSession(userId, returnUrl) {
     try {
+      // Get Firebase auth token
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('User not authenticated');
+      }
+      const token = await currentUser.getIdToken();
+
       const requestData = {
         user_id: userId,
         return_url: returnUrl
@@ -92,7 +142,14 @@ class PaymentAPI {
 
       const response = await fetch(
         buildUrl('/api/payments/create-portal-session'),
-        createRequestConfig('POST', requestData)
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(requestData)
+        }
       );
 
       if (!response.ok) {
@@ -211,28 +268,6 @@ class PaymentAPI {
     }
   }
 
-  /**
-   * Sync subscription status with Firebase
-   */
-  async syncSubscriptionStatus(userId) {
-    try {
-      const response = await fetch(
-        buildUrl(`/api/payments/sync-subscription/${userId}`),
-        createRequestConfig('POST')
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to sync subscription');
-      }
-
-      const result = await response.json();
-      return result;
-    } catch (error) {
-      console.error('Error syncing subscription status:', error);
-      throw error;
-    }
-  }
 
   /**
    * Handle payment success (called from success page)

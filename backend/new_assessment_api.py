@@ -209,6 +209,25 @@ async def calculate_ai_knowledge_results(
                     "difficulty": "progressive"
                 })
         
+        # Process category scores properly
+        category_scores_dict = {}
+        category_scores_raw = scores.get("category_scores", {})
+        for cat, score_data in category_scores_raw.items():
+            if isinstance(score_data, dict):
+                # Handle dict with score/max_score structure
+                if 'score' in score_data and 'max_score' in score_data:
+                    percentage = (score_data['score'] / score_data['max_score']) * 100 if score_data['max_score'] > 0 else 0
+                    category_scores_dict[cat] = round(percentage)
+                elif 'percentage' in score_data:
+                    category_scores_dict[cat] = round(score_data['percentage'])
+                else:
+                    # Fallback - try to extract any numeric value
+                    category_scores_dict[cat] = 0
+            elif isinstance(score_data, (int, float)):
+                category_scores_dict[cat] = round(score_data)
+            else:
+                category_scores_dict[cat] = 0
+        
         # Generate visualizations
         visualizations = {}
         
@@ -267,25 +286,6 @@ async def calculate_ai_knowledge_results(
             visualizations['readiness_gauge'] = json.dumps(gauge_data)
         except:
             pass
-        
-        # Process category scores properly
-        category_scores_dict = {}
-        category_scores_raw = scores.get("category_scores", {})
-        for cat, score_data in category_scores_raw.items():
-            if isinstance(score_data, dict):
-                # Handle dict with score/max_score structure
-                if 'score' in score_data and 'max_score' in score_data:
-                    percentage = (score_data['score'] / score_data['max_score']) * 100 if score_data['max_score'] > 0 else 0
-                    category_scores_dict[cat] = round(percentage)
-                elif 'percentage' in score_data:
-                    category_scores_dict[cat] = round(score_data['percentage'])
-                else:
-                    # Fallback - try to extract any numeric value
-                    category_scores_dict[cat] = 0
-            elif isinstance(score_data, (int, float)):
-                category_scores_dict[cat] = round(score_data)
-            else:
-                category_scores_dict[cat] = 0
         
         # Prepare response
         response_data = {

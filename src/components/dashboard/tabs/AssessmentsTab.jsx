@@ -15,7 +15,7 @@ import {
 import { useAuth } from '../../../contexts/AuthContext';
 import { useUserTier } from '../../../hooks/useUserTier';
 import { useDashboardStore } from '../../../store/dashboardStore';
-import { getUserAssessmentSummaries } from '../../../services/assessmentService';
+import { getUserAssessmentSummaries, getAssessmentResults } from '../../../services/assessmentService';
 import { colors } from '../../../utils/colors';
 
 /**
@@ -101,20 +101,36 @@ const AssessmentsTab = () => {
   ];
 
 
-  const handleAssessmentClick = (assessment, viewResults = false) => {
+  const handleAssessmentClick = async (assessment, viewResults = false) => {
     if (!assessment.freeAccess && !canAccess('assessments', assessment.id)) {
       // Show upgrade prompt
       navigate('/membership');
     } else {
       const status = assessmentStatus[assessment.id];
       if (viewResults && status?.completed) {
-        // Navigate to results with stored data
-        navigate(assessment.resultsPath, { 
-          state: { 
-            results: summaries[assessment.id],
-            orgInfo: assessment.id === 'org-readiness' ? summaries[assessment.id]?.orgInfo : null
-          } 
-        });
+        try {
+          // Get the assessment ID from the summary
+          const summary = summaries[assessment.id];
+          if (summary?.assessmentId) {
+            // Load the full assessment results from Firebase
+            const fullResults = await getAssessmentResults(user.uid, summary.assessmentId);
+            
+            // Navigate to results with full data
+            navigate(assessment.resultsPath, { 
+              state: { 
+                results: fullResults.results,
+                orgInfo: fullResults.orgInfo || null,
+                responses: fullResults.responses,
+                assessmentId: summary.assessmentId
+              } 
+            });
+          } else {
+            console.error('No assessmentId found in summary');
+          }
+        } catch (error) {
+          console.error('Error loading assessment results:', error);
+          // Show error message
+        }
       } else {
         navigate(assessment.path);
       }
