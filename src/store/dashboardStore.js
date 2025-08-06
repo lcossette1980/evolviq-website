@@ -132,8 +132,8 @@ export const useDashboardStore = create((set, get) => ({
       console.log('Dashboard data loaded:', {
         guides: guides.length,
         actionItems: items.length,
-        assessments: assessments.length,
-        completedAssessments: assessments.filter(a => a.isComplete).length,
+        assessments: allAssessments.length,
+        completedAssessments: allAssessments.filter(a => a.isComplete).length,
         analytics,
         currentProject: currentProject?.id
       });

@@ -24,10 +24,13 @@ class StripeIntegration:
         # Initialize Stripe with API key
         stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
         if not stripe.api_key:
+            logger.warning("STRIPE_SECRET_KEY environment variable is not set - Stripe integration will be disabled")
             raise ValueError("STRIPE_SECRET_KEY environment variable is required")
         
         # Webhook endpoint secret for verification
         self.webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET')
+        if not self.webhook_secret:
+            logger.warning("STRIPE_WEBHOOK_SECRET environment variable is not set - webhook verification will be disabled")
         
         # Initialize Firebase Admin (if not already initialized)
         try:

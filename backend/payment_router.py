@@ -45,7 +45,8 @@ async def create_checkout_session(
         from main import stripe_integration
         
         if not stripe_integration:
-            raise HTTPException(status_code=503, detail="Payment service unavailable")
+            logger.error("Stripe integration is not initialized - check STRIPE_SECRET_KEY environment variable")
+            raise HTTPException(status_code=503, detail="Payment service is currently unavailable. Please try again later.")
         
         # Use user email if not provided
         customer_email = checkout_data.customer_email or current_user.get('email')
@@ -70,8 +71,13 @@ async def create_checkout_session(
             "checkout_url": session['session_url']
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Failed to create checkout session: {e}")
+        logger.error(f"Request data: plan_id={checkout_data.plan_id}, user={current_user.get('uid')}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @payment_router.get("/subscription-status")
@@ -84,7 +90,8 @@ async def get_subscription_status(
         from main import stripe_integration
         
         if not stripe_integration:
-            raise HTTPException(status_code=503, detail="Payment service unavailable")
+            logger.error("Stripe integration is not initialized - check STRIPE_SECRET_KEY environment variable")
+            raise HTTPException(status_code=503, detail="Payment service is currently unavailable. Please try again later.")
         
         # Get Stripe customer ID
         customer_id = await premium_verification.get_stripe_customer_id(
@@ -140,7 +147,8 @@ async def cancel_subscription(
         from main import stripe_integration
         
         if not stripe_integration:
-            raise HTTPException(status_code=503, detail="Payment service unavailable")
+            logger.error("Stripe integration is not initialized - check STRIPE_SECRET_KEY environment variable")
+            raise HTTPException(status_code=503, detail="Payment service is currently unavailable. Please try again later.")
         
         # Get Stripe customer ID
         customer_id = await premium_verification.get_stripe_customer_id(
