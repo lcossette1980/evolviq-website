@@ -4,6 +4,7 @@
  */
 
 import { useAuth } from '../contexts/AuthContext';
+import { auth } from '../services/firebase';
 
 class SecureAPIError extends Error {
   constructor(message, code, status) {
@@ -24,7 +25,12 @@ export const authenticatedFetch = async (user, url, options = {}) => {
   }
 
   try {
-    const token = await user.getIdToken();
+    // Get token from Firebase auth
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      throw new SecureAPIError('Firebase user not authenticated', 'AUTH_REQUIRED', 401);
+    }
+    const token = await currentUser.getIdToken();
     
     const response = await fetch(url, {
       ...options,
@@ -81,7 +87,12 @@ export const useSecureAPI = () => {
       throw new SecureAPIError('Must be logged in', 'AUTH_REQUIRED', 401);
     }
 
-    const token = await user.getIdToken();
+    // Get token from Firebase auth
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      throw new SecureAPIError('Firebase user not authenticated', 'AUTH_REQUIRED', 401);
+    }
+    const token = await currentUser.getIdToken();
     
     return await fetch(url, {
       ...options,
@@ -98,7 +109,12 @@ export const useSecureAPI = () => {
       throw new SecureAPIError('Must be logged in', 'AUTH_REQUIRED', 401);
     }
 
-    const token = await user.getIdToken();
+    // Get token from Firebase auth
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      throw new SecureAPIError('Firebase user not authenticated', 'AUTH_REQUIRED', 401);
+    }
+    const token = await currentUser.getIdToken();
     const formData = new FormData();
     formData.append('file', file);
     

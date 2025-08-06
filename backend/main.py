@@ -115,6 +115,15 @@ except Exception as e:
     logger.error(f"❌ Failed to load New Assessment API: {e}")
     new_assessment_router = None
 
+# Import Payment Router
+payment_router = None
+try:
+    from payment_router import payment_router
+    logger.info("✅ Payment router loaded successfully")
+except Exception as e:
+    logger.error(f"❌ Failed to load Payment router: {e}")
+    payment_router = None
+
 # Import WebSocket server
 websocket_app = None
 websocket_server = None
@@ -196,6 +205,11 @@ if websocket_app:
 if new_assessment_router:
     app.include_router(new_assessment_router)
     logger.info("✅ New Assessment router mounted")
+
+# Mount Payment router
+if payment_router:
+    app.include_router(payment_router)
+    logger.info("✅ Payment router mounted")
 
 # Startup Events
 @app.on_event("startup")
