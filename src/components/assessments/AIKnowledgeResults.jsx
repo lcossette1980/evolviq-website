@@ -108,6 +108,7 @@ const AIKnowledgeResults = () => {
   };
 
   const getReadinessColor = () => {
+    if (!results.readiness_level) return 'bg-gray-100 text-gray-800';
     const level = results.readiness_level.toLowerCase();
     if (level.includes('expert') || level.includes('advanced')) return 'bg-green-100 text-green-800';
     if (level.includes('intermediate')) return 'bg-yellow-100 text-yellow-800';
@@ -125,7 +126,7 @@ const AIKnowledgeResults = () => {
               Your AI Knowledge Assessment Results
             </h1>
             <div className={`inline-flex items-center px-4 py-2 rounded-full ${getReadinessColor()} mt-4`}>
-              <span className="text-lg font-medium">{results.readiness_level}</span>
+              <span className="text-lg font-medium">{results.readiness_level || 'Assessment Complete'}</span>
             </div>
           </div>
 
@@ -140,7 +141,7 @@ const AIKnowledgeResults = () => {
                 {results.overall_score}%
               </div>
               <p className="text-xl text-gray-700 mb-2">Overall Score</p>
-              <p className="text-gray-600">{results.readiness_description}</p>
+              <p className="text-gray-600">{results.readiness_description || 'Your personalized AI knowledge assessment results'}</p>
             </div>
             
             {/* Action Buttons */}

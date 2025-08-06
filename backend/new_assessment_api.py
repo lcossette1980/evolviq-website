@@ -191,12 +191,21 @@ async def calculate_ai_knowledge_results(
         # Format learning path from next_steps
         learning_path = []
         for idx, step in enumerate(insights.get('next_steps', [])[:4]):
-            learning_path.append({
-                "title": f"Phase {idx + 1}",
-                "description": step,
-                "duration": "2-4 weeks",
-                "difficulty": "progressive"
-            })
+            # Handle step whether it's a string or object
+            if isinstance(step, dict):
+                learning_path.append({
+                    "title": step.get('title', f"Phase {idx + 1}"),
+                    "description": step.get('description', str(step)),
+                    "duration": step.get('duration', "2-4 weeks"),
+                    "difficulty": step.get('difficulty', "progressive")
+                })
+            else:
+                learning_path.append({
+                    "title": f"Phase {idx + 1}",
+                    "description": str(step),
+                    "duration": "2-4 weeks",
+                    "difficulty": "progressive"
+                })
         
         # Generate visualizations
         visualizations = {}
