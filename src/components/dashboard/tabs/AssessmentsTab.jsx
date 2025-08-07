@@ -15,6 +15,7 @@ import {
 import { useAuth } from '../../../contexts/AuthContext';
 import { useUserTier } from '../../../hooks/useUserTier';
 import { useDashboardStore } from '../../../store/dashboardStore';
+import { TIER_CONFIG } from '../../../config/tierConfig';
 import { getUserAssessmentSummaries, getAssessmentResults } from '../../../services/assessmentService';
 import { colors } from '../../../utils/colors';
 
@@ -102,7 +103,14 @@ const AssessmentsTab = () => {
 
 
   const handleAssessmentClick = async (assessment, viewResults = false) => {
-    if (!assessment.freeAccess && !canAccess('assessments', assessment.id)) {
+    // Normalize sub-feature keys to match tier config
+    const subFeature = assessment.id === 'ai-knowledge'
+      ? 'ai_knowledge_assessment'
+      : assessment.id === 'org-readiness'
+      ? 'change_readiness_assessment'
+      : assessment.id;
+
+    if (!assessment.freeAccess && !canAccess('assessments', subFeature)) {
       // Show upgrade prompt
       navigate('/membership');
     } else {
@@ -152,9 +160,10 @@ const AssessmentsTab = () => {
         <button
           onClick={() => handleAssessmentClick(assessment)}
           className="flex items-center text-chestnut hover:text-chestnut/80 font-medium"
+          title={upgradeMessage('assessments', subFeature)}
         >
           <Lock className="w-4 h-4 mr-2" />
-          Unlock with Premium
+          {upgradeMessage('assessments', subFeature)}
         </button>
       );
     }
@@ -215,7 +224,18 @@ const AssessmentsTab = () => {
       <div className="grid gap-6">
         {assessments.map((assessment) => {
           const status = assessmentStatus[assessment.id];
-          const hasAccess = assessment.freeAccess || canAccess('assessments', assessment.id);
+          const subFeature = assessment.id === 'ai-knowledge'
+            ? 'ai_knowledge_assessment'
+            : assessment.id === 'org-readiness'
+            ? 'change_readiness_assessment'
+            : assessment.id;
+          const hasAccess = assessment.freeAccess || canAccess('assessments', subFeature);
+          const trialIncludes =
+            TIER_CONFIG.trial.assessments.allowed === 'all' ||
+            (TIER_CONFIG.trial.assessments.allowed || []).includes(subFeature);
+          const premiumIncludes =
+            TIER_CONFIG.premium.assessments.allowed === 'all' ||
+            (TIER_CONFIG.premium.assessments.allowed || []).includes(subFeature);
           const Icon = assessment.icon;
 
           return (
@@ -243,9 +263,18 @@ const AssessmentsTab = () => {
                         </span>
                       )}
                     </h3>
-                    <p className="text-charcoal/70 text-sm mb-3">
+                    <p className="text-charcoal/70 text-sm mb-1">
                       {assessment.description}
                     </p>
+                    {!hasAccess && (
+                      <div className="text-xs text-charcoal/60 mb-2">
+                        {trialIncludes && premiumIncludes
+                          ? 'Available in Trial and Premium'
+                          : premiumIncludes
+                          ? 'Available in Premium'
+                          : 'Upgrade required'}
+                      </div>
+                    )}
                     
                     {/* Assessment Details */}
                     <div className="flex items-center space-x-4 text-sm text-charcoal/60 mb-3">

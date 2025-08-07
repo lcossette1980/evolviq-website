@@ -223,7 +223,7 @@ const AIJourneyTab = () => {
               <div className="text-center py-4">
                 <p className="text-gray-600 mb-3">Evaluate your organization's readiness for change</p>
                 <button
-                  onClick={() => navigate('/tools/change-readiness-assessment')}
+                  onClick={() => navigate('/dashboard/assessments/org-readiness')}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
                 >
                   Take Assessment

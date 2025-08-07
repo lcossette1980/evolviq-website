@@ -67,6 +67,10 @@ class OrganizationInfo(BaseModel):
     size: str
     current_ai_usage: str
 
+class OrgReadinessSubmissionPayload(BaseModel):
+    responses: Dict[int, str]
+    org_info: OrganizationInfo
+
 # Cache for assessment instances
 _ai_assessment_cache = None
 _org_assessment_cache = None
@@ -380,18 +384,21 @@ async def get_org_readiness_questions(
         questions = []
         
         for q in assessment.questions:
+            # Some question sets may not define a separate 'dimension';
+            # in that case, use 'category' as the dimension for grouping
+            dimension = q.get("dimension", q.get("category", "General"))
             formatted_q = {
                 "id": q["id"],
-                "dimension": q["dimension"],
-                "category": q["category"],
+                "dimension": dimension,
+                "category": q.get("category", dimension),
                 "question": q["question"],
                 "context": q.get("context"),
                 "options": {
                     key: {
-                        "text": opt["text"],
+                        "text": opt.get("text", str(opt)),
                         "description": opt.get("description", "")
                     }
-                    for key, opt in q["options"].items()
+                    for key, opt in q.get("options", {}).items()
                 }
             }
             questions.append(formatted_q)
@@ -399,7 +406,7 @@ async def get_org_readiness_questions(
         return {
             "questions": questions,
             "total_questions": len(questions),
-            "dimensions": list(set(q["dimension"] for q in assessment.questions)),
+            "dimensions": sorted(list({q.get("dimension", q.get("category", "General")) for q in assessment.questions})),
             "assessment_type": "org-readiness",
             "version": "2.0"
         }
@@ -410,8 +417,7 @@ async def get_org_readiness_questions(
 
 @assessment_router.post("/org-readiness/calculate")
 async def calculate_org_readiness_results(
-    submission: AssessmentSubmission,
-    org_info: OrganizationInfo,
+    payload: OrgReadinessSubmissionPayload,
     background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user),
     rate_limit: dict = Depends(rate_limit_assessment)
@@ -421,6 +427,7 @@ async def calculate_org_readiness_results(
         assessment = get_org_assessment()
         
         # Set organization info
+        org_info = payload.org_info
         assessment.set_organization_info(
             org_info.name,
             org_info.industry,
@@ -435,7 +442,7 @@ async def calculate_org_readiness_results(
         # Create lookup dict for O(1) access
         question_lookup = {str(q['id']): idx for idx, q in enumerate(assessment.questions)}
         
-        for question_id, answer in submission.responses.items():
+        for question_id, answer in payload.responses.items():
             # Find the question by ID using O(1) lookup
             if str(question_id) in question_lookup:
                 question_index = question_lookup[str(question_id)]
@@ -447,8 +454,8 @@ async def calculate_org_readiness_results(
                     assessment.user_responses[question_index] = {
                         'answer': answer,
                         'question_id': question['id'],
-                        'category': question['category'],
-                        'dimension': question['dimension'],
+                        'category': question.get('category', question.get('dimension', 'General')),
+                        'dimension': question.get('dimension', question.get('category', 'General')),
                         'weight': question['weight'],
                         'score': question['options'][answer]['score'],
                         'level': question['options'][answer]['level'],
@@ -634,8 +641,7 @@ async def calculate_org_readiness_results(
 
 @assessment_router.post("/org-readiness/report")
 async def generate_org_readiness_report(
-    submission: AssessmentSubmission,
-    org_info: OrganizationInfo,
+    payload: OrgReadinessSubmissionPayload,
     current_user: dict = Depends(get_current_user)
 ):
     """Generate executive PDF report for Organizational AI Readiness"""
@@ -643,13 +649,14 @@ async def generate_org_readiness_report(
         assessment = get_org_assessment()
         
         # Set organization info and responses
+        org_info = payload.org_info
         assessment.set_organization_info(
             org_info.name,
             org_info.industry,
             org_info.size,
             org_info.current_ai_usage
         )
-        assessment.user_responses = submission.responses
+        assessment.user_responses = payload.responses
         
         # Generate executive report
         # TODO: Implement proper PDF generation
