@@ -775,6 +775,22 @@ class StripeIntegration:
             return users[0].id
         return None
 
+    async def get_customer_subscriptions(self, customer_id: str) -> List[Any]:
+        """Get all subscriptions for a customer"""
+        try:
+            subscriptions = stripe.Subscription.list(
+                customer=customer_id,
+                status='all',
+                limit=10
+            )
+            return subscriptions.data
+        except stripe.error.StripeError as e:
+            logger.error(f"Stripe error getting subscriptions: {e}")
+            return []
+        except Exception as e:
+            logger.error(f"Error getting subscriptions: {e}")
+            return []
+
     async def cancel_subscription(self, customer_id: str) -> Dict[str, Any]:
         """Cancel a customer's subscription"""
         try:

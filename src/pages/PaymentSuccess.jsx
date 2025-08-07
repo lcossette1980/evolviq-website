@@ -73,7 +73,7 @@ const PaymentSuccess = () => {
   };
 
   const handleContinue = () => {
-    navigate('/member-dashboard');
+    navigate('/dashboard');
   };
 
   if (isLoading) {

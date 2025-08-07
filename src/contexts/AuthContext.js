@@ -249,7 +249,13 @@ export const AuthProvider = ({ children }) => {
         return false;
       }
 
-      const token = await user.getIdToken();
+      // Get current Firebase auth user
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        return false;
+      }
+
+      const token = await currentUser.getIdToken();
       const response = await fetch('/api/auth/premium-status', {
         headers: {
           'Authorization': `Bearer ${token}`
