@@ -153,6 +153,84 @@ async def get_subscription_status(
         logger.error(f"Failed to get subscription status: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@payment_router.post("/sync-subscription/{user_id}")
+async def sync_subscription(
+    user_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Sync subscription status from Stripe to Firebase"""
+    try:
+        # Verify user is syncing their own subscription
+        if current_user['uid'] != user_id:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+        
+        # Get stripe integration
+        from main import stripe_integration
+        
+        if not stripe_integration:
+            logger.error("Stripe integration is not initialized")
+            raise HTTPException(status_code=503, detail="Payment service unavailable")
+        
+        # Get subscription status from Stripe
+        status = await stripe_integration.get_subscription_status(user_id)
+        
+        # Update Firebase with the status
+        from firebase_admin import firestore
+        db = firestore.client()
+        
+        update_data = {
+            'isPremium': status['has_subscription'] and status['status'] in ['active', 'trialing'],
+            'subscriptionStatus': status.get('status', 'none'),
+            'subscriptionPlanId': status.get('plan_id'),
+            'subscriptionSynced': firestore.SERVER_TIMESTAMP
+        }
+        
+        if status.get('current_period_end'):
+            update_data['currentPeriodEnd'] = status['current_period_end']
+        
+        db.collection('users').document(user_id).update(update_data)
+        
+        logger.info(f"Synced subscription for user {user_id}: isPremium={update_data['isPremium']}")
+        
+        return {
+            "success": True,
+            "subscription": status
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to sync subscription: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@payment_router.post("/webhook")
+async def stripe_webhook(request: Request):
+    """Handle Stripe webhook events"""
+    try:
+        # Get the webhook payload and signature
+        payload = await request.body()
+        sig_header = request.headers.get('stripe-signature')
+        
+        # Get stripe integration
+        from main import stripe_integration
+        
+        if not stripe_integration:
+            logger.error("Stripe integration is not initialized")
+            raise HTTPException(status_code=503, detail="Service unavailable")
+        
+        # Handle the webhook
+        result = await stripe_integration.handle_webhook_event(payload, sig_header)
+        
+        return {"received": True, "status": result.get('status')}
+        
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+        # Return 200 to acknowledge receipt even if processing failed
+        # This prevents Stripe from retrying
+        return {"received": True, "error": str(e)}
+
 @payment_router.post("/cancel-subscription")
 async def cancel_subscription(
     current_user: dict = Depends(get_current_user)

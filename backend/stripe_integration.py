@@ -775,4 +775,38 @@ class StripeIntegration:
             return users[0].id
         return None
 
+    async def cancel_subscription(self, customer_id: str) -> Dict[str, Any]:
+        """Cancel a customer's subscription"""
+        try:
+            # Get active subscriptions
+            subscriptions = stripe.Subscription.list(
+                customer=customer_id,
+                status='active',
+                limit=1
+            )
+            
+            if not subscriptions.data:
+                raise HTTPException(status_code=404, detail="No active subscription found")
+            
+            # Cancel the subscription at period end
+            subscription = stripe.Subscription.modify(
+                subscriptions.data[0].id,
+                cancel_at_period_end=True
+            )
+            
+            logger.info(f"Subscription {subscription.id} set to cancel at period end")
+            
+            return {
+                'subscription_id': subscription.id,
+                'cancel_at_period_end': subscription.cancel_at_period_end,
+                'current_period_end': datetime.fromtimestamp(subscription.current_period_end)
+            }
+            
+        except stripe.error.StripeError as e:
+            logger.error(f"Stripe error canceling subscription: {e}")
+            raise HTTPException(status_code=400, detail=f"Payment error: {str(e)}")
+        except Exception as e:
+            logger.error(f"Error canceling subscription: {e}")
+            raise HTTPException(status_code=500, detail="Internal server error")
+
 # Global instance will be created in main.py with proper error handling
