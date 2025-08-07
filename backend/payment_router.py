@@ -172,7 +172,9 @@ async def sync_subscription(
             raise HTTPException(status_code=503, detail="Payment service unavailable")
         
         # Get subscription status from Stripe
+        logger.info(f"Getting subscription status for user {user_id}")
         status = await stripe_integration.get_subscription_status(user_id)
+        logger.info(f"Subscription status: {status}")
         
         # Update Firebase with the status
         from firebase_admin import firestore
@@ -188,6 +190,7 @@ async def sync_subscription(
         if status.get('current_period_end'):
             update_data['currentPeriodEnd'] = status['current_period_end']
         
+        logger.info(f"Updating Firebase user {user_id} with: {update_data}")
         db.collection('users').document(user_id).update(update_data)
         
         logger.info(f"Synced subscription for user {user_id}: isPremium={update_data['isPremium']}")

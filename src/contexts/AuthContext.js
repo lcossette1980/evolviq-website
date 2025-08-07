@@ -256,7 +256,13 @@ export const AuthProvider = ({ children }) => {
       }
 
       const token = await currentUser.getIdToken();
-      const response = await fetch('/api/auth/premium-status', {
+      
+      // Use the actual API endpoint with proper base URL
+      const apiUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://evolviq-website-production.up.railway.app'
+        : 'http://localhost:8000';
+      
+      const response = await fetch(`${apiUrl}/api/payments/subscription-status`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -264,20 +270,18 @@ export const AuthProvider = ({ children }) => {
 
       if (response.ok) {
         const data = await response.json();
-        const premiumStatus = data.premium_status;
         
         // Update local state with server-verified premium status
         setUser(prev => ({
           ...prev,
-          isPremium: premiumStatus.is_premium,
-          subscriptionType: premiumStatus.subscription_type,
-          subscriptionStatus: premiumStatus.subscription_status,
-          subscriptionExpiresAt: premiumStatus.expires_at,
-          stripeCustomerId: premiumStatus.stripe_customer_id,
-          premiumVerifiedAt: data.verified_at
+          isPremium: data.has_subscription && data.subscription_status === 'active',
+          subscriptionType: data.plan_name || null,
+          subscriptionStatus: data.subscription_status || 'none',
+          subscriptionExpiresAt: data.current_period_end,
+          premiumVerifiedAt: new Date().toISOString()
         }));
         
-        return premiumStatus.is_premium;
+        return data.has_subscription && data.subscription_status === 'active';
       }
       
       return false;
@@ -317,8 +321,15 @@ export const AuthProvider = ({ children }) => {
         return;
       }
       
-      // Use secure server-side premium verification instead of Firestore
+      // First verify premium status from Stripe
       await verifyPremiumStatus();
+      
+      // Then reload user data from Firestore to get the updated values
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        const userProfile = await getUserProfile(currentUser);
+        setUser(userProfile);
+      }
     } catch (error) {
       console.error('Error refreshing user data:', error);
     }
