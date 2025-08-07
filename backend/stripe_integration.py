@@ -367,7 +367,9 @@ class StripeIntegration:
             logger.info(f"Received webhook event: {event['type']}")
             
             # Handle different event types
-            if event['type'] == 'customer.subscription.created':
+            if event['type'] == 'checkout.session.completed':
+                await self._handle_checkout_completed(event['data']['object'])
+            elif event['type'] == 'customer.subscription.created':
                 await self._handle_subscription_created(event['data']['object'])
             elif event['type'] == 'customer.subscription.updated':
                 await self._handle_subscription_updated(event['data']['object'])
@@ -428,6 +430,31 @@ class StripeIntegration:
             logger.error(f"Error handling payment failed webhook: {e}")
             raise
 
+    async def _handle_checkout_completed(self, session):
+        """Handle completed checkout session"""
+        try:
+            logger.info(f"Processing checkout.session.completed for session: {session.id}")
+            
+            # Get the firebase_uid from metadata
+            firebase_uid = session.metadata.get('firebase_uid')
+            if not firebase_uid:
+                logger.error(f"No firebase_uid in session metadata for session {session.id}")
+                return
+            
+            # If there's a subscription, handle it
+            if session.subscription:
+                logger.info(f"Checkout completed with subscription: {session.subscription}")
+                subscription = stripe.Subscription.retrieve(session.subscription)
+                await self._update_user_subscription_status(subscription, 'checkout_completed')
+            else:
+                logger.info(f"Checkout completed but no subscription for session {session.id}")
+                
+        except Exception as e:
+            logger.error(f"Error handling checkout completed: {e}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            raise
+
     async def _update_user_subscription_status(self, subscription, event_type: str):
         """
         Update user's subscription status in Firestore
@@ -460,9 +487,16 @@ class StripeIntegration:
                 if hasattr(subscription, 'metadata') and subscription.metadata.get('firebase_uid'):
                     firebase_uid = subscription.metadata.get('firebase_uid')
                     logger.info(f"Attempting to find user by firebase_uid from metadata: {firebase_uid}")
-                    user_doc = db.collection('users').document(firebase_uid).get()
-                    if user_doc.exists:
+                    user_doc_ref = db.collection('users').document(firebase_uid)
+                    user_doc_snapshot = user_doc_ref.get()
+                    if user_doc_snapshot.exists:
                         logger.info(f"Found user by firebase_uid: {firebase_uid}")
+                        # Create a compatible user_doc object
+                        class UserDocWrapper:
+                            def __init__(self, doc_ref, doc_snapshot):
+                                self.reference = doc_ref
+                                self.id = firebase_uid
+                        user_doc = UserDocWrapper(user_doc_ref, user_doc_snapshot)
                     else:
                         logger.error(f"User not found by firebase_uid either: {firebase_uid}")
                         return
