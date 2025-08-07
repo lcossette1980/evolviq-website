@@ -22,9 +22,10 @@ export const useUserTier = () => {
   
   const tier = useMemo(() => {
     if (!user || user.isAnonymous) return 'free';
-    if (user.isPremium) {
-      return user.subscriptionStatus === 'trialing' ? 'trial' : 'premium';
-    }
+    // Treat Stripe trial explicitly
+    if (user.subscriptionStatus === 'trialing') return 'trial';
+    // Consider either explicit premium flag or active subscription as premium
+    if (user.isPremium || user.subscriptionStatus === 'active') return 'premium';
     return 'free';
   }, [user]);
   

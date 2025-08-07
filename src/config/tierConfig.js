@@ -186,15 +186,14 @@ export const getUserTierConfig = (user) => {
   if (!user || user.isAnonymous) {
     return TIER_CONFIG.free;
   }
-  
-  // Check subscription status
-  if (user.isPremium) {
-    if (user.subscriptionStatus === 'trialing') {
-      return TIER_CONFIG.trial;
-    }
+  // Trial takes precedence when present
+  if (user.subscriptionStatus === 'trialing') {
+    return TIER_CONFIG.trial;
+  }
+  // Active subscription OR explicit premium flag → premium
+  if (user.isPremium || user.subscriptionStatus === 'active') {
     return TIER_CONFIG.premium;
   }
-  
   return TIER_CONFIG.free;
 };
 

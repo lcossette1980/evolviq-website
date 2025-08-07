@@ -24,6 +24,7 @@ import { generateShareableReport } from '../../services/assessmentService';
 import { theme } from '../../styles/theme';
 import API_CONFIG from '../../config/apiConfig';
 import LoadingSpinner from '../shared/LoadingSpinner';
+import { getUserAssessmentSummaries, getAssessmentResults } from '../../services/assessmentService';
 
 const OrgReadinessResults = () => {
   const location = useLocation();
@@ -37,10 +38,30 @@ const OrgReadinessResults = () => {
   const [activeTab, setActiveTab] = useState('executive');
 
   useEffect(() => {
-    if (!results || !orgInfo) {
-      navigate('/dashboard/assessments');
-    }
-  }, [results, orgInfo, navigate]);
+    const fetchLatestIfMissing = async () => {
+      if (results && orgInfo) return;
+      try {
+        if (!user) return;
+        setIsLoading(true);
+        const summaries = await getUserAssessmentSummaries(user.uid);
+        // Newer keys use hyphen style: 'org-readiness'
+        const summary = summaries['org-readiness'] || summaries['change-readiness'] || summaries['change_readiness'] || null;
+        if (summary?.assessmentId) {
+          const doc = await getAssessmentResults(user.uid, summary.assessmentId);
+          setResults({ ...(doc.results || {}), assessmentId: doc.id });
+          setOrgInfo(doc.orgInfo || null);
+        } else {
+          navigate('/dashboard/assessments');
+        }
+      } catch (err) {
+        console.error('Failed to load latest Org Readiness results:', err);
+        navigate('/dashboard/assessments');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchLatestIfMissing();
+  }, [results, orgInfo, user, navigate]);
 
   const handleDownloadReport = async () => {
     try {
@@ -114,7 +135,13 @@ const OrgReadinessResults = () => {
     });
   };
 
-  if (!results || !orgInfo) return null;
+  if (!results || !orgInfo) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="large" />
+      </div>
+    );
+  }
 
   const getReadinessColor = (score) => {
     if (score >= 80) return 'text-green-600';

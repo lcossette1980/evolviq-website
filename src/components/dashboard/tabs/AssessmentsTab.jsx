@@ -139,7 +139,13 @@ const AssessmentsTab = () => {
 
   const getAssessmentButton = (assessment) => {
     const status = assessmentStatus[assessment.id];
-    const hasAccess = assessment.freeAccess || canAccess('assessments', assessment.id);
+    // Normalize sub-feature keys to match tier config
+    const subFeature = assessment.id === 'ai-knowledge'
+      ? 'ai_knowledge_assessment'
+      : assessment.id === 'org-readiness'
+      ? 'change_readiness_assessment'
+      : assessment.id;
+    const hasAccess = assessment.freeAccess || canAccess('assessments', subFeature);
 
     if (!hasAccess) {
       return (

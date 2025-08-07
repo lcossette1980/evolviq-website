@@ -100,14 +100,49 @@ const OverviewTab = () => {
                     </div>
                     <div className="text-right">
                       <div className="text-lg font-bold" style={{ color: colors.chestnut }}>
-                        {Math.round((assessment.overallScore || assessment.results?.overallScore || 0) * (assessment.overallScore > 10 ? 1 : 20))}%
+                        {(() => {
+                          // Normalize score across assessment types (new results use snake_case)
+                          const type = assessment.assessmentType || assessment.type;
+                          const results = assessment.results || {};
+                          const score =
+                            type === 'ai_knowledge'
+                              ? results.overall_score
+                              : type === 'change_readiness' || type === 'org-readiness'
+                              ? results.overall_readiness
+                              : undefined;
+                          if (typeof score === 'number') return Math.round(score) + '%';
+                          // Fallback for any legacy shape
+                          const legacy = assessment.overallScore || results.overallScore;
+                          if (typeof legacy === 'number') {
+                            // If it looks like a 0–5 or 0–1 scale, scale to %
+                            const scaled = legacy > 10 ? legacy : legacy * 20;
+                            return Math.round(scaled) + '%';
+                          }
+                          return '0%';
+                        })()}
                       </div>
                       <div className="text-xs text-gray-500">Score</div>
                       <button 
                         className="text-xs text-blue-600 hover:text-blue-800 mt-1"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/assessment-results/${assessment.assessmentType || assessment.id}`);
+                          // Route to the new results pages and pass needed state
+                          const type = assessment.assessmentType || assessment.type;
+                          const assessmentId = assessment.id;
+                          const state = {
+                            // Ensure results include assessmentId for share/report actions
+                            results: { ...(assessment.results || {}), assessmentId },
+                            orgInfo: assessment.orgInfo || null,
+                            responses: assessment.responses || {}
+                          };
+                          if (type === 'ai_knowledge') {
+                            navigate('/dashboard/assessments/ai-knowledge/results', { state });
+                          } else if (type === 'change_readiness' || type === 'org-readiness') {
+                            navigate('/dashboard/assessments/org-readiness/results', { state });
+                          } else {
+                            // Fallback: keep old route if unknown type
+                            navigate(`/assessment-results/${type || assessmentId}`);
+                          }
                         }}
                       >
                         View Details

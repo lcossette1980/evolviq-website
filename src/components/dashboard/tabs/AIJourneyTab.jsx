@@ -137,7 +137,14 @@ const AIJourneyTab = () => {
                     {aiKnowledgeAssessment.learningPlan?.length || 0} learning items • {aiKnowledgeAssessment.actionItems?.length || 0} actions
                   </div>
                   <button
-                    onClick={() => navigate(`/assessment-results/${aiKnowledgeAssessment.assessmentType}`)}
+                    onClick={() => {
+                      const state = {
+                        results: { ...(aiKnowledgeAssessment.results || {}), assessmentId: aiKnowledgeAssessment.id },
+                        orgInfo: aiKnowledgeAssessment.orgInfo || null,
+                        responses: aiKnowledgeAssessment.responses || {}
+                      };
+                      navigate('/dashboard/assessments/ai-knowledge/results', { state });
+                    }}
                     className="text-blue-600 hover:text-blue-800 flex items-center text-sm"
                   >
                     View Details <ArrowRight className="w-3 h-3 ml-1" />
@@ -198,7 +205,14 @@ const AIJourneyTab = () => {
                     {changeReadinessAssessment.learningPlan?.length || 0} learning items • {changeReadinessAssessment.actionItems?.length || 0} actions
                   </div>
                   <button
-                    onClick={() => navigate(`/assessment-results/${changeReadinessAssessment.assessmentType}`)}
+                    onClick={() => {
+                      const state = {
+                        results: { ...(changeReadinessAssessment.results || {}), assessmentId: changeReadinessAssessment.id },
+                        orgInfo: changeReadinessAssessment.orgInfo || null,
+                        responses: changeReadinessAssessment.responses || {}
+                      };
+                      navigate('/dashboard/assessments/org-readiness/results', { state });
+                    }}
                     className="text-blue-600 hover:text-blue-800 flex items-center text-sm"
                   >
                     View Details <ArrowRight className="w-3 h-3 ml-1" />

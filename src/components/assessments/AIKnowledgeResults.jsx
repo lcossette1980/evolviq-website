@@ -19,6 +19,7 @@ import { generateShareableReport } from '../../services/assessmentService';
 import { theme } from '../../styles/theme';
 import API_CONFIG from '../../config/apiConfig';
 import LoadingSpinner from '../shared/LoadingSpinner';
+import { getUserAssessmentSummaries, getAssessmentResults } from '../../services/assessmentService';
 
 const AIKnowledgeResults = () => {
   const location = useLocation();
@@ -31,10 +32,30 @@ const AIKnowledgeResults = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    if (!results) {
-      navigate('/dashboard/assessments');
-    }
-  }, [results, navigate]);
+    const fetchLatestIfMissing = async () => {
+      if (results) return;
+      try {
+        if (!user) return;
+        setIsLoading(true);
+        const summaries = await getUserAssessmentSummaries(user.uid);
+        // Newer keys use hyphen style: 'ai-knowledge'
+        const summary = summaries['ai-knowledge'] || summaries['ai_knowledge'] || null;
+        if (summary?.assessmentId) {
+          const doc = await getAssessmentResults(user.uid, summary.assessmentId);
+          setResults({ ...(doc.results || {}), assessmentId: doc.id });
+        } else {
+          // No prior assessments; send back to assessments hub
+          navigate('/dashboard/assessments');
+        }
+      } catch (err) {
+        console.error('Failed to load latest AI Knowledge results:', err);
+        navigate('/dashboard/assessments');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchLatestIfMissing();
+  }, [results, user, navigate]);
 
   const handleDownloadReport = async () => {
     try {
@@ -99,7 +120,13 @@ const AIKnowledgeResults = () => {
     navigate('/dashboard/assessments/ai-knowledge');
   };
 
-  if (!results) return null;
+  if (!results) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="large" />
+      </div>
+    );
+  }
 
   const getScoreColor = (score) => {
     if (score >= 80) return 'text-green-600';
