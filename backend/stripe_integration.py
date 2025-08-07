@@ -43,15 +43,6 @@ class StripeIntegration:
                 firebase_admin.initialize_app(cred)
         
         self.db = None
-    
-    def get_db(self):
-        if self.db is None:
-            try:
-                self.db = firestore.client()
-            except Exception as e:
-                logger.error(f"Failed to initialize Firestore: {e}")
-                return None
-        return self.db
         
         # Price mapping from your config
         self.price_mapping = {
@@ -60,7 +51,20 @@ class StripeIntegration:
             'business': os.getenv('STRIPE_PRICE_BUSINESS')
         }
         
-        logger.info("StripeIntegration initialized successfully")
+        logger.info(f"StripeIntegration initialized successfully with price mapping: {list(self.price_mapping.keys())}")
+    
+    def get_db(self):
+        if self.db is None:
+            try:
+                self.db = firestore.client()
+                logger.info("✅ Firestore client initialized for Stripe integration")
+            except Exception as e:
+                logger.error(f"Failed to initialize Firestore: {e}")
+                logger.error(f"Error type: {type(e).__name__}")
+                import traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
+                raise  # Re-raise to see the actual error
+        return self.db
 
     async def create_customer(self, user_id: str, email: str, name: str = None) -> str:
         """
@@ -77,11 +81,15 @@ class StripeIntegration:
             )
             
             # Update user document with Stripe customer ID
-            user_ref = self.db.collection('users').document(user_id)
-            user_ref.update({
-                'stripe_customer_id': customer.id,
-                'updated_at': datetime.utcnow()
-            })
+            db = self.get_db()
+            if db:
+                user_ref = db.collection('users').document(user_id)
+                user_ref.update({
+                    'stripe_customer_id': customer.id,
+                    'updated_at': datetime.utcnow()
+                })
+            else:
+                logger.error("Failed to get Firestore client in create_customer")
             
             logger.info(f"Created Stripe customer {customer.id} for user {user_id}")
             return customer.id
@@ -99,7 +107,12 @@ class StripeIntegration:
         """
         try:
             # Check if user already has a Stripe customer ID
-            user_ref = self.db.collection('users').document(user_id)
+            db = self.get_db()
+            if not db:
+                logger.error("Failed to get Firestore client in get_or_create_customer")
+                raise HTTPException(status_code=500, detail="Database connection error")
+            
+            user_ref = db.collection('users').document(user_id)
             user_doc = user_ref.get()
             
             if user_doc.exists:
@@ -142,12 +155,19 @@ class StripeIntegration:
         Create Stripe Checkout session for subscription
         """
         try:
+            logger.info(f"Creating checkout session - user_id: {user_id}, email: {email}, plan_id: {plan_id}")
+            logger.info(f"Price mapping: {self.price_mapping}")
+            
             # Get or create customer
             customer_id = await self.get_or_create_customer(user_id, email, name)
+            logger.info(f"Got/created customer: {customer_id}")
             
             # Get price ID for plan
             price_id = self.price_mapping.get(plan_id)
+            logger.info(f"Looking up price for plan '{plan_id}': {price_id}")
+            
             if not price_id:
+                logger.error(f"No price ID found for plan: {plan_id}. Available plans: {list(self.price_mapping.keys())}")
                 raise HTTPException(status_code=400, detail=f"Invalid plan: {plan_id}")
             
             # Determine if trial should be included
@@ -212,7 +232,11 @@ class StripeIntegration:
         """
         try:
             # Get user's Stripe customer ID
-            user_ref = self.db.collection('users').document(user_id)
+            db = self.get_db()
+            if not db:
+                raise HTTPException(status_code=500, detail="Database connection error")
+            
+            user_ref = db.collection('users').document(user_id)
             user_doc = user_ref.get()
             
             if not user_doc.exists:
@@ -244,7 +268,11 @@ class StripeIntegration:
         Get user's current subscription status
         """
         try:
-            user_ref = self.db.collection('users').document(user_id)
+            db = self.get_db()
+            if not db:
+                raise HTTPException(status_code=500, detail="Database connection error")
+            
+            user_ref = db.collection('users').document(user_id)
             user_doc = user_ref.get()
             
             if not user_doc.exists:
@@ -409,7 +437,12 @@ class StripeIntegration:
             logger.info(f"Updating subscription for customer {customer_id}, event: {event_type}")
             
             # Find user by Stripe customer ID
-            users_ref = self.db.collection('users')
+            db = self.get_db()
+            if not db:
+                logger.error("Failed to get Firestore client in _update_user_subscription_status")
+                return
+            
+            users_ref = db.collection('users')
             query = users_ref.where('stripe_customer_id', '==', customer_id).limit(1)
             docs = query.stream()
             
@@ -427,7 +460,7 @@ class StripeIntegration:
                 if hasattr(subscription, 'metadata') and subscription.metadata.get('firebase_uid'):
                     firebase_uid = subscription.metadata.get('firebase_uid')
                     logger.info(f"Attempting to find user by firebase_uid from metadata: {firebase_uid}")
-                    user_doc = self.db.collection('users').document(firebase_uid).get()
+                    user_doc = db.collection('users').document(firebase_uid).get()
                     if user_doc.exists:
                         logger.info(f"Found user by firebase_uid: {firebase_uid}")
                     else:
@@ -497,7 +530,7 @@ class StripeIntegration:
                 user_doc.reference.update(update_data)
             elif hasattr(user_doc, 'id'):
                 # This is a direct document get
-                self.db.collection('users').document(user_doc.id).update(update_data)
+                db.collection('users').document(user_doc.id).update(update_data)
             else:
                 logger.error(f"Unable to determine document reference type for user update")
                 return
@@ -560,7 +593,9 @@ class StripeIntegration:
             'updated_at': datetime.utcnow()
         }
         
-        self.db.collection('users').document(user_id).update(premium_data)
+        db = self.get_db()
+        if db:
+            db.collection('users').document(user_id).update(premium_data)
         logger.info(f"Canceled subscription for user {user_id}")
     
     async def handle_trial_ending(self, subscription: Dict[str, Any]):
@@ -584,7 +619,9 @@ class StripeIntegration:
             'subscription_id': subscription['id']
         }
         
-        self.db.collection('notifications').add(notification)
+        db = self.get_db()
+        if db:
+            db.collection('notifications').add(notification)
         logger.info(f"Trial ending notification sent for user {user_id}")
     
     async def handle_payment_succeeded(self, invoice: Dict[str, Any]):
@@ -607,7 +644,9 @@ class StripeIntegration:
             'description': invoice.get('description', 'Subscription payment')
         }
         
-        self.db.collection('payments').add(payment_record)
+        db = self.get_db()
+        if db:
+            db.collection('payments').add(payment_record)
         logger.info(f"Payment succeeded for user {user_id}: ${payment_record['amount']}")
     
     async def handle_payment_failed(self, invoice: Dict[str, Any]):
@@ -630,10 +669,12 @@ class StripeIntegration:
             'invoice_id': invoice['id']
         }
         
-        self.db.collection('notifications').add(notification)
-        
-        # Update user status
-        self.db.collection('users').document(user_id).update({
+        db = self.get_db()
+        if db:
+            db.collection('notifications').add(notification)
+            
+            # Update user status
+            db.collection('users').document(user_id).update({
             'payment_status': 'failed',
             'payment_failed_at': datetime.utcnow()
         })
@@ -647,7 +688,11 @@ class StripeIntegration:
             return
         
         # Find user by email
-        users = self.db.collection('users').where('email', '==', email).limit(1).get()
+        db = self.get_db()
+        if not db:
+            return
+        
+        users = db.collection('users').where('email', '==', email).limit(1).get()
         if not users:
             logger.warning(f"No user found for email {email}")
             return
@@ -655,7 +700,7 @@ class StripeIntegration:
         user_id = users[0].id
         
         # Store customer ID
-        self.db.collection('users').document(user_id).update({
+        db.collection('users').document(user_id).update({
             'stripeCustomerId': customer['id'],
             'stripe_customer_created': datetime.utcnow()
         })
@@ -677,7 +722,9 @@ class StripeIntegration:
             return
         
         # Update user's payment method info
-        self.db.collection('users').document(user_id).update({
+        db = self.get_db()
+        if db:
+            db.collection('users').document(user_id).update({
             'has_payment_method': True,
             'payment_method_type': payment_method['type'],
             'payment_method_last4': payment_method.get('card', {}).get('last4'),
@@ -700,13 +747,17 @@ class StripeIntegration:
             if client_ref:
                 user_id = client_ref
                 # Store customer ID
-                self.db.collection('users').document(user_id).update({
-                    'stripeCustomerId': customer_id
-                })
+                db = self.get_db()
+                if db:
+                    db.collection('users').document(user_id).update({
+                        'stripeCustomerId': customer_id
+                    })
         
         if user_id:
             # Record checkout completion
-            self.db.collection('users').document(user_id).update({
+            db = self.get_db()
+            if db:
+                db.collection('users').document(user_id).update({
                 'last_checkout_completed': datetime.utcnow(),
                 'checkout_session_id': session['id']
             })
@@ -715,7 +766,11 @@ class StripeIntegration:
     
     async def _get_user_id_by_customer(self, customer_id: str) -> Optional[str]:
         """Get user ID by Stripe customer ID"""
-        users = self.db.collection('users').where('stripeCustomerId', '==', customer_id).limit(1).get()
+        db = self.get_db()
+        if not db:
+            return None
+        
+        users = db.collection('users').where('stripeCustomerId', '==', customer_id).limit(1).get()
         if users:
             return users[0].id
         return None
