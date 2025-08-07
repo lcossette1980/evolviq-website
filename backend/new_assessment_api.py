@@ -428,12 +428,12 @@ async def calculate_org_readiness_results(
         
         # Set organization info
         org_info = payload.org_info
-        assessment.set_organization_info(
-            org_info.name,
-            org_info.industry,
-            org_info.size,
-            org_info.current_ai_usage
-        )
+        assessment.organization_info = {
+            'name': org_info.name,
+            'industry': org_info.industry,
+            'size': org_info.size,
+            'current_ai_usage': org_info.current_ai_usage
+        }
         
         # Process user responses properly
         # The frontend sends responses as {question_id: answer_choice}
@@ -650,12 +650,12 @@ async def generate_org_readiness_report(
         
         # Set organization info and responses
         org_info = payload.org_info
-        assessment.set_organization_info(
-            org_info.name,
-            org_info.industry,
-            org_info.size,
-            org_info.current_ai_usage
-        )
+        assessment.organization_info = {
+            'name': org_info.name,
+            'industry': org_info.industry,
+            'size': org_info.size,
+            'current_ai_usage': org_info.current_ai_usage
+        }
         assessment.user_responses = payload.responses
         
         # Generate executive report
