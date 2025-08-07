@@ -701,7 +701,7 @@ class StripeIntegration:
         
         # Store customer ID
         db.collection('users').document(user_id).update({
-            'stripeCustomerId': customer['id'],
+            'stripe_customer_id': customer['id'],
             'stripe_customer_created': datetime.utcnow()
         })
         
@@ -750,7 +750,7 @@ class StripeIntegration:
                 db = self.get_db()
                 if db:
                     db.collection('users').document(user_id).update({
-                        'stripeCustomerId': customer_id
+                        'stripe_customer_id': customer_id
                     })
         
         if user_id:
@@ -770,7 +770,7 @@ class StripeIntegration:
         if not db:
             return None
         
-        users = db.collection('users').where('stripeCustomerId', '==', customer_id).limit(1).get()
+        users = db.collection('users').where('stripe_customer_id', '==', customer_id).limit(1).get()
         if users:
             return users[0].id
         return None
