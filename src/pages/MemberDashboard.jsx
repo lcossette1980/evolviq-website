@@ -7,7 +7,6 @@ import ErrorBoundary from '../components/common/ErrorBoundary';
 // Layout Components
 import DashboardHeader from '../components/dashboard/DashboardHeader';
 import DashboardTabs from '../components/dashboard/DashboardTabs';
-import ProjectSelector from '../components/dashboard/ProjectSelector';
 import CreateProjectModal from '../components/dashboard/CreateProjectModal';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import DashboardSkeleton from '../components/dashboard/DashboardSkeleton';
@@ -121,11 +120,6 @@ const MemberDashboard = () => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header Section */}
         <DashboardHeader user={user} isPremium={isPremium} />
-        
-        {/* Project Selector */}
-        <div className="mb-8">
-          <ProjectSelector />
-        </div>
         
         {/* Navigation Tabs */}
         <DashboardTabs />

@@ -33,8 +33,9 @@ export const TIER_CONFIG = {
       showPreviews: true
     },
     dashboard: {
-      tabs: ['overview', 'assessments', 'tools', 'learning'],
+      tabs: ['overview', 'assessments', 'tools', 'learning'], // Tools tab accessible to all
       hideProjectsTab: true,
+      hideActionItemsTab: true, // Hide action items tab for free users
       showUpgradePrompts: true
     },
     export: {

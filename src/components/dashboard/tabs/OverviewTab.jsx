@@ -17,7 +17,9 @@ const OverviewTab = () => {
     guideProgress, 
     actionItems,
     getCompletedAssessments,
-    getPendingActionItems
+    getPendingActionItems,
+    hasCompletedCoreAssessments,
+    setShowCreateProject
   } = useDashboardStore();
 
   const completedAssessments = getCompletedAssessments();
@@ -25,6 +27,31 @@ const OverviewTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Guidance Banners */}
+      {!currentProject && !hasCompletedCoreAssessments() && (
+        <div className="bg-white rounded-lg shadow p-6 border">
+          <h3 className="text-lg font-semibold mb-1" style={{ color: colors.charcoal }}>
+            Get started: Complete your assessments
+          </h3>
+          <p className="text-sm text-gray-600">Take AI Knowledge and Organizational Readiness to unlock projects and guides.</p>
+        </div>
+      )}
+      {!currentProject && hasCompletedCoreAssessments() && (
+        <div className="bg-white rounded-lg shadow p-6 border flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold" style={{ color: colors.charcoal }}>
+              Next step: Create your first project
+            </h3>
+            <p className="text-sm text-gray-600">Each project gets its own implementation guides and action plan.</p>
+          </div>
+          <button
+            className="px-4 py-2 rounded-lg bg-chestnut text-white hover:bg-chestnut/90"
+            onClick={() => setShowCreateProject(true)}
+          >
+            Create Project
+          </button>
+        </div>
+      )}
       {/* Project Overview */}
       {currentProject && (
         <div className="bg-white rounded-lg shadow p-6">

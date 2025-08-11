@@ -28,23 +28,24 @@ const LinearRegressionPage = () => {
           case 'upload':
             return (
               <DataUploadStep
-                onFileUpload={handleFileUpload}
-                acceptedFileTypes={REGRESSION_TOOL_CONFIG.allowedFileTypes}
-                maxFileSize={REGRESSION_TOOL_CONFIG.maxFileSize}
-                uploadResults={stepData.uploadResults}
+                onUpload={handleFileUpload}
+                uploadedFile={stepData.uploadedFile}
+                validationResults={stepData.uploadResults}
+                showValidationResults={Boolean(stepData.uploadResults && stepData.uploadedFile)}
+                onNext={nextStep}
               />
             );
 
           case 'validate':
             return (
               <DataValidation
-                uploadResults={stepData.uploadResults}
-                onValidation={(results) => {
-                  processStep('validate', results).then(() => {
-                    nextStep();
-                  }).catch(console.error);
+                validationResults={stepData.uploadResults}
+                onValidate={(selectedTarget) => {
+                  processStep('validate', { target: selectedTarget })
+                    .then(() => nextStep())
+                    .catch(console.error);
                 }}
-                validationResults={stepData.validate}
+                isLoading={false}
               />
             );
 
@@ -52,10 +53,10 @@ const LinearRegressionPage = () => {
             return (
               <DataPreprocessing
                 validationResults={stepData.validate}
-                onPreprocessing={(config) => {
-                  processStep('preprocess', config).then(() => {
-                    nextStep();
-                  }).catch(console.error);
+                onPreprocess={(config) => {
+                  processStep('preprocess', config)
+                    .then(() => nextStep())
+                    .catch(console.error);
                 }}
                 preprocessingResults={stepData.preprocess}
               />
@@ -65,12 +66,12 @@ const LinearRegressionPage = () => {
             return (
               <ModelTraining
                 preprocessingResults={stepData.preprocess}
-                onTraining={(params) => {
-                  processStep('train', params).then(() => {
-                    nextStep();
-                  }).catch(console.error);
+                onTrain={(params) => {
+                  processStep('train', params)
+                    .then(() => nextStep())
+                    .catch(console.error);
                 }}
-                trainingResults={stepData.train}
+                isLoading={false}
               />
             );
 

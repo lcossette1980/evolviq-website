@@ -27,10 +27,11 @@ const ClusteringExplorePage = () => {
           case 'upload':
             return (
               <DataUploadStep
-                onFileUpload={handleFileUpload}
-                acceptedFileTypes={CLUSTERING_TOOL_CONFIG.allowedFileTypes}
-                maxFileSize={CLUSTERING_TOOL_CONFIG.maxFileSize}
-                uploadResults={stepData.uploadResults}
+                onUpload={handleFileUpload}
+                uploadedFile={stepData.uploadedFile}
+                validationResults={stepData.uploadResults}
+                showValidationResults={Boolean(stepData.uploadResults && stepData.uploadedFile)}
+                onNext={nextStep}
               />
             );
 
@@ -38,26 +39,27 @@ const ClusteringExplorePage = () => {
           case 'configure':
             return (
               <ClusterConfigurationStep
-                uploadResults={stepData.uploadResults}
-                onConfiguration={(config) => {
-                  processStep('configure', config).then(() => {
-                    nextStep();
-                  }).catch(console.error);
+                validationResults={stepData.uploadResults}
+                onConfigure={(config) => {
+                  processStep('configure', config)
+                    .then(() => nextStep())
+                    .catch(console.error);
                 }}
-                configurationResults={stepData.configure}
+                isLoading={false}
               />
             );
 
           case 'analyze':
             return (
               <ClusterAnalysisStep
-                configurationResults={stepData.configure}
-                onAnalysis={(params) => {
-                  processStep('analyze', params).then(() => {
-                    nextStep();
-                  }).catch(console.error);
+                config={stepData.configure}
+                validationResults={stepData.uploadResults}
+                onAnalyze={() => {
+                  processStep('analyze', { config: stepData.configure })
+                    .then(() => nextStep())
+                    .catch(console.error);
                 }}
-                analysisResults={stepData.analyze}
+                isLoading={false}
               />
             );
 

@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
+import API_CONFIG, { buildUrl } from '../config/apiConfig';
 
 const AuthContext = createContext(null);
 
@@ -214,11 +215,18 @@ export const AuthProvider = ({ children }) => {
 
     try {
       // Create checkout session through secure backend
-      const response = await fetch('/api/payments/create-checkout-session', {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('User not authenticated');
+      }
+
+      const token = await currentUser.getIdToken();
+
+      const response = await fetch(buildUrl('/api/payments/create-checkout-session'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await user.getIdToken()}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ 
           planId, 
@@ -256,13 +264,9 @@ export const AuthProvider = ({ children }) => {
       }
 
       const token = await currentUser.getIdToken();
-      
-      // Use the actual API endpoint with proper base URL
-      const apiUrl = process.env.NODE_ENV === 'production' 
-        ? 'https://evolviq-website-production.up.railway.app'
-        : 'http://localhost:8000';
-      
-      const response = await fetch(`${apiUrl}/api/payments/subscription-status`, {
+
+      // Always use centralized API base URL
+      const response = await fetch(buildUrl('/api/payments/subscription-status'), {
         headers: {
           'Authorization': `Bearer ${token}`
         }

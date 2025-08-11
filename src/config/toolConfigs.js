@@ -229,9 +229,9 @@ export const NLP_TOOL_CONFIG = {
     },
     {
       id: 2,
-      name: 'Text Preprocessing',
-      description: 'Clean and prepare text for analysis',
-      component: 'preprocess'
+      name: 'Validate Data',
+      description: 'Review text data structure and quality',
+      component: 'validate'
     },
     {
       id: 3,

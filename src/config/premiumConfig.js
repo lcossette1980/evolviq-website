@@ -33,21 +33,21 @@ export const PREMIUM_PRICING = {
 
 export const PREMIUM_FEATURES = {
   core: [
-    'All intelligent AI assessments with AI agents',
-    'Unlimited interactive ML tool access',
+    'All AI assessments (Knowledge + Organizational Readiness)',
+    '30+ premium interactive ML/AI tools',
     'Complete implementation guides and playbooks',
-    'Priority email support',
-    'Sector-specific recommendations'
+    'Priority email support (24hr response)',
+    'Industry-specific recommendations'
   ],
   monthly: [
-    'All intelligent assessments with AI agents',
-    'Unlimited interactive ML tool access',
+    'All AI assessments (Knowledge + Organizational Readiness)',
+    '30+ premium interactive ML/AI tools',
     'Complete implementation guides and playbooks',
     'Automatic action item generation',
-    'Progress tracking and analytics',
-    'Priority email support',
-    'Sector-specific recommendations',
-    'Export all your data and insights'
+    'Unlimited projects and progress tracking',
+    'Priority email support (24hr response)',
+    'Industry-specific recommendations',
+    'Export all data (PDF, Excel, no watermarks)'
   ],
   annual: [
     'Everything in Premium',
@@ -70,18 +70,18 @@ export const PREMIUM_FEATURES = {
 
 export const PREMIUM_BENEFITS = [
   {
-    title: 'Intelligent AI Assessments',
-    description: 'Multi-agent AI assessments that provide personalized recommendations',
+    title: 'All AI Assessments',
+    description: 'Both AI Knowledge Navigator and Organizational Readiness assessments',
     icon: 'Crown'
   },
   {
-    title: 'Interactive ML Tools',
-    description: 'Hands-on tools to explore AI capabilities for your business', 
+    title: '30+ Premium ML/AI Tools',
+    description: 'Full suite of interactive tools for regression, classification, clustering, NLP and more', 
     icon: 'CheckCircle'
   },
   {
-    title: 'Action-Oriented Results',
-    description: 'Every assessment generates specific, actionable next steps',
+    title: 'Action Items & Guides',
+    description: 'Automatic action item generation and complete implementation guides',
     icon: 'Star'
   }
 ];

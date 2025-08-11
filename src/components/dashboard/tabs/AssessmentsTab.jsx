@@ -27,7 +27,7 @@ const AssessmentsTab = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { tier, canAccess, upgradeMessage } = useUserTier();
-  const { userAssessments } = useDashboardStore();
+  const { userAssessments, setActiveTab } = useDashboardStore();
   const [assessmentStatus, setAssessmentStatus] = useState({});
   const [summaries, setSummaries] = useState({});
   const [loading, setLoading] = useState(true);
@@ -100,6 +100,8 @@ const AssessmentsTab = () => {
       ]
     }
   ];
+
+  const bothComplete = Boolean(summaries['ai-knowledge']) && Boolean(summaries['org-readiness'] || summaries['change_readiness']);
 
 
   const handleAssessmentClick = async (assessment, viewResults = false) => {
@@ -348,6 +350,25 @@ const AssessmentsTab = () => {
           >
             Start Free Trial
             <ArrowRight className="w-4 h-4 ml-2" />
+          </button>
+        </div>
+      )}
+
+      {/* Next Step Prompt */}
+      {bothComplete && (
+        <div className="mt-6 bg-white rounded-xl border shadow-sm p-6 flex items-center justify-between">
+          <div>
+            <h4 className="font-semibold text-charcoal">Great job! Next, create your first project</h4>
+            <p className="text-sm text-charcoal/70">We’ll attach project-specific implementation guides to help you execute.</p>
+          </div>
+          <button
+            onClick={() => {
+              navigate('/dashboard');
+              setActiveTab('projects');
+            }}
+            className="bg-chestnut text-white px-4 py-2 rounded-lg hover:bg-chestnut/90"
+          >
+            Go to Projects
           </button>
         </div>
       )}

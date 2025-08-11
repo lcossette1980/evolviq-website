@@ -378,19 +378,19 @@ const HomePage = () => {
               <ul className="space-y-3 mb-8">
                 <li className="flex items-center text-charcoal/80">
                   <CheckCircle className="w-5 h-5 text-khaki mr-3 flex-shrink-0" />
-                  <span>5 interactive ML tools & playgrounds</span>
+                  <span><strong>Free:</strong> AI Knowledge Assessment</span>
                 </li>
                 <li className="flex items-center text-charcoal/80">
                   <CheckCircle className="w-5 h-5 text-khaki mr-3 flex-shrink-0" />
-                  <span><strong>Intelligent AI readiness assessments</strong></span>
+                  <span><strong>Premium:</strong> 30+ interactive ML/AI tools</span>
                 </li>
                 <li className="flex items-center text-charcoal/80">
                   <CheckCircle className="w-5 h-5 text-khaki mr-3 flex-shrink-0" />
-                  <span>Strategy templates & guides</span>
+                  <span><strong>Premium:</strong> Organizational Readiness Assessment</span>
                 </li>
                 <li className="flex items-center text-charcoal/80">
                   <CheckCircle className="w-5 h-5 text-khaki mr-3 flex-shrink-0" />
-                  <span>Premium learning resources</span>
+                  <span><strong>Premium:</strong> Implementation guides & action items</span>
                 </li>
               </ul>
               <div className="space-y-3">

@@ -30,7 +30,7 @@ const LinearRegressionPage = lazy(() => import('./pages/LinearRegressionPage'));
 const EDAExplorePage = lazy(() => import('./pages/EDAExplorePage'));
 const ClassificationExplorePage = lazy(() => import('./pages/ClassificationExplorePage'));
 const ClusteringExplorePage = lazy(() => import('./pages/ClusteringExplorePage'));
-const SecureNLPTool = lazy(() => import('./pages/SecureNLPTool'));
+const NLPExplorePage = lazy(() => import('./pages/NLPExplorePage'));
 
 // Lazy load legal pages
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
@@ -134,7 +134,7 @@ const AppContent = () => {
           <Route path="/tools/nlp-explorer" element={
             <ProtectedRoute requiresPremium={false}>
               <PageSuspense>
-                <SecureNLPTool />
+                <NLPExplorePage />
               </PageSuspense>
             </ProtectedRoute>
           } />

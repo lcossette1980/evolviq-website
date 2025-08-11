@@ -5,6 +5,7 @@
 
 import { useAuth } from '../contexts/AuthContext';
 import { auth } from '../services/firebase';
+import API_CONFIG, { buildUrl } from '../config/apiConfig';
 
 class SecureAPIError extends Error {
   constructor(message, code, status) {
@@ -32,7 +33,8 @@ export const authenticatedFetch = async (user, url, options = {}) => {
     }
     const token = await currentUser.getIdToken();
     
-    const response = await fetch(url, {
+    const fullUrl = url?.startsWith('http') ? url : buildUrl(url);
+    const response = await fetch(fullUrl, {
       ...options,
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -94,7 +96,8 @@ export const useSecureAPI = () => {
     }
     const token = await currentUser.getIdToken();
     
-    return await fetch(url, {
+    const fullUrl = url?.startsWith('http') ? url : buildUrl(url);
+    return await fetch(fullUrl, {
       ...options,
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -123,7 +126,8 @@ export const useSecureAPI = () => {
       formData.append(key, value);
     });
 
-    return await fetch(url, {
+    const fullUrl = url?.startsWith('http') ? url : buildUrl(url);
+    return await fetch(fullUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -155,17 +159,19 @@ export class SecureToolSession {
     if (this.isInitialized) return this.sessionId;
 
     try {
-      const response = await authenticatedFetch('/api/tools/sessions', {
+      const response = await authenticatedFetch('/api/' + this.toolType + '/session', {
         method: 'POST',
         body: JSON.stringify({
-          toolType: this.toolType,
-          userId: this.userId
+          name: 'Session',
+          description: `${this.toolType} analysis session`,
+          user_id: this.userId,
+          tool_type: this.toolType
         })
       });
 
       if (response.ok) {
         const data = await response.json();
-        this.sessionId = data.sessionId;
+        this.sessionId = data.session_id || data.sessionId;
         this.isInitialized = true;
         return this.sessionId;
       } else {
@@ -184,7 +190,7 @@ export class SecureToolSession {
 
     try {
       const response = await authenticatedFetch(
-        `/api/tools/${this.toolType}/upload?session_id=${this.sessionId}`,
+        `/api/${this.toolType}/validate-data?session_id=${this.sessionId}`,
         {
           method: 'POST',
           headers: {
@@ -216,23 +222,9 @@ export class SecureToolSession {
     }
 
     try {
-      const response = await authenticatedFetch(
-        `/api/tools/${this.toolType}/process`,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            session_id: this.sessionId,
-            step,
-            data
-          })
-        }
-      );
+      // No generic process endpoint on backend; store client-side or map to specific endpoints
+      return { ok: true, data };
 
-      if (!response.ok) {
-        throw new Error('Processing failed');
-      }
-
-      return await response.json();
     } catch (error) {
       console.error('Processing failed:', error);
       throw error;

@@ -27,10 +27,11 @@ const ClassificationExplorePage = () => {
           case 'upload':
             return (
               <DataUploadStep
-                onFileUpload={handleFileUpload}
-                acceptedFileTypes={CLASSIFICATION_TOOL_CONFIG.allowedFileTypes}
-                maxFileSize={CLASSIFICATION_TOOL_CONFIG.maxFileSize}
-                uploadResults={stepData.uploadResults}
+                onUpload={handleFileUpload}
+                uploadedFile={stepData.uploadedFile}
+                validationResults={stepData.uploadResults}
+                showValidationResults={Boolean(stepData.uploadResults && stepData.uploadedFile)}
+                onNext={nextStep}
               />
             );
 
@@ -39,26 +40,27 @@ const ClassificationExplorePage = () => {
           case 'configure':
             return (
               <ModelSelectionStep
-                uploadResults={stepData.uploadResults}
-                onConfiguration={(config) => {
-                  processStep('configure', config).then(() => {
-                    nextStep();
-                  }).catch(console.error);
+                validationResults={stepData.uploadResults}
+                onSelectModels={(selected) => {
+                  processStep('configure', selected)
+                    .then(() => nextStep())
+                    .catch(console.error);
                 }}
-                configurationResults={stepData.configure}
+                isLoading={false}
               />
             );
 
           case 'train':
             return (
               <ModelTrainingStep
-                configurationResults={stepData.configure}
-                onTraining={(params) => {
-                  processStep('train', params).then(() => {
-                    nextStep();
-                  }).catch(console.error);
+                selectedModels={stepData.configure}
+                validationResults={stepData.uploadResults}
+                onTrain={() => {
+                  processStep('train', { models: stepData.configure })
+                    .then(() => nextStep())
+                    .catch(console.error);
                 }}
-                trainingResults={stepData.train}
+                isLoading={false}
               />
             );
 

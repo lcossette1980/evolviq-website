@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSecureAPI } from '../../utils/secureAPI';
 import StepNavigation from '../shared/StepNavigation';
+import API_CONFIG, { buildUrl } from '../../config/apiConfig';
 import LoadingState from '../shared/LoadingState';
 import ErrorBoundary from '../common/ErrorBoundary';
 import ToolPageSkeleton from './ToolPageSkeleton';
@@ -66,7 +67,7 @@ const UnifiedInteractiveTool = ({
       setIsLoading(true);
       setError(null);
 
-      const response = await secureCall(`/api/tools/${toolType}/session`, {
+      const response = await secureCall(`/api/${toolType}/session`, {
         method: 'POST',
         body: JSON.stringify({
           name: toolConfig.sessionName,
@@ -129,7 +130,7 @@ const UnifiedInteractiveTool = ({
 
       // Upload with secure API
       const response = await uploadFile(
-        `/api/tools/${toolType}/upload`,
+        `/api/${toolType}/validate-data?session_id=${encodeURIComponent(sessionId)}`,
         file,
         { session_id: sessionId }
       );
@@ -174,30 +175,32 @@ const UnifiedInteractiveTool = ({
       setIsLoading(true);
       setError(null);
 
-      const response = await secureCall(`/api/tools/${toolType}/process`, {
-        method: 'POST',
-        body: JSON.stringify({
-          session_id: sessionId,
-          step: stepName,
-          data: data
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `${stepName} processing failed`);
+      // By default, no backend process endpoint; store data locally
+      // Optionally, toolConfig.stepEndpoints can map steps to endpoints
+      if (toolConfig.stepEndpoints && toolConfig.stepEndpoints[stepName]) {
+        const endpoint = toolConfig.stepEndpoints[stepName];
+        const response = await secureCall(endpoint.replace(':tool', toolType), {
+          method: 'POST',
+          body: JSON.stringify({
+            session_id: sessionId,
+            step: stepName,
+            data: data
+          })
+        });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || `${stepName} processing failed`);
+        }
+        const result = await response.json();
+        setStepData(prev => ({ ...prev, [stepName]: result }));
+        console.log(`✅ ${toolType} ${stepName} completed via server`);
+        return result;
+      } else {
+        // Local-only step
+        setStepData(prev => ({ ...prev, [stepName]: data }));
+        console.log(`✅ ${toolType} ${stepName} stored locally`);
+        return data;
       }
-
-      const result = await response.json();
-      
-      // Store step results
-      setStepData(prev => ({
-        ...prev,
-        [stepName]: result
-      }));
-
-      console.log(`✅ ${toolType} ${stepName} completed`);
-      return result;
 
     } catch (error) {
       console.error(`Processing error for ${toolType} ${stepName}:`, error);
@@ -239,20 +242,14 @@ const UnifiedInteractiveTool = ({
   const exportResults = async (format = 'json') => {
     try {
       setIsLoading(true);
-      
-      const response = await secureCall(`/api/tools/${toolType}/export`, {
-        method: 'POST',
-        body: JSON.stringify({
-          session_id: sessionId,
-          format: format
-        })
+      // Backend provides GET /api/{tool_type}/export/{session_id}?format=
+      const res = await secureCall(`/api/${toolType}/export/${encodeURIComponent(sessionId)}?format=${encodeURIComponent(format)}`, {
+        method: 'GET'
       });
-
-      if (!response.ok) {
+      if (!res.ok) {
         throw new Error('Export failed');
       }
-
-      const blob = await response.blob();
+      const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

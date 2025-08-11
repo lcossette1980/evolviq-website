@@ -27,49 +27,50 @@ const EDAExplorePage = () => {
           case 'upload':
             return (
               <DataUploadStep
-                onFileUpload={handleFileUpload}
-                acceptedFileTypes={EDA_TOOL_CONFIG.allowedFileTypes}
-                maxFileSize={EDA_TOOL_CONFIG.maxFileSize}
-                uploadResults={stepData.uploadResults}
+                onUpload={handleFileUpload}
+                uploadedFile={stepData.uploadedFile}
+                validationResults={stepData.uploadResults}
+                showValidationResults={Boolean(stepData.uploadResults && stepData.uploadedFile)}
+                onNext={nextStep}
               />
             );
 
           case 'validate':
             return (
               <DataValidationStep
-                uploadResults={stepData.uploadResults}
-                onValidation={(results) => {
-                  processStep('validate', results).then(() => {
-                    nextStep();
-                  }).catch(console.error);
+                validationResults={stepData.uploadResults}
+                fileName={stepData.uploadedFile?.name}
+                onValidate={() => {
+                  // Store validation results locally and continue
+                  processStep('validate', stepData.uploadResults)
+                    .then(() => nextStep())
+                    .catch(console.error);
                 }}
-                validationResults={stepData.validate}
               />
             );
 
           case 'configure':
             return (
               <DataPreprocessingStep
-                validationResults={stepData.validate}
-                onConfiguration={(config) => {
-                  processStep('configure', config).then(() => {
-                    nextStep();
-                  }).catch(console.error);
+                validationResults={stepData.uploadResults}
+                onPreprocess={(config) => {
+                  processStep('configure', config)
+                    .then(() => nextStep())
+                    .catch(console.error);
                 }}
-                configurationResults={stepData.configure}
               />
             );
 
           case 'analyze':
             return (
               <AnalysisStep
-                configurationResults={stepData.configure}
-                onAnalysis={(params) => {
-                  processStep('analyze', params).then(() => {
-                    nextStep();
-                  }).catch(console.error);
+                preprocessingResults={stepData.configure}
+                onAnalyze={() => {
+                  // For now, mark analyze as complete locally
+                  processStep('analyze', { startedAt: new Date().toISOString() })
+                    .then(() => nextStep())
+                    .catch(console.error);
                 }}
-                analysisResults={stepData.analyze}
               />
             );
 

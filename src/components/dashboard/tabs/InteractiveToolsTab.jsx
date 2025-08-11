@@ -11,9 +11,12 @@ import {
   FileText,
   Star,
   Clock,
-  Users
+  Users,
+  Lock,
+  Crown
 } from 'lucide-react';
 import { colors } from '../../../utils/colors';
+import { useUserTier } from '../../../hooks/useUserTier';
 
 /**
  * Interactive Tools Tab Component
@@ -22,6 +25,8 @@ import { colors } from '../../../utils/colors';
 const InteractiveToolsTab = () => {
   const navigate = useNavigate();
   const [hoveredTool, setHoveredTool] = useState(null);
+  const { tier, isFreeTier } = useUserTier();
+  const isPremium = !isFreeTier;
 
   // Current available tools
   const initialOfferings = [
@@ -437,6 +442,10 @@ const InteractiveToolsTab = () => {
 
   const featuredTool = tools.find(t => t.id === 'eda-explorer');
 
+  // Filter tools based on user tier
+  const availableTools = isPremium ? tools : initialOfferings.filter(t => t.id === 'eda-explorer');
+  const lockedTools = !isPremium ? initialOfferings.filter(t => t.id !== 'eda-explorer') : [];
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -447,24 +456,35 @@ const InteractiveToolsTab = () => {
               Interactive ML/AI Tools
             </h2>
             <p className="text-gray-600">
-              Explore our suite of machine learning and AI analysis tools to gain insights from your data.
+              {isPremium 
+                ? "Explore our complete suite of machine learning and AI analysis tools to gain insights from your data."
+                : "Get started with our free EDA Explorer tool. Upgrade to Premium for access to 30+ advanced ML/AI tools."}
             </p>
           </div>
           <div className="text-right">
-            <div className="flex gap-4 justify-end">
-              <div>
-                <p className="text-sm text-gray-500">Available Now</p>
-                <p className="text-2xl font-bold" style={{ color: colors.chestnut }}>
-                  {tools.filter(t => t.status === 'available').length}
-                </p>
+            {isPremium ? (
+              <div className="flex gap-4 justify-end">
+                <div>
+                  <p className="text-sm text-gray-500">Available Now</p>
+                  <p className="text-2xl font-bold" style={{ color: colors.chestnut }}>
+                    {tools.filter(t => t.status === 'available').length}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Coming Soon</p>
+                  <p className="text-2xl font-bold text-gray-400">
+                    {tools.filter(t => t.status === 'coming-soon').length}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-gray-500">Coming Soon</p>
-                <p className="text-2xl font-bold text-gray-400">
-                  {tools.filter(t => t.status === 'coming-soon').length}
-                </p>
-              </div>
-            </div>
+            ) : (
+              <button
+                onClick={() => navigate('/membership')}
+                className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg font-semibold hover:from-amber-600 hover:to-orange-600 transition-all"
+              >
+                Upgrade to Premium
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -510,8 +530,127 @@ const InteractiveToolsTab = () => {
         </div>
       )}
 
-      {/* Tools by Category */}
-      {categories.map(category => (
+      {/* Free User: Available Tool */}
+      {!isPremium && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Available Tool (Free)
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {availableTools.map(tool => {
+              const Icon = tool.icon;
+              return (
+                <div
+                  key={tool.id}
+                  className="border rounded-lg overflow-hidden transition-all group bg-white hover:shadow-xl cursor-pointer"
+                  onClick={() => navigate(tool.path)}
+                >
+                  <div className="relative h-48 overflow-hidden">
+                    <img 
+                      src={tool.image || '/images/resources/eda.jpg'} 
+                      alt={tool.title}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    <div className="absolute top-4 right-4">
+                      <div className="w-12 h-12 rounded-lg flex items-center justify-center backdrop-blur-sm bg-white/90">
+                        <Icon className="w-6 h-6" style={{ color: tool.color }} />
+                      </div>
+                    </div>
+                    <div className="absolute bottom-4 left-4 right-4">
+                      <div className="flex items-center gap-2 text-white text-sm">
+                        <span className="px-2 py-1 rounded bg-white/20 backdrop-blur-sm">
+                          {tool.difficulty}
+                        </span>
+                        <span className="px-2 py-1 rounded bg-white/20 backdrop-blur-sm">
+                          {tool.timeEstimate}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <h4 className="font-semibold text-lg text-gray-900 mb-2 group-hover:text-chestnut transition-colors">
+                      {tool.title}
+                    </h4>
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                      {tool.detailedDescription}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center text-sm font-medium" style={{ color: tool.color }}>
+                        <span>Launch Tool</span>
+                        <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Free User: Premium Tools Preview */}
+      {!isPremium && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Premium Tools (Upgrade Required)
+            </h3>
+            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-sm font-medium flex items-center">
+              <Lock className="w-4 h-4 mr-1" />
+              Premium Only
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {lockedTools.map(tool => {
+              const Icon = tool.icon;
+              return (
+                <div
+                  key={tool.id}
+                  className="border rounded-lg overflow-hidden opacity-75 relative cursor-not-allowed"
+                >
+                  <div className="relative h-48 overflow-hidden">
+                    <img 
+                      src={tool.image || '/images/resources/coming-soon.jpg'} 
+                      alt={tool.title}
+                      className="w-full h-full object-cover filter grayscale"
+                    />
+                    <div className="absolute inset-0 bg-black/40" />
+                    <div className="absolute top-4 left-4">
+                      <Lock className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="absolute top-4 right-4">
+                      <div className="w-12 h-12 rounded-lg flex items-center justify-center backdrop-blur-sm bg-white/90">
+                        <Icon className="w-6 h-6" style={{ color: tool.color }} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <h4 className="font-semibold text-lg text-gray-900 mb-2">
+                      {tool.title}
+                    </h4>
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                      {tool.description}
+                    </p>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate('/membership');
+                      }}
+                      className="text-sm font-medium text-amber-600 hover:text-amber-700"
+                    >
+                      Upgrade to Access →
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Premium Users: Tools by Category */}
+      {isPremium && categories.map(category => (
         <div key={category} className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             {category}

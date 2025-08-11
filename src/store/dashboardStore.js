@@ -150,6 +150,30 @@ export const useDashboardStore = create((set, get) => ({
     return userAssessments.filter(assessment => assessment.isComplete);
   },
 
+  // Core assessment completion state (AI Knowledge + Org Readiness)
+  hasCompletedCoreAssessments: () => {
+    const { assessmentSummaries } = get();
+    const aiKnowledgeDone = Boolean(assessmentSummaries['ai-knowledge']);
+    const orgReadinessDone = Boolean(assessmentSummaries['org-readiness'] || assessmentSummaries['change_readiness']);
+    return aiKnowledgeDone && orgReadinessDone;
+  },
+
+  getCoreAssessmentChecklist: () => {
+    const { assessmentSummaries } = get();
+    return {
+      aiKnowledge: {
+        id: 'ai-knowledge',
+        completed: Boolean(assessmentSummaries['ai-knowledge']),
+        lastCompleted: assessmentSummaries['ai-knowledge']?.lastCompleted || null
+      },
+      orgReadiness: {
+        id: 'org-readiness',
+        completed: Boolean(assessmentSummaries['org-readiness'] || assessmentSummaries['change_readiness']),
+        lastCompleted: (assessmentSummaries['org-readiness'] || assessmentSummaries['change_readiness'])?.lastCompleted || null
+      }
+    };
+  },
+
   getPendingActionItems: () => {
     const { actionItems } = get();
     return actionItems.filter(item => item.status === 'pending');

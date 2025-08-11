@@ -165,18 +165,19 @@ const MembersPage = () => {
       name: "Free",
       price: "$0",
       period: "forever",
-      description: "Perfect for exploring AI basics and getting started",
+      description: "Get started with AI assessment basics",
       features: [
-        "AI Knowledge Navigator assessment",
-        "5 Interactive ML tool explorations per month",
-        "Basic implementation guides",
-        "Community support and resources"
+        "AI Knowledge Navigator assessment only",
+        "Limited EDA Explorer tool (10K rows, CSV export)",
+        "View assessment results",
+        "Basic learning resources"
       ],
       limitations: [
-        "No Change Readiness Assessment",
-        "Limited interactive tool usage",
+        "No Organizational Readiness Assessment",
+        "No premium interactive ML/AI tools",
         "No action item generation",
-        "No progress tracking"
+        "No implementation guides",
+        "No projects or progress tracking"
       ],
       cta: "Start Free Today",
       popular: false
@@ -187,14 +188,14 @@ const MembersPage = () => {
       period: "month",
       description: "Complete AI transformation toolkit for small businesses",
       features: [
-        "All intelligent assessments with AI agents",
-        "Unlimited interactive ML tool access",
+        "All AI assessments (Knowledge + Organizational Readiness)",
+        "30+ premium interactive ML/AI tools",
         "Complete implementation guides and playbooks",
         "Automatic action item generation",
-        "Progress tracking and analytics",
-        "Priority email support",
-        "Sector-specific recommendations",
-        "Export all your data and insights"
+        "Unlimited projects and progress tracking",
+        "Priority email support (24hr response)",
+        "Industry-specific recommendations",
+        "Export all data (PDF, Excel, no watermarks)"
       ],
       limitations: [],
       cta: "Start 3-Day Free Trial",

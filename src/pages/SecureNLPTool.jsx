@@ -51,16 +51,14 @@ const SecureNLPTool = () => {
       case 1:
         return (
           <DataUploadStep
-            onFileUpload={async (file) => {
+            onUpload={async (file) => {
               const result = await handleUpload(file);
-              if (result) {
-                nextStep();
-              }
+              if (result) nextStep();
             }}
             isLoading={isLoading}
-            acceptedFileTypes=".csv,.json,.txt"
-            maxFileSize="10MB"
-            helpText="Upload a CSV file with text data, JSON file with text fields, or plain text file."
+            acceptedFormats=".csv,.json,.txt"
+            title="Upload Text Dataset"
+            description="Upload a CSV, JSON, or TXT file with your text data"
           />
         );
 
@@ -129,11 +127,9 @@ const SecureNLPTool = () => {
         return (
           <NLPConfigurationStep
             validationResults={stepData[1]}
-            onConfigurationComplete={async (config) => {
+            onConfigure={async (config) => {
               const result = await processStep(3, config);
-              if (result) {
-                nextStep();
-              }
+              if (result) nextStep();
             }}
             isLoading={isLoading}
           />
@@ -142,12 +138,11 @@ const SecureNLPTool = () => {
       case 4:
         return (
           <NLPAnalysisStep
-            nlpConfig={stepData[3]}
-            onAnalysisComplete={async (analysisData) => {
-              const result = await processStep(4, analysisData);
-              if (result) {
-                nextStep();
-              }
+            config={stepData[3]}
+            validationResults={stepData[1]}
+            onAnalyze={async () => {
+              const result = await processStep(4, { config: stepData[3] });
+              if (result) nextStep();
             }}
             isLoading={isLoading}
           />

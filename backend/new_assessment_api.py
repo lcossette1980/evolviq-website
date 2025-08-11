@@ -461,6 +461,7 @@ async def calculate_org_readiness_results(
                         'level': question['options'][answer]['level'],
                         'maturity_indicator': question['options'][answer].get('maturity_indicator', 'developing'),
                         'risk_factor': question['options'][answer].get('risk_factor', 0.5),
+                        'business_impact': question.get('business_impact', ''),
                         'timestamp': datetime.now()
                     }
         

@@ -423,6 +423,35 @@ Before implementing, need to verify:
 
 ---
 
+### Issue #21: Interactive Tools UI/UX Unification
+- **Date/Time**: 2025-08-11
+- **Status**: COMPLETED
+- **Files Modified**:
+  - src/pages/ClassificationExplorePage.jsx
+  - src/pages/ClusteringExplorePage.jsx
+  - src/pages/LinearRegressionPage.jsx
+- **Changes**:
+  - Standardized `DataUploadStep` usage to `onUpload`, `uploadedFile`, `validationResults`, and `showValidationResults` across tools.
+  - Aligned Classification flow props: `ModelSelectionStep` now uses `validationResults` and `onSelectModels`; `ModelTrainingStep` uses `selectedModels`, `validationResults`, and `onTrain`.
+  - Aligned Clustering flow props: `ClusterConfigurationStep` now uses `validationResults` and `onConfigure`; `ClusterAnalysisStep` uses `config`, `validationResults`, and `onAnalyze`.
+  - Aligned Regression flow props: `DataValidation` now uses `validationResults` and `onValidate`; `DataPreprocessing` uses `onPreprocess`; `ModelTraining` uses `onTrain`.
+- **Reason**: Pages were still using legacy prop names and mixed step responsibilities, causing broken interactions and inconsistent UI/UX.
+- **Result**: All UnifiedInteractiveTool-based pages now share a consistent interaction model and UI; upload validation results are surfaced uniformly with auto-step progression.
+- **Notes**: NLP tool still uses `SecureToolBase`; consider migrating to `UnifiedInteractiveTool` with `NLP_TOOL_CONFIG` for complete parity.
+
+### Issue #22: NLP Tool Migration to UnifiedInteractiveTool
+- **Date/Time**: 2025-08-11
+- **Status**: COMPLETED
+- **Files Modified**:
+  - src/config/toolConfigs.js (NLP step 2 changed to `validate`)
+  - src/pages/NLPExplorePage.jsx (new; unified implementation)
+  - src/App.js (route switched to NLPExplorePage)
+- **Changes**:
+  - Replaced SecureToolBase NLP page with UnifiedInteractiveTool-based page.
+  - Standardized upload/validate/configure/analyze/results flow and props.
+  - Kept old file for reference but not routed.
+- **Result**: NLP now shares the same step UI/UX as other tools and uses centralized configuration.
+
 ## Major Architecture Change: New Assessment System (2025-08-05)
 ### Replacing CrewAI Assessment System with Standalone Assessments
 

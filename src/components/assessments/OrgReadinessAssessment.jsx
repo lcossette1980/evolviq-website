@@ -481,7 +481,6 @@ const OrgReadinessAssessment = () => {
                 ) : (
                   <>
                     Complete Assessment
-                    <Check className="w-5 h-5 ml-2" />
                   </>
                 )}
               </button>
