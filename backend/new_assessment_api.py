@@ -373,6 +373,84 @@ async def generate_ai_knowledge_report(
         logger.error(f"Failed to generate AI knowledge report: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# UNIFIED PROFILE ENDPOINT
+@assessment_router.get("/profile")
+async def get_unified_profile(
+    current_user: dict = Depends(get_current_user)
+):
+    """Get unified AI capability profile for current user"""
+    try:
+        # Stub implementation - returns mock data based on schema
+        profile_data = {
+            "user_id": current_user.get("uid", "unknown"),
+            "timestamp": datetime.now().isoformat(),
+            "version": "1.0",
+            "ai_knowledge": {
+                "overall_score": 72,
+                "level": "Intermediate",
+                "categories": {
+                    "Fundamentals": {"score": 80, "level": "Advanced"},
+                    "Machine Learning": {"score": 75, "level": "Intermediate"},
+                    "Deep Learning": {"score": 68, "level": "Intermediate"},
+                    "Ethics & Safety": {"score": 70, "level": "Intermediate"}
+                },
+                "strengths": ["Strong foundation in ML concepts", "Good understanding of ethics"],
+                "growth_areas": ["Deep learning architectures", "Advanced optimization"]
+            },
+            "org_readiness": {
+                "overall_score": 65,
+                "maturity_level": "Developing",
+                "dimensions": {
+                    "Strategy": {"score": 70, "maturity": "Defined"},
+                    "Culture": {"score": 60, "maturity": "Developing"},
+                    "Infrastructure": {"score": 68, "maturity": "Defined"},
+                    "Governance": {"score": 62, "maturity": "Developing"}
+                },
+                "key_insights": [
+                    "Strategic alignment shows promise",
+                    "Culture needs more AI literacy programs"
+                ]
+            },
+            "unified_insights": {
+                "capability_level": "Intermediate Practitioner",
+                "readiness_stage": "Early Adopter",
+                "alignment_score": 68,
+                "recommendations": [
+                    {
+                        "priority": "high",
+                        "area": "Skills Development",
+                        "action": "Focus on deep learning and neural networks",
+                        "timeline": "3-6 months"
+                    },
+                    {
+                        "priority": "medium",
+                        "area": "Organizational Culture",
+                        "action": "Implement AI literacy workshops",
+                        "timeline": "2-4 months"
+                    }
+                ],
+                "next_steps": [
+                    "Complete advanced ML modules",
+                    "Engage in hands-on AI projects",
+                    "Lead AI culture initiatives"
+                ]
+            },
+            "metadata": {
+                "last_assessment": {
+                    "ai_knowledge": datetime.now().isoformat(),
+                    "org_readiness": datetime.now().isoformat()
+                },
+                "profile_generated": datetime.now().isoformat(),
+                "data_sources": ["ai_knowledge_v2", "org_readiness_v2"]
+            }
+        }
+        
+        return JSONResponse(content=profile_data)
+        
+    except Exception as e:
+        logger.error(f"Failed to get unified profile: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ORGANIZATIONAL AI READINESS ENDPOINTS
 @assessment_router.get("/org-readiness/questions")
 async def get_org_readiness_questions(
@@ -520,13 +598,55 @@ async def calculate_org_readiness_results(
         if not quick_wins:
             quick_wins = ["Focus on advancing from current maturity level"]
         
-        # Create strategic priorities
-        strategic_priorities = [
-            "Develop comprehensive AI strategy aligned with business objectives",
-            "Build AI governance framework and ethical guidelines",
-            "Invest in workforce AI literacy and upskilling programs",
-            "Establish AI Center of Excellence or dedicated team"
-        ]
+        # Create strategic priorities dynamically based on lowest-scoring dimensions
+        priorities_catalog = {
+            "Leadership & Strategy": [
+                "Define an executive-sponsored AI vision and roadmap",
+                "Create a cross-functional AI steering committee"
+            ],
+            "Governance & Ethics": [
+                "Stand up AI governance and risk management processes",
+                "Publish responsible AI guidelines and approval workflows"
+            ],
+            "Data Infrastructure": [
+                "Invest in centralized, scalable data platform",
+                "Implement data quality and lineage standards"
+            ],
+            "Technology Infrastructure": [
+                "Adopt cloud-first AI/ML platforms with MLOps",
+                "Establish model registry and deployment pipelines"
+            ],
+            "Human Resources & Skills": [
+                "Launch AI literacy and upskilling programs",
+                "Hire or develop key AI roles (ML engineer, data scientist)"
+            ],
+            "Process & Operations": [
+                "Operationalize AI delivery with agile rituals",
+                "Build reusable components and accelerators"
+            ],
+            "Market & Customer Focus": [
+                "Prioritize AI use cases with clear customer impact",
+                "Implement feedback loops to measure value"
+            ],
+            "Financial Resources": [
+                "Set aside dedicated AI innovation budget",
+                "Adopt stage-gated funding for pilots to scale"
+            ]
+        }
+
+        sorted_dims = sorted(dimension_scores.items(), key=lambda x: x[1])
+        strategic_priorities = []
+        for dim, _score in sorted_dims[:3]:
+            recs = priorities_catalog.get(dim)
+            if recs:
+                strategic_priorities.extend(recs)
+        if not strategic_priorities:
+            strategic_priorities = [
+                "Develop comprehensive AI strategy aligned with business objectives",
+                "Build AI governance framework and ethical guidelines",
+                "Invest in workforce AI literacy and upskilling programs",
+                "Establish AI Center of Excellence or dedicated team"
+            ]
         
         # Generate visualizations
         visualizations = {}
@@ -575,24 +695,38 @@ async def calculate_org_readiness_results(
         except Exception as e:
             logger.info(f"Could not create dimension visualization: {e}")
         
-        # Industry comparison mock data
-        industry_comparison = {
-            "position": "above average" if overall_readiness > 50 else "below average",
-            "average": 50,
-            "leaders": 85
-        }
+        # Industry comparison using industry profiles when available
+        try:
+            industry_profiles = getattr(assessment, 'industry_profiles', {})
+            profile = industry_profiles.get(org_info.industry) if industry_profiles else None
+            if profile and isinstance(profile, dict) and 'avg_readiness' in profile:
+                avg = int(profile.get('avg_readiness', 50))
+                leaders = min(95, max(avg + 15, 75))
+                position = 'above average' if overall_readiness >= avg else 'below average'
+                industry_comparison = {"position": position, "average": avg, "leaders": leaders}
+            else:
+                industry_comparison = {"position": "above average" if overall_readiness > 50 else "below average", "average": 50, "leaders": 85}
+        except Exception:
+            industry_comparison = {"position": "above average" if overall_readiness > 50 else "below average", "average": 50, "leaders": 85}
         
-        # Create narrative insights structure
+        # Create narrative insights using strengths and gaps
+        strengths_sorted = sorted(dimension_scores.items(), key=lambda x: x[1], reverse=True)
+        top_strengths = [f"{dim} at {score}%" for dim, score in strengths_sorted[:2] if score >= 70]
+        top_gaps = [f"{dim} at {score}%" for dim, score in sorted_dims[:2]]
         narrative_insights = {
             "title": f"{org_info.name} AI Readiness Assessment",
-            "summary": f"{org_info.name} demonstrates {maturity_level.lower()} AI maturity with an overall readiness score of {overall_readiness}%. The organization shows varying levels of preparedness across different dimensions, with clear opportunities for strategic improvement.",
+            "summary": (
+                f"{org_info.name} demonstrates {maturity_level.lower()} AI maturity with an overall readiness score of {overall_readiness}%. "
+                + (f"Strengths include {', '.join(top_strengths)}. " if top_strengths else "")
+                + (f"Key gaps include {', '.join(top_gaps)}." if top_gaps else "")
+            ).strip(),
             "key_findings": [
                 f"Overall AI readiness: {overall_readiness}%",
                 f"Maturity level: {maturity_level}",
                 f"Industry position: {industry_comparison['position']}",
-                f"Key strength areas identified in assessment"
+                *(top_strengths or ["Key strength areas identified in assessment"]) 
             ],
-            "recommendations": strategic_priorities[:3],
+            "recommendations": strategic_priorities[:5],
             "risk_factors": [
                 "Rapid pace of AI technology evolution",
                 "Potential skills gap in AI expertise",
@@ -676,8 +810,8 @@ async def generate_org_readiness_report(
         
         return FileResponse(
             report_path,
-            media_type='application/pdf',
-            filename=f'{org_info.name.replace(" ", "_")}_ai_readiness_report_{datetime.now().strftime("%Y%m%d")}.pdf'
+            media_type='text/plain',
+            filename=f'{org_info.name.replace(" ", "_")}_ai_readiness_report_{datetime.now().strftime("%Y%m%d")}.txt'
         )
         
     except Exception as e:

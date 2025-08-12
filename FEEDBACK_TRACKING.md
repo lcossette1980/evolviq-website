@@ -452,6 +452,38 @@ Before implementing, need to verify:
   - Kept old file for reference but not routed.
 - **Result**: NLP now shares the same step UI/UX as other tools and uses centralized configuration.
 
+### Issue #23: Org Readiness Results Felt Mock/Generic
+- **Date/Time**: 2025-08-11
+- **Status**: IMPROVED (backend logic updated)
+- **Files Modified**:
+  - backend/new_assessment_api.py
+- **Changes**:
+  - Industry comparison now uses real industry profiles from `EnhancedOrganizationalAIReadiness.industry_profiles` when available (avg, leaders, above/below avg vs industry baseline).
+  - Strategic priorities are generated dynamically from the lowest scoring dimensions, with a catalog of targeted actions per dimension (fallback to baseline list remains).
+  - Narrative insights include concrete strengths (top-scoring dimensions) and gaps (lowest dimensions) rather than generic placeholders.
+  - Fixed report endpoint to return a `.txt` placeholder as `text/plain` to avoid misleading “PDF” label until a real PDF generator is implemented.
+- **Reason**: Results previously used static strings (e.g., priorities, industry comparison), which felt generic.
+- **Result**: More personalized, data-driven outputs based on actual responses and selected industry.
+- **Next**: Implement real PDF generation (e.g., WeasyPrint/ReportLab) and expand dimension-specific recommendations.
+
+### Issue #24: Docs for Unified Profile & Roadmap
+- **Date/Time**: 2025-08-11
+- **Status**: COMPLETED
+- **Files Added**:
+  - docs/ASSESSMENTS_PROFILE_ROADMAP.md
+  - docs/SCHEMAS/AssessmentResult.schema.md
+  - docs/SCHEMAS/Profile.schema.md
+  - docs/API_SPEC_PROFILE.md
+  - docs/GUIDE_REGISTRY.md
+  - docs/TODO_PROFILE_INTEGRATION.md
+- **Contents**:
+  - Roadmap overview, data flow, endpoints, versioning, and security notes
+  - JSON-like schemas for AssessmentResult and Profile with examples
+  - API spec for profile/learning-plan/registry/context/tasks endpoints
+  - Guide registry model and initial dimension→section mappings
+  - Detailed TODO checklist with acceptance criteria and references
+- **Reason**: Ensure continuity if session is interrupted; provide a clear build guide
+
 ## Major Architecture Change: New Assessment System (2025-08-05)
 ### Replacing CrewAI Assessment System with Standalone Assessments
 

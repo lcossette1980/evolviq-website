@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useProject } from '../../../contexts/ProjectContext';
 import { useDashboardStore } from '../../../store/dashboardStore';
 import { colors } from '../../../utils/colors';
+import ProfileCard from '../ProfileCard';
 
 /**
  * Overview Tab Component
@@ -94,6 +95,11 @@ const OverviewTab = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* AI Capability Profile Card */}
+      {hasCompletedCoreAssessments() && (
+        <ProfileCard />
       )}
 
       {/* Recent Activity */}
