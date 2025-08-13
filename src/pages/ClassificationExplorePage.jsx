@@ -10,6 +10,7 @@ import { CLASSIFICATION_TOOL_CONFIG } from '../config/toolConfigs';
 // Classification-specific step components
 import DataUploadStep from '../components/shared/DataUploadStep';
 import ModelSelectionStep from '../components/classification/ModelSelectionStep';
+import TargetSelectionStep from '../components/classification/TargetSelectionStep';
 import ModelTrainingStep from '../components/classification/ModelTrainingStep';
 import ResultsVisualization from '../components/classification/ResultsVisualization';
 import ExportStep from '../components/classification/ExportStep';
@@ -36,7 +37,24 @@ const ClassificationExplorePage = () => {
             );
 
           case 'validate':
+            return (
+              <div className="text-center py-8 text-charcoal/60">Validation complete. Continue to select target.</div>
+            );
+
           case 'target':
+            return (
+              <TargetSelectionStep
+                validationResults={stepData.uploadResults}
+                onSelectTarget={(target) => {
+                  // Kick off server-side preprocessing with target
+                  processStep('preprocess', { target_column: target, config: {} })
+                    .then(() => nextStep())
+                    .catch(console.error);
+                }}
+                isLoading={false}
+              />
+            );
+
           case 'configure':
             return (
               <ModelSelectionStep
@@ -56,7 +74,9 @@ const ClassificationExplorePage = () => {
                 selectedModels={stepData.configure}
                 validationResults={stepData.uploadResults}
                 onTrain={() => {
-                  processStep('train', { models: stepData.configure })
+                  const target = stepData.preprocess?.selected_target || stepData.preprocess?.target_column;
+                  const config = { models_to_include: stepData.configure || [] };
+                  processStep('train', { config, target_column: target })
                     .then(() => nextStep())
                     .catch(console.error);
                 }}

@@ -140,8 +140,63 @@ const UnifiedInteractiveTool = ({
         throw new Error(errorData.message || 'Upload failed');
       }
 
-      const result = await response.json();
-      
+      const raw = await response.json();
+
+      // Normalize backend response shapes across tools
+      const normalizeUploadResult = (type, input) => {
+        let validation = null;
+        let summary = null;
+        // Common cases:
+        // - Regression/Classification workflow returns { validation: { validation: {...}, summary: {...} } }
+        // - Generic endpoint returns { validation: {...}, data_info: { rows, columns, memory_mb } }
+        if (input?.validation?.summary || input?.validation?.validation) {
+          validation = input.validation.validation || input.validation;
+          summary = input.validation.summary || null;
+        } else if (input?.validation || input?.data_info) {
+          validation = input.validation || null;
+          if (input.summary) {
+            summary = input.summary;
+          } else if (input.data_info) {
+            summary = {
+              shape: [input.data_info.rows, input.data_info.columns],
+              memory_usage_mb: input.data_info.memory_mb,
+            };
+          }
+        } else {
+          validation = input?.validation || null;
+          summary = input?.summary || null;
+        }
+
+        // Derive convenience fields used by some UIs
+        const numericColumns = summary?.numerical_columns || input?.numeric_columns || [];
+        const suggestedTarget = input?.suggested_target || (numericColumns.length ? numericColumns[numericColumns.length - 1] : undefined);
+
+        return {
+          // Preserve both normalized and convenience forms
+          validation: validation || { is_valid: true, errors: [], warnings: [], recommendations: [] },
+          summary: summary || null,
+          // Convenience top-level for legacy components
+          is_valid: validation?.is_valid ?? true,
+          errors: validation?.errors || [],
+          warnings: validation?.warnings || [],
+          recommendations: validation?.recommendations || [],
+          numeric_columns: numericColumns,
+          suggested_target: suggestedTarget,
+          _raw: input
+        };
+      };
+
+      const result = normalizeUploadResult(toolType, raw);
+
+      // Additional NLP-specific ingestion checks
+      if (toolType === 'nlp') {
+        const cols = result?.summary?.columns || [];
+        const textCol = cols.find(c => ['text', 'content', 'body', 'message'].includes(String(c).toLowerCase()));
+        if (!textCol) {
+          throw new Error('NLP CSV/JSON must include a text column (e.g., "text", "content", "body", or "message").');
+        }
+      }
+
       // Store upload results in step data
       setStepData(prev => ({
         ...prev,
@@ -150,6 +205,7 @@ const UnifiedInteractiveTool = ({
       }));
 
       console.log(`✅ ${toolType} file uploaded successfully`);
+      addNotification({ type: 'success', message: `${toolType.toUpperCase()} file uploaded successfully` });
       
       // Auto-advance to next step if upload successful
       if (result.is_valid !== false) {
@@ -159,6 +215,7 @@ const UnifiedInteractiveTool = ({
     } catch (error) {
       console.error(`Upload error for ${toolType}:`, error);
       setError(`Upload failed: ${error.message}`);
+      addNotification({ type: 'error', message: error.message || 'Upload failed' });
     } finally {
       setIsLoading(false);
     }
@@ -293,6 +350,16 @@ const UnifiedInteractiveTool = ({
     setIsLoading
   };
 
+  // Lightweight toast notifications
+  const [notifications, setNotifications] = useState([]);
+  const addNotification = ({ type = 'info', message }) => {
+    const id = Date.now();
+    setNotifications(prev => [...prev, { id, type, message }]);
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 4000);
+  };
+
   const currentStepConfig = toolConfig.steps[currentStep - 1];
 
   if (!isAuthenticated) {
@@ -320,6 +387,16 @@ const UnifiedInteractiveTool = ({
   return (
     <ErrorBoundary level="tool">
       <div className="min-h-screen bg-bone">
+        {/* Toasts */}
+        <div className="fixed top-4 right-4 z-50 space-y-2">
+          {notifications.map(n => (
+            <div key={n.id} className={`px-4 py-2 rounded shadow text-white ${
+              n.type === 'success' ? 'bg-green-600' : n.type === 'error' ? 'bg-red-600' : 'bg-gray-800'
+            }`}>
+              {n.message}
+            </div>
+          ))}
+        </div>
         {/* Tool Header */}
         <div className="bg-white border-b border-gray-200">
           <div className="max-w-6xl mx-auto px-4 py-6">

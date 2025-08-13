@@ -124,6 +124,15 @@ except Exception as e:
     logger.error(f"❌ Failed to load Payment router: {e}")
     payment_router = None
 
+# Import Guide Registry router
+guide_router = None
+try:
+    from guide_registry_api import guide_router
+    logger.info("✅ Guide registry API loaded successfully")
+except Exception as e:
+    logger.error(f"❌ Failed to load Guide registry API: {e}")
+    guide_router = None
+
 # Import WebSocket server
 websocket_app = None
 websocket_server = None
@@ -211,6 +220,11 @@ if payment_router:
     app.include_router(payment_router)
     logger.info("✅ Payment router mounted")
 
+# Mount Guide registry router
+if guide_router:
+    app.include_router(guide_router)
+    logger.info("✅ Guide registry router mounted")
+
 # Startup Events
 @app.on_event("startup")
 async def startup_validation():
@@ -286,6 +300,51 @@ class TrainingRequest(BaseModel):
 class PreprocessingRequest(BaseModel):
     config: PreprocessingConfig
     target_column: str
+
+# PREPROCESS ENDPOINT
+@app.post("/api/{tool_type}/preprocess")
+async def preprocess_data_endpoint(
+    tool_type: str,
+    request: PreprocessingRequest,
+    session_id: str = Query(...),
+    current_user: dict = Depends(get_current_user),
+    rate_limit: dict = Depends(rate_limit_ml_tools)
+):
+    """Preprocess data for regression/classification using stored session data."""
+    try:
+        # Load session data with persisted DataFrame
+        session_data = await session_storage.get_session(session_id)
+        if not session_data or 'dataframe' not in session_data:
+            raise HTTPException(status_code=400, detail="No data uploaded for this session")
+
+        data = session_data['dataframe']
+
+        # Get workflow by type
+        workflow = await get_session_workflow(session_id, tool_type, current_user['user_id'])
+
+        if tool_type not in ['regression', 'classification']:
+            raise HTTPException(status_code=400, detail="Preprocessing not supported for this tool")
+
+        # Apply preprocessing
+        if tool_type == 'regression':
+            result = workflow.preprocess_data(data, request.target_column)
+        else:
+            result = workflow.preprocess_data(data, request.target_column)
+
+        # Save partial results in session
+        session_data['status'] = 'preprocessed'
+        session_data['target_column'] = request.target_column
+        session_data['preprocess'] = result
+        await session_storage.save_session(session_id, session_data)
+
+        return {
+            "preprocess": result,
+            "rate_limit": rate_limit
+        }
+
+    except Exception as e:
+        logger.error(f"Preprocessing failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Stripe Payment Models
 class CreateCheckoutSessionRequest(BaseModel):
@@ -686,13 +745,14 @@ async def validate_data(
         else:
             validation_result = workflow.validate_data(data)
         
-        # Update session data
+        # Update session data and persist DataFrame for downstream steps
         session_update = {
             'data_shape': data.shape,
             'columns': data.columns.tolist(),
             'status': 'data_uploaded',
             'uploaded_by': current_user['user_id'],
-            'upload_time': datetime.now()
+            'upload_time': datetime.now(),
+            'dataframe': data
         }
         
         # Get existing session data and update
@@ -701,16 +761,38 @@ async def validate_data(
             existing_session.update(session_update)
             await session_storage.save_session(session_id, existing_session)
         
-        # Return validation results with rate limit info
-        return {
-            "validation": validation_result,
-            "data_info": {
-                "rows": data.shape[0],
-                "columns": data.shape[1],
-                "memory_mb": memory_manager.estimate_dataframe_memory(data)
-            },
-            "rate_limit": rate_limit
-        }
+        # Normalize response shape across tools
+        # If workflow returned nested { validation: {...}, summary: {...} }
+        # flatten to top-level keys; else build a basic summary from data
+        if isinstance(validation_result, dict) and (
+            ('summary' in validation_result) or ('validation' in validation_result)
+        ):
+            # Regression/Classification style
+            inner_val = validation_result.get('validation', validation_result)
+            inner_sum = validation_result.get('summary')
+            return {
+                "validation": inner_val,
+                "summary": inner_sum,
+                "rate_limit": rate_limit
+            }
+        else:
+            # EDA/NLP/Clustering basic validation. Build a concise summary
+            dtypes_dict = {str(k): str(v) for k, v in data.dtypes.to_dict().items()}
+            summary = {
+                "shape": data.shape,
+                "memory_usage_mb": float(memory_manager.estimate_dataframe_memory(data)),
+                "columns": data.columns.tolist(),
+                "dtypes": dtypes_dict,
+                "missing_values": {k: int(v) for k, v in data.isnull().sum().to_dict().items()},
+                "duplicate_rows": int(data.duplicated().sum()),
+                "numerical_columns": data.select_dtypes(include=[np.number]).columns.tolist(),
+                "categorical_columns": data.select_dtypes(include=['object', 'category']).columns.tolist()
+            }
+            return {
+                "validation": validation_result,
+                "summary": summary,
+                "rate_limit": rate_limit
+            }
         
     except Exception as e:
         logger.error(f"Validation failed: {e}")
@@ -777,26 +859,43 @@ async def train_models(
         
         # For smaller tasks, process immediately
         workflow = await get_session_workflow(session_id, tool_type, current_user['user_id'])
-        
-        # Get session data
+
+        # Get session data and persisted DataFrame
         session_data = await session_storage.get_session(session_id)
-        if not session_data or 'data_shape' not in session_data:
+        if not session_data or 'dataframe' not in session_data:
             raise HTTPException(status_code=400, detail="No data uploaded for this session")
-        
-        # Train models (simplified for example)
-        results = {
-            "status": "completed",
-            "models_trained": len(request.config.models_to_include),
-            "training_time": datetime.now().isoformat()
-        }
-        
+
+        data = session_data['dataframe']
+
+        # Ensure preprocessing has set feature columns if needed
+        if tool_type in ['regression', 'classification']:
+            # If no preprocess results or feature_columns missing, run preprocessing with provided target
+            if not session_data.get('preprocess') or not session_data['preprocess'].get('feature_columns'):
+                _ = workflow.preprocess_data(data, request.target_column)
+
+        # Train using respective workflow
+        if tool_type == 'regression':
+            train_input_df = data
+            if session_data.get('preprocess') and session_data['preprocess'].get('processed_data'):
+                import pandas as pd
+                train_input_df = pd.DataFrame(session_data['preprocess']['processed_data'])
+            train_out = workflow.train_models(train_input_df, request.target_column)
+        elif tool_type == 'classification':
+            train_input_df = data
+            if session_data.get('preprocess') and session_data['preprocess'].get('processed_data'):
+                import pandas as pd
+                train_input_df = pd.DataFrame(session_data['preprocess']['processed_data'])
+            train_out = workflow.train_models(train_input_df, request.target_column)
+        else:
+            raise HTTPException(status_code=400, detail="Training not supported for this tool")
+
         # Update session
-        session_data['status'] = 'training_complete'
-        session_data['training_results'] = results
+        session_data['status'] = 'training_complete' if train_out.get('success') else 'training_failed'
+        session_data['training_results'] = train_out
         await session_storage.save_session(session_id, session_data)
-        
+
         return {
-            "results": results,
+            "results": train_out,
             "rate_limit": rate_limit
         }
         

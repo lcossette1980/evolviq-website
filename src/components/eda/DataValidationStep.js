@@ -88,8 +88,8 @@ const DataValidationStep = ({ validationResults, onValidate, fileName }) => {
             </div>
             
             <div className="text-center p-4 bg-bone rounded-lg">
-              <div className="text-2xl font-bold text-chestnut">
-                {summary?.memory_usage || 'N/A'}
+            <div className="text-2xl font-bold text-chestnut">
+                {summary?.memory_usage_mb ?? summary?.memory_usage ?? 'N/A'}
               </div>
               <div className="text-sm text-charcoal/70">Memory Usage</div>
             </div>

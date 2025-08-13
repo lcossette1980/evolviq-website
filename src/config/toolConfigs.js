@@ -65,6 +65,10 @@ export const CLASSIFICATION_TOOL_CONFIG = {
     'application/vnd.ms-excel',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   ],
+  stepEndpoints: {
+    preprocess: '/api/:tool/preprocess',
+    train: '/api/:tool/train'
+  },
   steps: [
     {
       id: 1,
@@ -167,6 +171,10 @@ export const REGRESSION_TOOL_CONFIG = {
     'application/vnd.ms-excel',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   ],
+  stepEndpoints: {
+    preprocess: '/api/:tool/preprocess',
+    train: '/api/:tool/train'
+  },
   steps: [
     {
       id: 1,

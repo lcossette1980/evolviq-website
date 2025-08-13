@@ -15,6 +15,7 @@ import {
   onSnapshot
 } from 'firebase/firestore';
 import { db } from './firebase';
+import { buildUrl } from '../config/apiConfig';
 
 class GuidesAPI {
   constructor() {
@@ -52,6 +53,19 @@ class GuidesAPI {
         sections: ['strategy', 'roadmap', 'governance', 'implementation']
       }
     };
+  }
+
+  // Backend registry (for mapping dimensions→sections and future agentic flows)
+  async getRegistry() {
+    try {
+      const res = await fetch(buildUrl('/api/guides/registry'));
+      if (!res.ok) throw new Error('Failed to load guide registry');
+      const data = await res.json();
+      return data.guides || [];
+    } catch (e) {
+      console.error('Guide registry fetch failed:', e);
+      return [];
+    }
   }
 
   // User Progress Management

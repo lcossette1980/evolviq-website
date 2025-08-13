@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { BookOpen, PlayCircle, Target, TrendingUp, CheckCircle, AlertTriangle, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDashboardStore } from '../../../store/dashboardStore';
 import { useProject } from '../../../contexts/ProjectContext';
+import guidesAPI from '../../../services/guidesAPI';
 import { colors } from '../../../utils/colors';
 
 /**
@@ -12,13 +13,23 @@ import { colors } from '../../../utils/colors';
 const ProjectsTab = () => {
   const navigate = useNavigate();
   const { setActiveTab, hasCompletedCoreAssessments, getCoreAssessmentChecklist, setShowCreateProject, guideProgress } = useDashboardStore();
-  const { projects, currentProject } = useProject();
+  const { projects, currentProject, updateGuideProgress, addGuideToProject } = useProject();
+  const [registry, setRegistry] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const reg = await guidesAPI.getRegistry();
+      if (mounted) setRegistry(reg);
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   // Core assessment gating
   const coreComplete = hasCompletedCoreAssessments();
   const checklist = getCoreAssessmentChecklist();
 
-  // Project-scoped guides mapping
+  // Fallback metadata when registry is not yet loaded
   const guideCatalog = {
     implementation_playbook: {
       title: 'AI Implementation Playbook',
@@ -46,7 +57,27 @@ const ProjectsTab = () => {
     }
   };
 
+  const metaByClientKey = useMemo(() => {
+    const map = {};
+    (registry || []).forEach(g => {
+      map[g.client_key] = {
+        title: g.title,
+        tags: g.tags,
+        dimensions: g.dimensions,
+        sections: g.sections,
+        icon: guideCatalog[g.client_key]?.icon || BookOpen,
+        color: guideCatalog[g.client_key]?.color || colors.charcoal,
+        path: guideCatalog[g.client_key]?.path || `/guides/${g.guide_id}`
+      };
+    });
+    return map;
+  }, [registry]);
+
   const projectGuides = currentProject?.guides || {};
+  const missingGuides = useMemo(() => {
+    const existing = new Set(Object.keys(projectGuides));
+    return (registry || []).filter(g => !existing.has(g.client_key));
+  }, [registry, projectGuides]);
 
   // Gated flow: require assessments first
   if (!coreComplete) {
@@ -146,9 +177,25 @@ const ProjectsTab = () => {
             <Plus className="w-4 h-4 mr-2" /> New Project
           </button>
         </div>
+        {missingGuides.length > 0 && (
+          <div className="mb-6">
+            <div className="text-sm text-gray-700 mb-2">Available guides to add</div>
+            <div className="flex flex-wrap gap-2">
+              {missingGuides.map((g) => (
+                <button
+                  key={g.client_key}
+                  className="px-3 py-1.5 border rounded-full text-xs hover:bg-gray-50"
+                  onClick={() => addGuideToProject(currentProject.id, g.client_key, { title: g.title })}
+                >
+                  + {g.title}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {Object.entries(projectGuides).map(([guideKey, guide]) => {
-            const meta = guideCatalog[guideKey] || {};
+            const meta = metaByClientKey[guideKey] || guideCatalog[guideKey] || {};
             const Icon = meta.icon || BookOpen;
             const color = meta.color || colors.charcoal;
             // Fallback to user-level guide progress until full project integration
@@ -164,8 +211,7 @@ const ProjectsTab = () => {
             return (
               <div
                 key={guideKey}
-                className="border rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => navigate(meta.path)}
+                className="border rounded-lg p-6 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center">
@@ -180,11 +226,21 @@ const ProjectsTab = () => {
                       <p className="text-xs text-gray-500 mt-1 capitalize">{status.replace('_', ' ')}</p>
                     </div>
                   </div>
-                  {status === 'completed' && (
-                    <span className="text-green-600 text-sm inline-flex items-center">
-                      <CheckCircle className="w-4 h-4 mr-1" /> Completed
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {status === 'completed' && (
+                      <span className="text-green-600 text-sm inline-flex items-center">
+                        <CheckCircle className="w-4 h-4 mr-1" /> Completed
+                      </span>
+                    )}
+                    {status !== 'completed' && (
+                      <button
+                        className="text-sm px-3 py-1.5 rounded bg-chestnut text-white hover:bg-chestnut/90"
+                        onClick={() => updateGuideProgress(currentProject.id, guideKey, { status: 'in_progress', progress: progress || 1 })}
+                      >
+                        {progress > 0 ? 'Resume' : 'Start'}
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="mt-2">
                   <div className="flex items-center justify-between mb-2">
@@ -200,6 +256,16 @@ const ProjectsTab = () => {
                     />
                   </div>
                 </div>
+                {meta.dimensions && meta.dimensions.length > 0 && (
+                  <div className="mt-4">
+                    <div className="text-[11px] text-gray-500 mb-1">Dimensions covered</div>
+                    <div className="flex flex-wrap gap-1">
+                      {meta.dimensions.slice(0, 3).map((d) => (
+                        <span key={d} className="px-2 py-0.5 rounded-full bg-gray-100 text-[11px] text-gray-700">{d}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

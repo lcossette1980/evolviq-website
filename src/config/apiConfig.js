@@ -52,6 +52,11 @@ const API_CONFIG = {
       RESULTS: '/assessments/results',
       HEALTH: '/api/assessment/health'
     }
+    ,
+    // Guides endpoints
+    GUIDES: {
+      REGISTRY: '/api/guides/registry'
+    }
   },
   
   // Common headers for all requests

@@ -54,7 +54,8 @@ const LinearRegressionPage = () => {
               <DataPreprocessing
                 validationResults={stepData.validate}
                 onPreprocess={(config) => {
-                  processStep('preprocess', config)
+                  const target = stepData.validate?.target;
+                  processStep('preprocess', { config, target_column: target })
                     .then(() => nextStep())
                     .catch(console.error);
                 }}
@@ -66,8 +67,9 @@ const LinearRegressionPage = () => {
             return (
               <ModelTraining
                 preprocessingResults={stepData.preprocess}
-                onTrain={(params) => {
-                  processStep('train', params)
+                onTrain={(config) => {
+                  const target = stepData.validate?.target;
+                  processStep('train', { config, target_column: target })
                     .then(() => nextStep())
                     .catch(console.error);
                 }}

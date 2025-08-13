@@ -89,9 +89,9 @@ const DataUploadStep = ({
             </div>
             <div className="text-center p-4 bg-bone rounded-lg">
               <div className="text-xl font-bold text-chestnut">
-                {validationResults.summary?.memory_usage || 'N/A'}
+                {validationResults.summary?.memory_usage_mb ?? validationResults.summary?.memory_usage ?? 'N/A'}
               </div>
-              <div className="text-sm text-charcoal/70">Size</div>
+              <div className="text-sm text-charcoal/70">Size (MB)</div>
             </div>
             <div className="text-center p-4 bg-bone rounded-lg">
               <div className="text-xl font-bold text-chestnut">

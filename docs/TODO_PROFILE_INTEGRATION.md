@@ -7,7 +7,7 @@ This is the actionable checklist with statuses and acceptance criteria. Update a
 - [ ] Implement POST `/api/assessments/{type}/complete` (persist summary + trigger recompute)
 - [x] Implement GET `/api/assessments/profile` (stub with mock data implemented)
 - [ ] Implement POST `/api/profile/learning-plan` (map gaps to guides)
-- [ ] Implement GET `/api/guides/registry` (static JSON or Firestore-backed)
+- [x] Implement GET `/api/guides/registry` (static JSON stub)
 - [ ] Implement GET `/api/assessments/profile/context` (sanitized agent context)
 - [ ] (Optional) Implement GET `/api/assessments/profile/tasks` (task graph)
 - [ ] Add feature flags `PROFILE_ENABLED`, `LEARNING_PLAN_ENABLED`

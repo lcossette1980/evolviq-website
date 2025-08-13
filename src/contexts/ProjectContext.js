@@ -314,6 +314,24 @@ export const ProjectProvider = ({ children }) => {
     await updateProject(projectId, { guides });
   };
 
+  const addGuideToProject = async (projectId, guideKey, guideMeta = {}) => {
+    if (!user || !currentProject) return;
+    const guides = currentProject.guides || {};
+    if (guides[guideKey]) return; // already exists
+
+    const newGuide = {
+      id: guideKey,
+      title: guideMeta.title || guideKey,
+      status: 'not_started',
+      progress: 0,
+      sections: {},
+      lastAccessed: new Date().toISOString(),
+      completedAt: null
+    };
+
+    await updateProject(projectId, { guides: { ...guides, [guideKey]: newGuide } });
+  };
+
   const addActionItem = async (projectId, actionItem) => {
     if (!projectId || !currentProject) return;
     
@@ -429,7 +447,8 @@ export const ProjectProvider = ({ children }) => {
     updateActionItem,
     generateActionItemsFromAssessment,
     trackActionItemCompletion,
-    loadProjects
+    loadProjects,
+    addGuideToProject
   };
 
   return (
