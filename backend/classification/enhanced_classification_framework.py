@@ -416,6 +416,75 @@ class ClassificationWorkflow:
                 'success': False,
                 'error': str(e)
             }
+
+    def get_visualizations(self) -> Dict[str, Any]:
+        """Create Plotly visualizations for classification results."""
+        try:
+            import plotly.graph_objects as go
+            import numpy as np
+            visuals = {}
+
+            # Model comparison bar (Accuracy)
+            if 'comparison_df' in self.results:
+                comp_df = pd.DataFrame(self.results['comparison_df'])
+                fig = go.Figure()
+                fig.add_trace(go.Bar(
+                    x=comp_df['model'],
+                    y=comp_df['test_accuracy'],
+                    name='Accuracy',
+                    marker_color='#A44A3F',
+                    text=[f"{v:.3f}" for v in comp_df['test_accuracy']],
+                    textposition='auto'
+                ))
+                fig.update_layout(title='Model Accuracy Comparison', yaxis_title='Accuracy', height=400)
+                visuals['model_comparison'] = fig.to_dict()
+
+            # Confusion matrix heatmap for best model
+            if 'confusion_matrix' in self.results:
+                cm = np.array(self.results['confusion_matrix'])
+                heat = go.Figure(data=go.Heatmap(
+                    z=cm,
+                    colorscale='Reds',
+                    showscale=True
+                ))
+                heat.update_layout(title='Confusion Matrix', xaxis_title='Predicted', yaxis_title='Actual', height=400)
+                visuals['confusion_matrix'] = heat.to_dict()
+
+            # ROC curve (binary) if probabilities available
+            try:
+                if 'best_model' in self.results and 'X_test' in self.results:
+                    best = self.results['best_model']
+                    X_test = self.results['X_test']
+                    y_test = self.results['y_test']
+                    # Try proba
+                    proba = None
+                    try:
+                        proba = best.predict_proba(X_test)
+                    except Exception:
+                        pass
+                    if proba is not None and len(np.unique(y_test)) == 2:
+                        from sklearn.metrics import roc_curve, auc
+                        fpr, tpr, _ = roc_curve(y_test, proba[:, 1])
+                        roc_auc = auc(fpr, tpr)
+                        roc_fig = go.Figure()
+                        roc_fig.add_trace(go.Scatter(x=fpr, y=tpr, mode='lines', name=f'ROC (AUC={roc_auc:.3f})', line=dict(color='#A44A3F')))
+                        roc_fig.add_trace(go.Scatter(x=[0,1], y=[0,1], mode='lines', name='Chance', line=dict(dash='dash', color='#cccccc')))
+                        roc_fig.update_layout(title='ROC Curve', xaxis_title='False Positive Rate', yaxis_title='True Positive Rate', height=400)
+                        visuals['roc_curve'] = roc_fig.to_dict()
+            except Exception:
+                pass
+
+            # Feature importance bar (if available)
+            if self.results.get('feature_importance'):
+                imp_df = pd.DataFrame(self.results['feature_importance'])
+                top = imp_df.head(15)
+                fig_imp = go.Figure(go.Bar(y=top['feature'], x=top['importance'], orientation='h', marker_color='#A44A3F'))
+                fig_imp.update_layout(title='Feature Importance', xaxis_title='Importance', height=500, yaxis={'categoryorder': 'total ascending'})
+                visuals['feature_importance'] = fig_imp.to_dict()
+
+            return {'success': True, 'visualizations': visuals}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
     
     def make_prediction(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """Make prediction with the best model."""

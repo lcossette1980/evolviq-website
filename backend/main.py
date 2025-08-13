@@ -33,6 +33,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from typing import Dict, List, Optional, Any, Union
+import csv
 import pandas as pd
 import numpy as np
 import io
@@ -202,6 +203,22 @@ async def security_middleware(request: Request, call_next):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    # HSTS (only if behind HTTPS)
+    if request.url.scheme == 'https':
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    # Basic CSP (adjust if needed for external CDNs)
+    csp = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: blob:; "
+        "connect-src 'self' *; "
+        "font-src 'self' data:; "
+        "object-src 'none'; "
+        "base-uri 'self'; "
+        "frame-ancestors 'none'"
+    )
+    response.headers["Content-Security-Policy"] = csp
     
     return response
 
@@ -477,6 +494,18 @@ async def clustering_analyze(
                 'n_noise': int(evalm.get('n_noise_points', 0) or 0)
             })
 
+        # Choose labels for best algorithm
+        best_algo_key = clusters.get('best_algorithm')
+        chosen_labels = None
+        if best_algo_key and clusters['clustering_results'].get(best_algo_key):
+            chosen_labels = clusters['clustering_results'][best_algo_key].get('labels')
+        if chosen_labels is None:
+            # pick first available labels if best missing
+            for v in clusters['clustering_results'].values():
+                if isinstance(v, dict) and v.get('labels') is not None:
+                    chosen_labels = v['labels']
+                    break
+
         # Create simple 2D visualization data using PCA on processed data
         viz_data = []
         try:
@@ -485,17 +514,7 @@ async def clustering_analyze(
             proc = workflow.processed_data
             pca = PCA(n_components=2, random_state=cfg.random_state)
             coords = pca.fit_transform(proc)
-            # Use labels from best algorithm if available, otherwise first available
-            labels = None
-            if best_algo_key and clusters['clustering_results'].get(best_algo_key):
-                labels = clusters['clustering_results'][best_algo_key].get('labels')
-            if labels is None:
-                # Pick any available
-                for v in clusters['clustering_results'].values():
-                    if isinstance(v, dict) and v.get('labels') is not None:
-                        labels = v['labels']
-                        break
-            labels = labels or [0] * len(coords)
+            labels = chosen_labels or [0] * len(coords)
             # Build scatter points with simple per-cluster counts
             import collections
             counts = collections.Counter(labels)
@@ -515,7 +534,8 @@ async def clustering_analyze(
             'visualization_data': viz_data,
             'recommended_k': optimal['silhouette_method'].get('optimal_clusters') if optimal.get('success') else None,
             'best_algorithm': clusters.get('best_algorithm'),
-            'best_score': clusters.get('best_score')
+            'best_score': clusters.get('best_score'),
+            'labels': chosen_labels or []
         }
 
         # Save in session
@@ -1080,6 +1100,14 @@ async def train_models(
                 import pandas as pd
                 train_input_df = pd.DataFrame(session_data['preprocess']['processed_data'])
             train_out = workflow.train_models(train_input_df, request.target_column)
+            # Attach visualizations if available
+            try:
+                if train_out.get('success'):
+                    viz = workflow.get_visualizations()
+                    if viz.get('success'):
+                        train_out['visualizations'] = viz.get('visualizations', {})
+            except Exception as _viz_err:
+                logger.warning(f"Classification visualization generation failed: {_viz_err}")
         else:
             raise HTTPException(status_code=400, detail="Training not supported for this tool")
 
@@ -1192,6 +1220,68 @@ async def export_results(
             
     except Exception as e:
         logger.error(f"Export failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# CLUSTERING EXPORT ENDPOINT
+@app.get("/api/clustering/export/{session_id}")
+async def export_clustering_results(
+    session_id: str,
+    current_user: dict = Depends(get_current_user),
+    rate_limit: dict = Depends(rate_limit_export)
+):
+    """Export best clustering labels as CSV (id,label)."""
+    try:
+        session_data = await session_storage.get_session(session_id)
+        if not session_data:
+            raise HTTPException(status_code=404, detail="Session not found")
+        if session_data.get('user_id') != current_user['user_id'] and not current_user.get('is_admin'):
+            raise HTTPException(status_code=403, detail="Not authorized to export this session")
+
+        analysis = session_data.get('clustering_analysis')
+        if not analysis:
+            raise HTTPException(status_code=400, detail="No clustering analysis found for session")
+
+        # Extract best algorithm labels if available (stored in session results is summarized; re-run quick labeling is out of scope)
+        # Here we export summary rows as a placeholder CSV for documentation.
+        # If labels are available, export per-row labels; else export summary
+        labels = analysis.get('labels') or []
+        import io
+        output = io.StringIO()
+        if labels:
+            writer = csv.DictWriter(output, fieldnames=['row_index', 'cluster_label'])
+            writer.writeheader()
+            for idx, lab in enumerate(labels):
+                writer.writerow({'row_index': idx, 'cluster_label': lab})
+            filename = f"{session_id}_clustering_labels.csv"
+        else:
+            rows = analysis.get('clustering_results', [])
+            if not rows:
+                raise HTTPException(status_code=400, detail="No clustering results to export")
+            writer = csv.DictWriter(output, fieldnames=['algorithm', 'silhouette', 'calinski', 'davies', 'n_clusters', 'n_noise'])
+            writer.writeheader()
+            for r in rows:
+                writer.writerow({
+                    'algorithm': r.get('algorithm'),
+                    'silhouette': r.get('silhouette'),
+                    'calinski': r.get('calinski'),
+                    'davies': r.get('davies'),
+                    'n_clusters': r.get('n_clusters'),
+                    'n_noise': r.get('n_noise')
+                })
+            filename = f"{session_id}_clustering_summary.csv"
+
+        csv_bytes = output.getvalue().encode('utf-8')
+        return FileResponse(
+            io.BytesIO(csv_bytes),
+            media_type="text/csv",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "X-RateLimit-Limit": str(rate_limit["limit"]),
+                "X-RateLimit-Remaining": str(rate_limit["remaining"])
+            }
+        )
+    except Exception as e:
+        logger.error(f"Clustering export failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # STRIPE WEBHOOK ENDPOINT

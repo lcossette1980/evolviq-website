@@ -1,6 +1,6 @@
-# Getting Started with Create React App
+# EvolvIQ Web App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Frontend (React, Vercel) + Backend (FastAPI, Railway). See the docs section below for production readiness.
 
 ## Available Scripts
 
@@ -39,32 +39,23 @@ Instead, it will copy all the configuration files and the transitive dependencie
 
 You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
 
-## Learn More
+## Documentation
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- Production Master TODO: `docs/PRODUCTION_TODO.md` — master, sequenced checklist for launch.
+- Roadmap: `docs/ASSESSMENTS_PROFILE_ROADMAP.md` — high‑level phases and goals.
+- API Spec: `docs/API_SPEC_PROFILE.md` — endpoint contracts.
+- Schemas: `docs/SCHEMAS/*.md` — data shapes used by the API and frontend.
+- Guide Registry: `docs/GUIDE_REGISTRY.md` — guide metadata and mappings.
+- Feedback Log: `FEEDBACK_TRACKING.md` — ongoing issue/decision log.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Create GitHub Issues from the Master TODO
 
-### Code Splitting
+Requires GitHub CLI (gh) and authentication.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+```
+node scripts/create_issues_from_todo.js docs/PRODUCTION_TODO.md --repo <owner>/<repo> --label production
+```
 
-### Analyzing the Bundle Size
+Use `--dry-run` to preview without creating issues.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+For CRA reference docs, see: https://facebook.github.io/create-react-app/
