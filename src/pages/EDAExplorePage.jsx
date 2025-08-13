@@ -77,7 +77,7 @@ const EDAExplorePage = () => {
           case 'results':
             return (
               <ResultsVisualization
-                analysisResults={stepData.analyze?.analysis || stepData.analyze}
+                analysisResults={stepData.analyze}
                 validationResults={stepData.uploadResults}
                 onNext={() => {}}
               />

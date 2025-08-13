@@ -232,26 +232,30 @@ const UnifiedInteractiveTool = ({
       setIsLoading(true);
       setError(null);
 
-      // By default, no backend process endpoint; store data locally
-      // Optionally, toolConfig.stepEndpoints can map steps to endpoints
+      // If a backend endpoint is defined for this step, call it with proper shape
       if (toolConfig.stepEndpoints && toolConfig.stepEndpoints[stepName]) {
-        const endpoint = toolConfig.stepEndpoints[stepName];
-        const response = await secureCall(endpoint.replace(':tool', toolType), {
+        let endpoint = toolConfig.stepEndpoints[stepName].replace(':tool', toolType);
+        // Append session_id as required by backend endpoints
+        endpoint += (endpoint.includes('?') ? '&' : '?') + `session_id=${encodeURIComponent(sessionId)}`;
+
+        const response = await secureCall(endpoint, {
           method: 'POST',
-          body: JSON.stringify({
-            session_id: sessionId,
-            step: stepName,
-            data: data
-          })
+          body: JSON.stringify(data || {})
         });
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           throw new Error(errorData.message || `${stepName} processing failed`);
         }
-        const result = await response.json();
-        setStepData(prev => ({ ...prev, [stepName]: result }));
+        const raw = await response.json();
+        // Normalize known step payloads
+        let normalized = raw;
+        if (stepName === 'preprocess' && raw?.preprocess) normalized = raw.preprocess;
+        if (stepName === 'train' && raw?.results) normalized = raw.results;
+        if (stepName === 'analyze' && raw?.analysis) normalized = raw.analysis;
+
+        setStepData(prev => ({ ...prev, [stepName]: normalized }));
         console.log(`✅ ${toolType} ${stepName} completed via server`);
-        return result;
+        return normalized;
       } else {
         // Local-only step
         setStepData(prev => ({ ...prev, [stepName]: data }));
