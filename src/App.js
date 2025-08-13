@@ -31,6 +31,7 @@ const EDAExplorePage = lazy(() => import('./pages/EDAExplorePage'));
 const ClassificationExplorePage = lazy(() => import('./pages/ClassificationExplorePage'));
 const ClusteringExplorePage = lazy(() => import('./pages/ClusteringExplorePage'));
 const NLPExplorePage = lazy(() => import('./pages/NLPExplorePage'));
+const GuideViewer = lazy(() => import('./pages/GuideViewer'));
 
 // Lazy load legal pages
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
@@ -135,6 +136,14 @@ const AppContent = () => {
             <ProtectedRoute requiresPremium={false}>
               <PageSuspense>
                 <NLPExplorePage />
+              </PageSuspense>
+            </ProtectedRoute>
+          } />
+          {/* Dynamic Guide Viewer (fallback for registry-driven paths) */}
+          <Route path="/guides/:guideId" element={
+            <ProtectedRoute requiresPremium={true}>
+              <PageSuspense>
+                <GuideViewer />
               </PageSuspense>
             </ProtectedRoute>
           } />

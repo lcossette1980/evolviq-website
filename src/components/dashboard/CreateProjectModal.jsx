@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { useProject } from '../../contexts/ProjectContext';
 import { useDashboardStore } from '../../store/dashboardStore';
+import { useAuth } from '../../contexts/AuthContext';
 import { colors } from '../../utils/colors';
 
 /**
@@ -9,10 +10,39 @@ import { colors } from '../../utils/colors';
  * Allows users to create new projects
  */
 const CreateProjectModal = () => {
-  const { createProject } = useProject();
+  const { createProject, projects } = useProject();
   const { showCreateProject, setShowCreateProject, newProjectData, updateNewProjectData, resetNewProjectData } = useDashboardStore();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Prefill org fields from last project or user profile when modal opens
+  useEffect(() => {
+    if (!showCreateProject) return;
+    const alreadyFilled = newProjectData.organizationName || newProjectData.industry || newProjectData.organizationSize;
+    if (alreadyFilled) return;
+
+    // Prefer last project org details
+    const lastProject = projects && projects.length > 0 ? projects[0] : null;
+    if (lastProject?.organization) {
+      updateNewProjectData({
+        organizationName: lastProject.organization.name || '',
+        organizationSize: lastProject.organization.size || '',
+        industry: lastProject.organization.industry || ''
+      });
+      return;
+    }
+
+    // Fallback: try user profile fields if available
+    if (user) {
+      updateNewProjectData({
+        organizationName: user.organizationName || '',
+        organizationSize: user.organizationSize || '',
+        industry: user.industry || ''
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showCreateProject]);
 
   const handleClose = () => {
     setShowCreateProject(false);

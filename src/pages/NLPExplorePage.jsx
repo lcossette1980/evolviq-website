@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import UnifiedInteractiveTool from '../components/tools/UnifiedInteractiveTool';
 import { NLP_TOOL_CONFIG } from '../config/toolConfigs';
 
@@ -14,6 +15,7 @@ import NLPAnalysisStep from '../components/nlp/NLPAnalysisStep';
 import ResultsVisualization from '../components/nlp/ResultsVisualization';
 
 const NLPExplorePage = () => {
+  const navigate = useNavigate();
   return (
     <UnifiedInteractiveTool
       toolConfig={NLP_TOOL_CONFIG}
@@ -132,6 +134,7 @@ const NLPExplorePage = () => {
               <ResultsVisualization
                 analysisResults={stepData.analyze}
                 validationResults={stepData.uploadResults}
+                onNext={() => navigate('/dashboard')}
               />
             );
 
@@ -148,4 +151,3 @@ const NLPExplorePage = () => {
 };
 
 export default NLPExplorePage;
-

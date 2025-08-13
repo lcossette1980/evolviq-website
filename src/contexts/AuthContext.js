@@ -60,7 +60,11 @@ export const AuthProvider = ({ children }) => {
           subscriptionType: userData.subscriptionType || null,
           subscriptionStatus: userData.subscriptionStatus || null,
           createdAt: userData.createdAt,
-          lastLoginAt: new Date().toISOString()
+          lastLoginAt: new Date().toISOString(),
+          // Central org profile
+          organizationName: userData.company || userData.organizationName || '',
+          organizationSize: userData.teamSize || userData.organizationSize || '',
+          industry: userData.industry || ''
         };
       } else {
         // Create new user profile
@@ -72,7 +76,11 @@ export const AuthProvider = ({ children }) => {
           subscriptionType: null,
           subscriptionStatus: null,
           createdAt: new Date().toISOString(),
-          lastLoginAt: new Date().toISOString()
+          lastLoginAt: new Date().toISOString(),
+          // Initialize central org profile fields
+          company: '',
+          industry: '',
+          teamSize: ''
         };
 
         try {
@@ -103,7 +111,10 @@ export const AuthProvider = ({ children }) => {
           subscriptionType: null,
           subscriptionStatus: null,
           createdAt: newUserData.createdAt,
-          lastLoginAt: newUserData.lastLoginAt
+          lastLoginAt: newUserData.lastLoginAt,
+          organizationName: '',
+          organizationSize: '',
+          industry: ''
         };
       }
     } catch (error) {
@@ -119,7 +130,10 @@ export const AuthProvider = ({ children }) => {
         subscriptionType: null,
         subscriptionStatus: null,
         createdAt: new Date().toISOString(),
-        lastLoginAt: new Date().toISOString()
+        lastLoginAt: new Date().toISOString(),
+        organizationName: '',
+        organizationSize: '',
+        industry: ''
       };
     }
   };

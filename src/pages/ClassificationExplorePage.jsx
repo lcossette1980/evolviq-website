@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import UnifiedInteractiveTool from '../components/tools/UnifiedInteractiveTool';
 import { CLASSIFICATION_TOOL_CONFIG } from '../config/toolConfigs';
 
@@ -16,6 +17,7 @@ import ResultsVisualization from '../components/classification/ResultsVisualizat
 import ExportStep from '../components/classification/ExportStep';
 
 const ClassificationExplorePage = () => {
+  const navigate = useNavigate();
   return (
     <UnifiedInteractiveTool 
       toolConfig={CLASSIFICATION_TOOL_CONFIG}
@@ -89,6 +91,7 @@ const ClassificationExplorePage = () => {
               <ResultsVisualization
                 trainingResults={stepData.train}
                 validationResults={stepData.uploadResults}
+                onNext={() => navigate('/dashboard')}
               />
             );
 

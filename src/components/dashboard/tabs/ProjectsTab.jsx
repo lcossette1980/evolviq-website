@@ -165,18 +165,21 @@ const ProjectsTab = () => {
   // Project selected: show project-scoped guides
   return (
     <div className="space-y-6">
+      {/* Top actions outside the guides card */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold" style={{ color: colors.charcoal }}>
+          {currentProject ? `${currentProject.name}: Implementation Guides` : 'Implementation Guides'}
+        </h3>
+        <button
+          onClick={() => setShowCreateProject(true)}
+          className="px-4 py-2 rounded-lg bg-chestnut text-white inline-flex items-center hover:bg-chestnut/90"
+        >
+          <Plus className="w-4 h-4 mr-2" /> New Project
+        </button>
+      </div>
+
       <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold" style={{ color: colors.charcoal }}>
-            {currentProject ? `${currentProject.name}: Implementation Guides` : 'Implementation Guides'}
-          </h3>
-          <button
-            onClick={() => setShowCreateProject(true)}
-            className="px-4 py-2 rounded-lg bg-chestnut text-white inline-flex items-center hover:bg-chestnut/90"
-          >
-            <Plus className="w-4 h-4 mr-2" /> New Project
-          </button>
-        </div>
+        <div className="mb-6" />
         {missingGuides.length > 0 && (
           <div className="mb-6">
             <div className="text-sm text-gray-700 mb-2">Available guides to add</div>
@@ -211,7 +214,8 @@ const ProjectsTab = () => {
             return (
               <div
                 key={guideKey}
-                className="border rounded-lg p-6 hover:shadow-md transition-shadow"
+                className="border rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => navigate(meta.path)}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center">
@@ -235,7 +239,7 @@ const ProjectsTab = () => {
                     {status !== 'completed' && (
                       <button
                         className="text-sm px-3 py-1.5 rounded bg-chestnut text-white hover:bg-chestnut/90"
-                        onClick={() => updateGuideProgress(currentProject.id, guideKey, { status: 'in_progress', progress: progress || 1 })}
+                        onClick={(e) => { e.stopPropagation(); updateGuideProgress(currentProject.id, guideKey, { status: 'in_progress', progress: progress || 1 }); navigate(meta.path); }}
                       >
                         {progress > 0 ? 'Resume' : 'Start'}
                       </button>
@@ -272,44 +276,7 @@ const ProjectsTab = () => {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4" style={{ color: colors.charcoal }}>
-          Quick Actions
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button
-            onClick={() => navigate('/dashboard/assessments/ai-knowledge')}
-            className="p-4 text-left border rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <div className="flex items-center mb-2">
-              <Target className="w-5 h-5 mr-2" style={{ color: colors.chestnut }} />
-              <span className="font-medium">Retake AI Knowledge</span>
-            </div>
-            <p className="text-sm text-gray-600">Update your skills baseline</p>
-          </button>
-          <button
-            onClick={() => setActiveTab('tools')}
-            className="p-4 text-left border rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <div className="flex items-center mb-2">
-              <BookOpen className="w-5 h-5 mr-2" style={{ color: colors.khaki }} />
-              <span className="font-medium">Explore Tools</span>
-            </div>
-            <p className="text-sm text-gray-600">Standalone interactive tools</p>
-          </button>
-          <button
-            onClick={() => setShowCreateProject(true)}
-            className="p-4 text-left border rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <div className="flex items-center mb-2">
-              <PlayCircle className="w-5 h-5 mr-2" style={{ color: colors.navy }} />
-              <span className="font-medium">New Project</span>
-            </div>
-            <p className="text-sm text-gray-600">Start a new implementation</p>
-          </button>
-        </div>
-      </div>
+      {/* Quick Actions removed as requested */}
     </div>
   );
 };

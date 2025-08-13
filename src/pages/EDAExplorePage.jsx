@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import UnifiedInteractiveTool from '../components/tools/UnifiedInteractiveTool';
 import { EDA_TOOL_CONFIG } from '../config/toolConfigs';
 
@@ -15,6 +16,7 @@ import AnalysisStep from '../components/eda/AnalysisStep';
 import ResultsVisualization from '../components/eda/ResultsVisualization';
 
 const EDAExplorePage = () => {
+  const navigate = useNavigate();
   return (
     <UnifiedInteractiveTool 
       toolConfig={EDA_TOOL_CONFIG}
@@ -79,7 +81,7 @@ const EDAExplorePage = () => {
               <ResultsVisualization
                 analysisResults={stepData.analyze}
                 validationResults={stepData.uploadResults}
-                onNext={() => {}}
+                onNext={() => navigate('/dashboard')}
               />
             );
 

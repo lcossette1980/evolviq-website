@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import UnifiedInteractiveTool from '../components/tools/UnifiedInteractiveTool';
 import { CLUSTERING_TOOL_CONFIG } from '../config/toolConfigs';
 
@@ -15,6 +16,7 @@ import ResultsVisualization from '../components/clustering/ResultsVisualization'
 import ExportStep from '../components/clustering/ExportStep';
 
 const ClusteringExplorePage = () => {
+  const navigate = useNavigate();
   return (
     <UnifiedInteractiveTool 
       toolConfig={CLUSTERING_TOOL_CONFIG}
@@ -74,7 +76,7 @@ const ClusteringExplorePage = () => {
               <ResultsVisualization
                 analysisResults={stepData.analyze}
                 validationResults={stepData.uploadResults}
-                onNext={() => {}}
+                onNext={() => navigate('/dashboard')}
               />
             );
 

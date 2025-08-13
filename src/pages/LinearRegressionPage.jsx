@@ -52,7 +52,7 @@ const LinearRegressionPage = () => {
           case 'preprocess':
             return (
               <DataPreprocessing
-                validationResults={stepData.validate}
+                validationResults={{ ...(stepData.uploadResults || {}), selectedTarget: stepData.validate?.target }}
                 onPreprocess={(config) => {
                   const target = stepData.validate?.target;
                   processStep('preprocess', { config, target_column: target })
