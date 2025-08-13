@@ -87,9 +87,8 @@ const ClassificationExplorePage = () => {
           case 'results':
             return (
               <ResultsVisualization
-                trainingResults={stepData.train}
-                allStepData={stepData}
-                toolContext={toolContext}
+                trainingResults={stepData.train?.results}
+                validationResults={stepData.uploadResults}
               />
             );
 

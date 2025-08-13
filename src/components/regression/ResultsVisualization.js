@@ -9,8 +9,19 @@ const ResultsVisualization = ({ trainingResults, sessionId, onContinue }) => {
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    loadFullResults();
-  }, [sessionId]);
+    if (trainingResults && Object.keys(trainingResults || {}).length > 0) {
+      // Prefer provided training results; enhance and use directly
+      const enhanced = enhanceResultsWithFallbacks(trainingResults);
+      setFullResults(enhanced);
+      setIsLoading(false);
+      return;
+    }
+    if (sessionId) {
+      loadFullResults();
+    } else {
+      setIsLoading(false);
+    }
+  }, [sessionId, trainingResults]);
 
   const enhanceResultsWithFallbacks = (results) => {
     if (!results) return results;

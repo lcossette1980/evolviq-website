@@ -80,9 +80,8 @@ const LinearRegressionPage = () => {
           case 'results':
             return (
               <ResultsVisualization
-                trainingResults={stepData.train}
-                allStepData={stepData}
-                toolContext={toolContext}
+                trainingResults={stepData.train?.results}
+                sessionId={toolContext.sessionId}
               />
             );
 

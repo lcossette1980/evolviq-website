@@ -66,8 +66,8 @@ const EDAExplorePage = () => {
               <AnalysisStep
                 preprocessingResults={stepData.configure}
                 onAnalyze={() => {
-                  // For now, mark analyze as complete locally
-                  processStep('analyze', { startedAt: new Date().toISOString() })
+                  // Invoke backend EDA analysis
+                  processStep('analyze', { config: stepData.configure || {} })
                     .then(() => nextStep())
                     .catch(console.error);
                 }}
@@ -77,9 +77,9 @@ const EDAExplorePage = () => {
           case 'results':
             return (
               <ResultsVisualization
-                analysisResults={stepData.analyze}
-                allStepData={stepData}
-                toolContext={toolContext}
+                analysisResults={stepData.analyze?.analysis || stepData.analyze}
+                validationResults={stepData.uploadResults}
+                onNext={() => {}}
               />
             );
 

@@ -17,6 +17,9 @@ export const EDA_TOOL_CONFIG = {
     'application/vnd.ms-excel',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   ],
+  stepEndpoints: {
+    analyze: '/api/:tool/analyze'
+  },
   steps: [
     {
       id: 1,
@@ -123,6 +126,9 @@ export const CLUSTERING_TOOL_CONFIG = {
     'application/vnd.ms-excel',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   ],
+  stepEndpoints: {
+    analyze: '/api/:tool/analyze'
+  },
   steps: [
     {
       id: 1,

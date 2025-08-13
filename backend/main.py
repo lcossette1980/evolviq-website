@@ -301,6 +301,17 @@ class PreprocessingRequest(BaseModel):
     config: PreprocessingConfig
     target_column: str
 
+class EDAAnalyzeRequest(BaseModel):
+    config: Optional[Dict[str, Any]] = None
+
+class ClusteringAnalyzeRequest(BaseModel):
+    algorithms: Optional[List[str]] = None
+    minClusters: Optional[int] = 2
+    maxClusters: Optional[int] = 8
+    scalingMethod: Optional[str] = 'standard'
+    dimensionalityReduction: Optional[str] = 'pca'
+    nComponents: Optional[int] = 2
+
 # PREPROCESS ENDPOINT
 @app.post("/api/{tool_type}/preprocess")
 async def preprocess_data_endpoint(
@@ -344,6 +355,181 @@ async def preprocess_data_endpoint(
 
     except Exception as e:
         logger.error(f"Preprocessing failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# EDA ANALYZE ENDPOINT
+@app.post("/api/eda/analyze")
+async def eda_analyze(
+    request: EDAAnalyzeRequest,
+    session_id: str = Query(...),
+    current_user: dict = Depends(get_current_user),
+    rate_limit: dict = Depends(rate_limit_ml_tools)
+):
+    """Run EDA analysis (quality, univariate, bivariate) on uploaded data."""
+    try:
+        session_data = await session_storage.get_session(session_id)
+        if not session_data or 'dataframe' not in session_data:
+            raise HTTPException(status_code=400, detail="No data uploaded for this session")
+
+        data = session_data['dataframe']
+
+        # Run analyses
+        workflow = EDAWorkflow(EDAConfig())
+        quality = workflow.perform_quality_assessment(data)
+        univariate = workflow.perform_univariate_analysis(data)
+        bivariate = workflow.perform_bivariate_analysis(data)
+        insights = workflow.generate_insights(data, {
+            'assessment': quality.get('assessment'),
+            'numeric_analysis': univariate.get('numeric_analysis'),
+            'categorical_analysis': univariate.get('categorical_analysis'),
+            'correlation_analysis': bivariate.get('correlation_analysis')
+        })
+
+        analysis = {
+            "quality": quality,
+            "univariate": univariate,
+            "bivariate": bivariate,
+            "insights": insights,
+            "timestamp": datetime.now().isoformat()
+        }
+
+        # Save to session
+        session_data['status'] = 'analyzed'
+        session_data['eda_analysis'] = analysis
+        await session_storage.save_session(session_id, session_data)
+
+        return {
+            "analysis": analysis,
+            "rate_limit": rate_limit
+        }
+
+    except Exception as e:
+        logger.error(f"EDA analyze failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# CLUSTERING ANALYZE ENDPOINT
+@app.post("/api/clustering/analyze")
+async def clustering_analyze(
+    request: ClusteringAnalyzeRequest,
+    session_id: str = Query(...),
+    current_user: dict = Depends(get_current_user),
+    rate_limit: dict = Depends(rate_limit_ml_tools)
+):
+    """Run clustering preprocessing, optimal K, clustering, and return visualization data."""
+    try:
+        session_data = await session_storage.get_session(session_id)
+        if not session_data or 'dataframe' not in session_data:
+            raise HTTPException(status_code=400, detail="No data uploaded for this session")
+
+        data = session_data['dataframe']
+
+        # Map request to ClusteringConfig
+        cfg = ClusteringConfig(
+            max_clusters=request.maxClusters or 8,
+            min_clusters=request.minClusters or 2,
+            algorithms_to_include=(request.algorithms or [
+                'kmeans', 'hierarchical', 'dbscan', 'gaussian_mixture'
+            ]),
+            scaling_method=request.scalingMethod or 'standard',
+            dimensionality_reduction=request.dimensionalityReduction or 'pca',
+            n_components=request.nComponents or 2
+        )
+
+        workflow = ClusteringWorkflow(cfg)
+
+        # Preprocess
+        pre = workflow.preprocess_data(data)
+        if not pre.get('success'):
+            raise HTTPException(status_code=400, detail=f"Preprocessing failed: {pre.get('error')}")
+
+        # Compute optimization curves
+        optimal = workflow.find_optimal_clusters()
+
+        # Perform clustering with recommended clusters
+        clusters = workflow.perform_clustering()
+
+        # Build optimization data for charts
+        optimization_data = []
+        if optimal.get('success'):
+            k_values = optimal['silhouette_method']['k_values']
+            sil_scores = optimal['silhouette_method']['silhouette_scores']
+            elbow_k = optimal['elbow_method']['k_values']
+            elbow_vals = optimal['elbow_method']['distortions']
+            # Merge on k index (they should align by construction)
+            for i, k in enumerate(k_values):
+                optimization_data.append({
+                    'k': k,
+                    'silhouette': float(sil_scores[i]) if i < len(sil_scores) else 0.0,
+                    'elbow': float(elbow_vals[i+1]) if (i+1) < len(elbow_vals) else float(elbow_vals[min(len(elbow_vals)-1, i)])
+                })
+
+        # Build algorithm comparison list
+        comparison = []
+        best_algo_key = clusters.get('best_algorithm')
+        for key, result in clusters.get('clustering_results', {}).items():
+            evalm = result.get('evaluation', {}) if isinstance(result, dict) else {}
+            comparison.append({
+                'algorithm': result.get('name', key),
+                'silhouette': float(evalm.get('silhouette_score', 0) or 0),
+                'calinski': float(evalm.get('calinski_harabasz_score', 0) or 0),
+                'davies': float(evalm.get('davies_bouldin_score', 0) or 0),
+                'n_clusters': int(result.get('n_clusters', 0) or 0),
+                'n_noise': int(evalm.get('n_noise_points', 0) or 0)
+            })
+
+        # Create simple 2D visualization data using PCA on processed data
+        viz_data = []
+        try:
+            import pandas as pd
+            from sklearn.decomposition import PCA
+            proc = workflow.processed_data
+            pca = PCA(n_components=2, random_state=cfg.random_state)
+            coords = pca.fit_transform(proc)
+            # Use labels from best algorithm if available, otherwise first available
+            labels = None
+            if best_algo_key and clusters['clustering_results'].get(best_algo_key):
+                labels = clusters['clustering_results'][best_algo_key].get('labels')
+            if labels is None:
+                # Pick any available
+                for v in clusters['clustering_results'].values():
+                    if isinstance(v, dict) and v.get('labels') is not None:
+                        labels = v['labels']
+                        break
+            labels = labels or [0] * len(coords)
+            # Build scatter points with simple per-cluster counts
+            import collections
+            counts = collections.Counter(labels)
+            for i, (x, y) in enumerate(coords):
+                viz_data.append({
+                    'x': float(x),
+                    'y': float(y),
+                    'cluster': int(labels[i]) if isinstance(labels, list) else int(labels),
+                    'size': int(counts.get(labels[i], 1))
+                })
+        except Exception as viz_err:
+            logger.warning(f"Clustering viz creation failed: {viz_err}")
+
+        analysis = {
+            'optimization_data': optimization_data,
+            'clustering_results': comparison,
+            'visualization_data': viz_data,
+            'recommended_k': optimal['silhouette_method'].get('optimal_clusters') if optimal.get('success') else None,
+            'best_algorithm': clusters.get('best_algorithm'),
+            'best_score': clusters.get('best_score')
+        }
+
+        # Save in session
+        session_data['status'] = 'clustering_complete'
+        session_data['clustering_analysis'] = analysis
+        await session_storage.save_session(session_id, session_data)
+
+        return {
+            'analysis': analysis,
+            'rate_limit': rate_limit
+        }
+
+    except Exception as e:
+        logger.error(f"Clustering analyze failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # Stripe Payment Models
@@ -880,6 +1066,14 @@ async def train_models(
                 import pandas as pd
                 train_input_df = pd.DataFrame(session_data['preprocess']['processed_data'])
             train_out = workflow.train_models(train_input_df, request.target_column)
+            # Attach rich visualizations if training succeeded
+            try:
+                if train_out.get('success'):
+                    viz = workflow.get_visualizations()
+                    if viz.get('success'):
+                        train_out['visualizations'] = viz.get('visualizations', {})
+            except Exception as _viz_err:
+                logger.warning(f"Regression visualization generation failed: {_viz_err}")
         elif tool_type == 'classification':
             train_input_df = data
             if session_data.get('preprocess') and session_data['preprocess'].get('processed_data'):

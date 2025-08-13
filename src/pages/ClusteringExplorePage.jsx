@@ -55,7 +55,13 @@ const ClusteringExplorePage = () => {
                 config={stepData.configure}
                 validationResults={stepData.uploadResults}
                 onAnalyze={() => {
-                  processStep('analyze', { config: stepData.configure })
+                  processStep('analyze', {
+                    algorithms: stepData.configure?.algorithms,
+                    minClusters: stepData.configure?.minClusters,
+                    maxClusters: stepData.configure?.maxClusters,
+                    scalingMethod: stepData.configure?.scalingMethod,
+                    dimensionalityReduction: stepData.configure?.enableDimensionalityReduction ? 'pca' : 'none'
+                  })
                     .then(() => nextStep())
                     .catch(console.error);
                 }}
@@ -66,9 +72,9 @@ const ClusteringExplorePage = () => {
           case 'results':
             return (
               <ResultsVisualization
-                analysisResults={stepData.analyze}
-                allStepData={stepData}
-                toolContext={toolContext}
+                analysisResults={stepData.analyze?.analysis || stepData.analyze}
+                validationResults={stepData.uploadResults}
+                onNext={() => {}}
               />
             );
 
