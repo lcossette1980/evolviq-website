@@ -162,6 +162,66 @@ const ProjectsTab = () => {
     );
   }
 
+  // Render project cards linking to the Master Implementation Guide
+  if (coreComplete && projects.length > 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold" style={{ color: colors.charcoal }}>
+            Your Projects
+          </h3>
+          <button
+            onClick={() => setShowCreateProject(true)}
+            className="px-4 py-2 rounded-lg bg-chestnut text-white inline-flex items-center hover:bg-chestnut/90"
+          >
+            <Plus className="w-4 h-4 mr-2" /> New Project
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {projects.map(project => {
+            const org = project.organization || {};
+            return (
+              <div key={project.id} className="border rounded-lg p-6 bg-white hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center">
+                    <div className="w-12 h-12 rounded-lg flex items-center justify-center mr-4" style={{ backgroundColor: `${colors.chestnut}20` }}>
+                      <Briefcase className="w-6 h-6" style={{ color: colors.chestnut }} />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">{project.name}</h4>
+                      <p className="text-xs text-gray-500 mt-1">{org.name || '—'}{org.industry ? ` • ${org.industry}` : ''}{org.size ? ` • ${org.size}` : ''}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700 capitalize">{project.stage || 'exploring'}</span>
+                </div>
+
+                {project.objective && (
+                  <p className="text-sm text-gray-700 mb-3">Objective: {project.objective}</p>
+                )}
+                <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-4">
+                  <div>Type: <span className="font-medium">{project.type || 'general'}</span></div>
+                  <div>Timeline: <span className="font-medium">{project.timeline || '6_months'}</span></div>
+                  <div>Budget: <span className="font-medium">{project.budget || '10k_50k'}</span></div>
+                  <div>Updated: <span className="font-medium">{project.lastUpdated ? new Date(project.lastUpdated).toLocaleDateString() : '—'}</span></div>
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    className="px-4 py-2 rounded bg-chestnut text-white hover:bg-chestnut/90 text-sm"
+                    onClick={() => navigate('/guides/AIProjectImplementation', { state: { projectId: project.id } })}
+                  >
+                    Open Implementation Plan
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   // Project selected: show project-scoped guides
   return (
     <div className="space-y-6">
