@@ -103,6 +103,13 @@ const ProjectsTab = () => {
           const org = project.organization || {};
           const isCurrentProject = currentProject?.id === project.id;
           
+          // Tool progress badges
+          const tools = project.tools || {};
+          const guide = tools.interactiveGuide || {};
+          const totalPhases = (guide.phases || []).length || 7;
+          const donePhases = (guide.completed || []).length || 0;
+          const roi = tools.roiCalculator;
+
           return (
             <div 
               key={project.id} 
@@ -135,7 +142,7 @@ const ProjectsTab = () => {
                 </p>
               )}
 
-              <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-4">
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-2">
                 <div>Type: <span className="font-medium">{project.type || 'general'}</span></div>
                 <div>Timeline: <span className="font-medium">{project.timeline || '6 months'}</span></div>
                 <div>Budget: <span className="font-medium">{project.budget || '$10k-50k'}</span></div>
@@ -143,16 +150,25 @@ const ProjectsTab = () => {
                   {project.lastUpdated ? new Date(project.lastUpdated).toLocaleDateString() : '—'}
                 </span></div>
               </div>
+              <div className="flex items-center gap-2 text-xs mb-4">
+                <span className="px-2 py-1 rounded bg-bone border">Guide {donePhases}/{totalPhases}</span>
+                {roi && <span className="px-2 py-1 rounded bg-bone border">ROI saved</span>}
+              </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-2">
                 <button
                   className="px-4 py-2 rounded bg-chestnut text-white hover:bg-chestnut/90 text-sm inline-flex items-center"
-                  onClick={() => navigate('/guides/AIProjectImplementation', { 
-                    state: { projectId: project.id } 
-                  })}
+                  onClick={() => navigate(`/projects/${encodeURIComponent(project.id)}/guide`)}
                 >
                   <PlayCircle className="w-4 h-4 mr-2" />
-                  Open Implementation Guide
+                  Interactive Implementation Guide
+                </button>
+                <button
+                  className="px-4 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 text-sm inline-flex items-center"
+                  onClick={() => navigate(`/projects/${encodeURIComponent(project.id)}/roi`)}
+                >
+                  <PlayCircle className="w-4 h-4 mr-2" />
+                  ROI Calculator
                 </button>
               </div>
             </div>
@@ -160,30 +176,7 @@ const ProjectsTab = () => {
         })}
       </div>
 
-      {/* Master Guide Card */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
-            <PlayCircle className="w-8 h-8 text-blue-600" />
-          </div>
-          <div className="ml-4">
-            <h4 className="text-lg font-semibold text-gray-900 mb-2">
-              AI Project Implementation Guide (Master)
-            </h4>
-            <p className="text-sm text-gray-700 mb-4">
-              Comprehensive guide covering all aspects of AI project implementation, from strategy to deployment. 
-              Personalized based on your assessments and project details.
-            </p>
-            <button
-              onClick={() => navigate('/guides/AIProjectImplementation')}
-              className="text-sm px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 inline-flex items-center"
-            >
-              <PlayCircle className="w-4 h-4 mr-2" />
-              Access Master Guide
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* Removed Master Guide card; replaced by per-project tools above */}
     </div>
   );
 };

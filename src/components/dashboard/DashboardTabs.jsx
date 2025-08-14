@@ -21,7 +21,6 @@ const DashboardTabs = () => {
     { id: 'overview', label: 'Overview', icon: BarChart3, alwaysShow: true },
     { id: 'assessments', label: 'Assessments', icon: Target, alwaysShow: true },
     { id: 'tools', label: 'Interactive Tools', icon: Wrench, alwaysShow: true },
-    { id: 'learning', label: 'Learning Plan', icon: BookOpen, alwaysShow: true },
     { id: 'projects', label: 'Projects', icon: BookOpen, requiresAccess: 'projects' },
     { id: 'actions', label: 'Action Items', icon: CheckCircle, requiresPremium: true }
   ];

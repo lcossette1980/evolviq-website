@@ -32,6 +32,8 @@ const ClassificationExplorePage = lazy(() => import('./pages/ClassificationExplo
 const ClusteringExplorePage = lazy(() => import('./pages/ClusteringExplorePage'));
 const NLPExplorePage = lazy(() => import('./pages/NLPExplorePage'));
 const GuideViewer = lazy(() => import('./pages/GuideViewer'));
+const ProjectInteractiveGuide = lazy(() => import('./pages/ProjectInteractiveGuide'));
+const ProjectRoiCalculator = lazy(() => import('./pages/ProjectRoiCalculator'));
 
 // Lazy load legal pages
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
@@ -143,6 +145,22 @@ const AppContent = () => {
             <ProtectedRoute requiresPremium={true}>
               <PageSuspense>
                 <GuideViewer />
+              </PageSuspense>
+            </ProtectedRoute>
+          } />
+
+          {/* Project-specific tools */}
+          <Route path="/projects/:projectId/guide" element={
+            <ProtectedRoute requiresPremium={true}>
+              <PageSuspense>
+                <ProjectInteractiveGuide />
+              </PageSuspense>
+            </ProtectedRoute>
+          } />
+          <Route path="/projects/:projectId/roi" element={
+            <ProtectedRoute requiresPremium={true}>
+              <PageSuspense>
+                <ProjectRoiCalculator />
               </PageSuspense>
             </ProtectedRoute>
           } />

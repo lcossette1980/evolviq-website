@@ -19,7 +19,6 @@ const AssessmentsTab = React.lazy(() => import('../components/dashboard/tabs/Ass
 const ProjectsTab = React.lazy(() => import('../components/dashboard/tabs/ProjectsTab'));
 const InteractiveToolsTab = React.lazy(() => import('../components/dashboard/tabs/InteractiveToolsTab'));
 const ActionItemsTab = React.lazy(() => import('../components/dashboard/tabs/ActionItemsTab'));
-const LearningPlanTab = React.lazy(() => import('../components/dashboard/tabs/LearningPlanTab'));
 
 /**
  * Refactored Member Dashboard - Version 2.0
@@ -87,14 +86,6 @@ const MemberDashboard = () => {
           <ErrorBoundary level="component">
             <React.Suspense fallback={<LoadingSpinner message="Loading Interactive Tools..." />}>
               <InteractiveToolsTab />
-            </React.Suspense>
-          </ErrorBoundary>
-        );
-      case 'learning':
-        return (
-          <ErrorBoundary level="component">
-            <React.Suspense fallback={<LoadingSpinner message="Loading Learning Plan..." />}>
-              <LearningPlanTab />
             </React.Suspense>
           </ErrorBoundary>
         );

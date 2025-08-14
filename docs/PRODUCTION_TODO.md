@@ -90,8 +90,8 @@ Purpose: Single source of truth for getting the app production‑ready on Railwa
   - Smooth transitions back to the dashboard.
 
 ## 9) Guides & Projects UX
-- [x] Simplified ProjectsTab to show projects and single master guide
-  - Cleaner UX with consolidated implementation guide.
+- [x] Simplified ProjectsTab to show per‑project tools (interactive guide + ROI)
+  - Cleaner UX with consolidated, project‑attached tools.
 - [x] Updated GUIDE_REGISTRY.md to single master entry architecture
   - Unified guide system with dynamic content adaptation.
 - [ ] Clicking a guide opens it; Start/Resume updates progress and opens
@@ -104,6 +104,21 @@ Purpose: Single source of truth for getting the app production‑ready on Railwa
   - Registry-driven guide access and fallback renderer.
 - [ ] Autofill Create Project from org profile or last project
   - Saves time and keeps data consistent.
+
+## 22) Projects Tab — Interactive Guide + ROI (Launch)
+
+- [x] Remove Learning Plan tab from dashboard
+  - Simplifies IA; focus on Projects, Tools, and Assessments.
+- [x] Replace master guide with project-specific tools
+  - New routes: `/projects/:projectId/guide` (interactive guide) and `/projects/:projectId/roi` (ROI calculator).
+- [x] Persist tool outputs in Firestore under project
+  - Store under `projects/{id}.tools.{interactiveGuide|roiCalculator}` with timestamps.
+- [x] Add UI entrypoints per project card
+  - Buttons for Interactive Implementation Guide and ROI Calculator.
+- [x] Add tool progress badges to project cards
+  - Show guide phase completion count and ROI saved indicator.
+- [x] Append tool events to project timeline
+  - Events like `tool_saved` with summary and timestamps.
 
 ## 10) UI/UX Polish
 - [x] ProfileCard component integrated in dashboard Overview tab
@@ -317,3 +332,26 @@ Purpose: Nice‑to‑have refinements to ship after launch for stronger UX/robus
   - Avoid duplication and stale links; redirect legacy guide paths.
 - [x] Remove deprecated guide components/files and ensure no imports remain
   - Prevent dead code and confusion.
+
+
+## 23) Tool Enhancements (Ship now)
+
+- [x] Interactive Guide: phase dependencies + checklists
+  - Gate phases until prior is complete; add per‑phase checklists; persist progress.
+- [x] ROI Calculator: scenarios + sensitivity + PDF print
+  - Named scenarios saved per project, simple sensitivity table, and print/save PDF via browser.
+
+## 24) Post‑Launch Enhancements (moved/expanded)
+
+- [ ] Classification UX guardrails
+  - Toggle to disable stratify on small/imbalanced classes; dynamic test_size guidance; model‑specific error messages.
+- [ ] Export polish and options
+  - Bundle multi‑CSV exports into a zip; expose export format/options in UI; include prediction artifacts.
+- [ ] EDA adapters and fallbacks
+  - Broaden adapters to handle alternate shapes and add fallback visuals; dev‑only diagnostics toggle.
+- [ ] Observability & UX
+  - Integrate Sentry (frontend+backend) with release tags; add request IDs; standardize toasts/empty states.
+- [ ] Performance/UX
+  - Debounce remaining actions; background task status indicators; richer skeletons for tool steps and dashboard.
+- [ ] Documentation
+  - Update deployment runbook (flags, endpoints, exports), and publish API schemas for validate/preprocess/train/analyze/results/export.

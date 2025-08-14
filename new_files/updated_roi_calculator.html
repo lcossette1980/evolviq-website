@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Implementation ROI Calculator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Lato', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: #2A2A2A;
+            background: #F5F2EA;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(42, 42, 42, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: #2A2A2A;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            font-family: 'Lato', sans-serif;
+            font-size: 1.1em;
+            opacity: 0.9;
+            color: #A59E8C;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+        
+        .input-section {
+            background: #F5F2EA;
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid #D7CEB2;
+        }
+        
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4em;
+            margin-bottom: 20px;
+            color: #2A2A2A;
+            border-bottom: 3px solid #A44A3F;
+            padding-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #2A2A2A;
+            font-family: 'Lato', sans-serif;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #D7CEB2;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Lato', sans-serif;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #A44A3F;
+            box-shadow: 0 0 0 3px rgba(164, 74, 63, 0.1);
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            color: #A44A3F;
+            margin-left: 5px;
+        }
+        
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2A2A2A;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            font-family: 'Lato', sans-serif;
+        }
+        
+        .results-section {
+            background: #F5F2EA;
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid #D7CEB2;
+        }
+        
+        .metric-card {
+            background: white;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #A44A3F;
+            box-shadow: 0 2px 10px rgba(42, 42, 42, 0.05);
+        }
+        
+        .metric-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 2em;
+            font-weight: bold;
+            color: #2A2A2A;
+            margin-bottom: 5px;
+        }
+        
+        .metric-label {
+            color: #A59E8C;
+            font-size: 0.9em;
+            font-family: 'Lato', sans-serif;
+        }
+        
+        .positive { color: #27ae60; }
+        .negative { color: #e74c3c; }
+        .warning { color: #A44A3F; }
+        
+        .calculate-btn {
+            background: #A44A3F;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-family: 'Lato', sans-serif;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: transform 0.2s, background-color 0.3s;
+        }
+        
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+            background: #8A3A30;
+            box-shadow: 0 5px 15px rgba(164, 74, 63, 0.3);
+        }
+        
+        .instructions {
+            background: #F5F2EA;
+            margin: 20px 30px;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #A44A3F;
+        }
+        
+        .instructions h3 {
+            font-family: 'Playfair Display', serif;
+            color: #2A2A2A;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+            font-family: 'Lato', sans-serif;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+            color: #2A2A2A;
+        }
+        
+        .instructions p {
+            font-family: 'Lato', sans-serif;
+            color: #2A2A2A;
+        }
+        
+        .scenario-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .scenario-btn {
+            background: #D7CEB2;
+            border: 2px solid #A59E8C;
+            color: #2A2A2A;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            text-align: center;
+            font-family: 'Lato', sans-serif;
+            font-weight: 500;
+        }
+        
+        .scenario-btn:hover, .scenario-btn.active {
+            background: #A44A3F;
+            color: white;
+            border-color: #A44A3F;
+        }
+        
+        .breakdown {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #D7CEB2;
+        }
+        
+        .breakdown h4 {
+            font-family: 'Playfair Display', serif;
+            margin-bottom: 15px;
+            color: #2A2A2A;
+            font-weight: 700;
+        }
+        
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #D7CEB2;
+            font-family: 'Lato', sans-serif;
+            color: #2A2A2A;
+        }
+        
+        .breakdown-item:last-child {
+            border-bottom: none;
+            margin-top: 10px;
+            padding-top: 15px;
+            border-top: 2px solid #A44A3F;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .scenario-buttons {
+                flex-direction: column;
+            }
+            
+            body {
+                padding: 10px;
+            }
+        }
+        
+        /* Custom scrollbar for webkit browsers */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #F5F2EA;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #A59E8C;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #A44A3F;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AI Implementation ROI Calculator</h1>
+            <p>Calculate the return on investment for your AI efficiency initiatives</p>
+        </div>
+        
+        <div class="instructions">
+            <h3>📋 How to Use This Calculator</h3>
+            <ol>
+                <li><strong>Start with Baseline Metrics:</strong> Enter your current performance data (task times, volumes, costs)</li>
+                <li><strong>Add Implementation Costs:</strong> Include development time, training, and infrastructure costs</li>
+                <li><strong>Set Improvement Expectations:</strong> Enter realistic percentage improvements you expect from AI</li>
+                <li><strong>Try Different Scenarios:</strong> Use the scenario buttons to see conservative, realistic, and optimistic projections</li>
+                <li><strong>Review Results:</strong> Analyze ROI, payback period, and detailed cost/benefit breakdown</li>
+            </ol>
+            <p><strong>💡 Pro Tip:</strong> Start conservative with your improvement estimates. It's better to under-promise and over-deliver!</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="input-section">
+                <h2 class="section-title">📊 Baseline Metrics</h2>
+                
+                <div class="form-group">
+                    <label for="taskTime">Average Task Completion Time (hours) <span class="tooltip" data-tooltip="How long does it currently take to complete one typical task?">ℹ️</span></label>
+                    <input type="number" id="taskTime" step="0.1" value="2.5">
+                </div>
+                
+                <div class="form-group">
+                    <label for="monthlyVolume">Monthly Task Volume <span class="tooltip" data-tooltip="How many tasks does your team complete per month?">ℹ️</span></label>
+                    <input type="number" id="monthlyVolume" value="500">
+                </div>
+                
+                <div class="form-group">
+                    <label for="errorRate">Current Error/Rework Rate (%) <span class="tooltip" data-tooltip="What percentage of tasks require rework or correction?">ℹ️</span></label>
+                    <input type="number" id="errorRate" step="0.1" value="15">
+                </div>
+                
+                <div class="form-group">
+                    <label for="employeeCount">Affected Employees (FTEs) <span class="tooltip" data-tooltip="How many full-time employees will use this AI solution?">ℹ️</span></label>
+                    <input type="number" id="employeeCount" value="8">
+                </div>
+                
+                <div class="form-group">
+                    <label for="hourlyRate">Loaded Hourly Rate ($) <span class="tooltip" data-tooltip="Total cost per hour including salary, benefits, overhead">ℹ️</span></label>
+                    <input type="number" id="hourlyRate" value="75">
+                </div>
+                
+                <div class="form-group">
+                    <label for="customerSat">Current Customer Satisfaction (1-10) <span class="tooltip" data-tooltip="Current CSAT or NPS score">ℹ️</span></label>
+                    <input type="number" id="customerSat" min="1" max="10" step="0.1" value="7.2">
+                </div>
+                
+                <div class="form-group">
+                    <label for="customerValue">Average Monthly Customer Value ($) <span class="tooltip" data-tooltip="Average monthly revenue per customer">ℹ️</span></label>
+                    <input type="number" id="customerValue" value="2500">
+                </div>
+                
+                <h2 class="section-title">💰 Implementation Costs</h2>
+                
+                <div class="form-group">
+                    <label for="devHours">Development Hours <span class="tooltip" data-tooltip="Internal time to build and deploy the solution">ℹ️</span></label>
+                    <input type="number" id="devHours" value="200">
+                </div>
+                
+                <div class="form-group">
+                    <label for="trainingHours">Training Hours (Total) <span class="tooltip" data-tooltip="Time to train all affected employees">ℹ️</span></label>
+                    <input type="number" id="trainingHours" value="80">
+                </div>
+                
+                <div class="form-group">
+                    <label for="infraCost">Infrastructure Cost ($) <span class="tooltip" data-tooltip="Hardware, software, licensing costs">ℹ️</span></label>
+                    <input type="number" id="infraCost" value="5000">
+                </div>
+                
+                <div class="form-group">
+                    <label for="opportunityCost">Opportunity Cost ($) <span class="tooltip" data-tooltip="Revenue lost during implementation/transition">ℹ️</span></label>
+                    <input type="number" id="opportunityCost" value="10000">
+                </div>
+                
+                <div class="form-group">
+                    <label for="maintenanceHours">Monthly Maintenance Hours <span class="tooltip" data-tooltip="Ongoing monthly maintenance and updates">ℹ️</span></label>
+                    <input type="number" id="maintenanceHours" value="20">
+                </div>
+                
+                <h2 class="section-title">🚀 Expected Improvements</h2>
+                
+                <div class="scenario-buttons">
+                    <button class="scenario-btn" onclick="loadScenario('conservative')">Conservative</button>
+                    <button class="scenario-btn active" onclick="loadScenario('realistic')">Realistic</button>
+                    <button class="scenario-btn" onclick="loadScenario('optimistic')">Optimistic</button>
+                </div>
+                
+                <div class="form-group">
+                    <label for="timeReduction">Time Savings (%) <span class="tooltip" data-tooltip="Expected reduction in task completion time">ℹ️</span></label>
+                    <input type="number" id="timeReduction" step="0.1" value="25">
+                </div>
+                
+                <div class="form-group">
+                    <label for="errorReduction">Error Reduction (%) <span class="tooltip" data-tooltip="Expected reduction in errors/rework">ℹ️</span></label>
+                    <input type="number" id="errorReduction" step="0.1" value="40">
+                </div>
+                
+                <div class="form-group">
+                    <label for="qualityImprovement">Quality Improvement (%) <span class="tooltip" data-tooltip="Expected improvement in customer satisfaction">ℹ️</span></label>
+                    <input type="number" id="qualityImprovement" step="0.1" value="15">
+                </div>
+                
+                <div class="form-group">
+                    <label for="capacityIncrease">Capacity Increase (%) <span class="tooltip" data-tooltip="Additional throughput with same resources">ℹ️</span></label>
+                    <input type="number" id="capacityIncrease" step="0.1" value="20">
+                </div>
+                
+                <button class="calculate-btn" onclick="calculateROI()">Calculate ROI</button>
+            </div>
+            
+            <div class="results-section">
+                <h2 class="section-title">📈 Results</h2>
+                
+                <div class="metric-card">
+                    <div class="metric-value" id="roiValue">--%</div>
+                    <div class="metric-label">Year 1 ROI</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-value" id="paybackValue">-- months</div>
+                    <div class="metric-label">Payback Period</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-value" id="netBenefitValue">$--</div>
+                    <div class="metric-label">Year 1 Net Benefit</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-value" id="totalCostValue">$--</div>
+                    <div class="metric-label">Total Implementation Cost</div>
+                </div>
+                
+                <div class="breakdown" id="breakdown" style="display: none;">
+                    <h4>💡 Detailed Breakdown</h4>
+                    <div class="breakdown-item">
+                        <span>Annual Labor Savings:</span>
+                        <span id="laborSavings">$--</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span>Annual Error Reduction Savings:</span>
+                        <span id="errorSavings">$--</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span>Annual Retention Value:</span>
+                        <span id="retentionValue">$--</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span>Annual Capacity Revenue:</span>
+                        <span id="capacityRevenue">$--</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span><strong>Total Annual Benefits:</strong></span>
+                        <span id="totalBenefits"><strong>$--</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function loadScenario(scenario) {
+            // Remove active class from all buttons
+            document.querySelectorAll('.scenario-btn').forEach(btn => btn.classList.remove('active'));
+            // Add active class to clicked button
+            event.target.classList.add('active');
+            
+            const scenarios = {
+                conservative: {
+                    timeReduction: 15,
+                    errorReduction: 25,
+                    qualityImprovement: 8,
+                    capacityIncrease: 10
+                },
+                realistic: {
+                    timeReduction: 25,
+                    errorReduction: 40,
+                    qualityImprovement: 15,
+                    capacityIncrease: 20
+                },
+                optimistic: {
+                    timeReduction: 40,
+                    errorReduction: 60,
+                    qualityImprovement: 25,
+                    capacityIncrease: 35
+                }
+            };
+            
+            const values = scenarios[scenario];
+            document.getElementById('timeReduction').value = values.timeReduction;
+            document.getElementById('errorReduction').value = values.errorReduction;
+            document.getElementById('qualityImprovement').value = values.qualityImprovement;
+            document.getElementById('capacityIncrease').value = values.capacityIncrease;
+            
+            calculateROI();
+        }
+        
+        function calculateROI() {
+            // Get input values
+            const taskTime = parseFloat(document.getElementById('taskTime').value) || 0;
+            const monthlyVolume = parseFloat(document.getElementById('monthlyVolume').value) || 0;
+            const errorRate = parseFloat(document.getElementById('errorRate').value) || 0;
+            const employeeCount = parseFloat(document.getElementById('employeeCount').value) || 0;
+            const hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 0;
+            const customerSat = parseFloat(document.getElementById('customerSat').value) || 0;
+            const customerValue = parseFloat(document.getElementById('customerValue').value) || 0;
+            
+            const devHours = parseFloat(document.getElementById('devHours').value) || 0;
+            const trainingHours = parseFloat(document.getElementById('trainingHours').value) || 0;
+            const infraCost = parseFloat(document.getElementById('infraCost').value) || 0;
+            const opportunityCost = parseFloat(document.getElementById('opportunityCost').value) || 0;
+            const maintenanceHours = parseFloat(document.getElementById('maintenanceHours').value) || 0;
+            
+            const timeReduction = parseFloat(document.getElementById('timeReduction').value) || 0;
+            const errorReduction = parseFloat(document.getElementById('errorReduction').value) || 0;
+            const qualityImprovement = parseFloat(document.getElementById('qualityImprovement').value) || 0;
+            const capacityIncrease = parseFloat(document.getElementById('capacityIncrease').value) || 0;
+            
+            // Calculate benefits
+            const monthlyTimeSaved = (taskTime * monthlyVolume * timeReduction) / 100;
+            const monthlyLaborSavings = monthlyTimeSaved * hourlyRate;
+            const annualLaborSavings = monthlyLaborSavings * 12;
+            
+            const errorHoursSavedMonthly = (monthlyVolume * errorRate * taskTime * errorReduction) / 10000;
+            const errorCostSavingsMonthly = errorHoursSavedMonthly * hourlyRate;
+            const annualErrorSavings = errorCostSavingsMonthly * 12;
+            
+            // Simplified customer retention calculation
+            const totalCustomers = 1000; // Assumed customer base
+            const currentChurnRate = 3; // Assumed monthly churn rate
+            const churnReduction = currentChurnRate * (qualityImprovement / 100) * 0.3;
+            const customersRetainedMonthly = totalCustomers * churnReduction / 100;
+            const monthlyRetentionValue = customersRetainedMonthly * customerValue;
+            const annualRetentionValue = monthlyRetentionValue * 12;
+            
+            const additionalMonthlyCapacity = monthlyVolume * capacityIncrease / 100;
+            const revenuePerTask = customerValue / 10; // Simplified assumption
+            const monthlyCapacityRevenue = additionalMonthlyCapacity * revenuePerTask;
+            const annualCapacityRevenue = monthlyCapacityRevenue * 12;
+            
+            // Calculate costs
+            const oneTimeImplementationCost = (devHours + trainingHours) * hourlyRate + infraCost + opportunityCost;
+            const annualMaintenanceCost = maintenanceHours * 12 * hourlyRate;
+            
+            // Calculate ROI
+            const totalAnnualBenefits = annualLaborSavings + annualErrorSavings + annualRetentionValue + annualCapacityRevenue;
+            const totalAnnualCosts = oneTimeImplementationCost + annualMaintenanceCost;
+            const netBenefit = totalAnnualBenefits - totalAnnualCosts;
+            const roi = totalAnnualCosts > 0 ? (netBenefit / totalAnnualCosts) * 100 : 0;
+            const paybackPeriod = oneTimeImplementationCost > 0 ? oneTimeImplementationCost / (totalAnnualBenefits / 12) : 0;
+            
+            // Update display
+            document.getElementById('roiValue').textContent = roi.toFixed(1) + '%';
+            document.getElementById('roiValue').className = 'metric-value ' + (roi > 0 ? 'positive' : roi < 0 ? 'negative' : '');
+            
+            document.getElementById('paybackValue').textContent = paybackPeriod.toFixed(1) + ' months';
+            document.getElementById('paybackValue').className = 'metric-value ' + (paybackPeriod < 12 ? 'positive' : paybackPeriod < 24 ? 'warning' : 'negative');
+            
+            document.getElementById('netBenefitValue').textContent = '$' + netBenefit.toLocaleString(undefined, {maximumFractionDigits: 0});
+            document.getElementById('netBenefitValue').className = 'metric-value ' + (netBenefit > 0 ? 'positive' : 'negative');
+            
+            document.getElementById('totalCostValue').textContent = '$' + totalAnnualCosts.toLocaleString(undefined, {maximumFractionDigits: 0});
+            
+            // Update breakdown
+            document.getElementById('laborSavings').textContent = '$' + annualLaborSavings.toLocaleString(undefined, {maximumFractionDigits: 0});
+            document.getElementById('errorSavings').textContent = '$' + annualErrorSavings.toLocaleString(undefined, {maximumFractionDigits: 0});
+            document.getElementById('retentionValue').textContent = '$' + annualRetentionValue.toLocaleString(undefined, {maximumFractionDigits: 0});
+            document.getElementById('capacityRevenue').textContent = '$' + annualCapacityRevenue.toLocaleString(undefined, {maximumFractionDigits: 0});
+            document.getElementById('totalBenefits').textContent = '$' + totalAnnualBenefits.toLocaleString(undefined, {maximumFractionDigits: 0});
+            
+            document.getElementById('breakdown').style.display = 'block';
+        }
+        
+        // Calculate on page load with default values
+        calculateROI();
+        
+        // Add real-time calculation when inputs change
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', calculateROI);
+        });
+    </script>
+</body>
+</html>

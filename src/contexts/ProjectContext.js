@@ -359,6 +359,45 @@ export const ProjectProvider = ({ children }) => {
     await updateProject(projectId, { actionItems });
   };
 
+  // Persist tool outputs to the project document (tools.<key>)
+  const saveToolData = async (projectId, toolKey, data) => {
+    if (!user) throw new Error('User must be logged in');
+    const projectRef = doc(db, 'projects', projectId);
+    const proj = projects.find(p => p.id === projectId) || {};
+    const tools = { ...(proj.tools || {}) };
+    tools[toolKey] = { ...data };
+    // Build timeline event
+    const timeline = [...(proj.timeline || [])];
+    timeline.push({
+      id: `event_${Date.now()}`,
+      type: 'tool_saved',
+      tool: toolKey,
+      date: new Date().toISOString(),
+      summary: toolKey === 'interactiveGuide'
+        ? `Saved guide progress (${(data.completed || []).length}/${(data.phases || []).length || 7})`
+        : toolKey === 'roiCalculator' ? `Saved ROI scenario: ${data.activeScenario || 'Base'}` : 'Saved tool data'
+    });
+    await updateDoc(projectRef, { tools, timeline, lastUpdated: serverTimestamp() });
+    // update local state
+    setProjects(projects.map(p => p.id === projectId ? { ...p, tools, timeline } : p));
+    if (currentProject?.id === projectId) setCurrentProject({ ...currentProject, tools, timeline });
+  };
+
+  const getToolData = async (projectId, toolKey) => {
+    const proj = projects.find(p => p.id === projectId);
+    if (proj && proj.tools && proj.tools[toolKey]) return proj.tools[toolKey];
+    try {
+      const snap = await getDoc(doc(db, 'projects', projectId));
+      if (snap.exists()) {
+        const data = snap.data();
+        return data.tools ? data.tools[toolKey] : null;
+      }
+    } catch (e) {
+      console.warn('Failed to load tool data', e);
+    }
+    return null;
+  };
+
   const generateActionItemsFromAssessment = async (projectId, assessmentType, assessmentData) => {
     if (!user || !projectId) return [];
     
@@ -442,6 +481,8 @@ export const ProjectProvider = ({ children }) => {
     switchProject,
     archiveProject,
     addAssessmentToProject,
+    saveToolData,
+    getToolData,
     updateGuideProgress,
     addActionItem,
     updateActionItem,
