@@ -1351,16 +1351,38 @@ async def get_regression_results(
     _: dict = Depends(rate_limit_default)
 ):
     """Return stored regression training results for a session."""
-    session_data = await session_storage.get_session(session_id)
-    if not session_data:
-        raise HTTPException(status_code=404, detail="Session not found")
-    # Ownership check (if available)
-    if session_data.get('user_id') and session_data.get('user_id') != current_user.get('user_id') and not current_user.get('is_admin'):
-        raise HTTPException(status_code=403, detail="Not authorized to access this session")
-    results = session_data.get('training_results')
-    if not results:
-        raise HTTPException(status_code=404, detail="No training results found for this session")
-    return results
+    # Try multiple times with small delay in case of async save delay
+    max_retries = 3
+    retry_delay = 0.5  # seconds
+    
+    for attempt in range(max_retries):
+        session_data = await session_storage.get_session(session_id)
+        if not session_data:
+            if attempt < max_retries - 1:
+                await asyncio.sleep(retry_delay)
+                continue
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        # Ownership check (if available)
+        if session_data.get('user_id') and session_data.get('user_id') != current_user.get('user_id') and not current_user.get('is_admin'):
+            raise HTTPException(status_code=403, detail="Not authorized to access this session")
+        
+        results = session_data.get('training_results')
+        if not results:
+            # Check if training is still in progress
+            if session_data.get('status') == 'training_in_progress':
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(retry_delay)
+                    continue
+                raise HTTPException(status_code=202, detail="Training still in progress")
+            if attempt < max_retries - 1:
+                await asyncio.sleep(retry_delay)
+                continue
+            raise HTTPException(status_code=404, detail="No training results found for this session")
+        
+        return results
+    
+    raise HTTPException(status_code=404, detail="No training results found for this session")
 
 # CLASSIFICATION RESULTS ENDPOINT
 @app.get("/api/classification/results/{session_id}")

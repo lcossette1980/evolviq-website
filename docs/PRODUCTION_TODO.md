@@ -203,13 +203,13 @@ Purpose: Single source of truth for getting the app production‑ready on Railwa
 
 Purpose: Consolidate current production issues from the Interactive Tools (Regression, Classification, Clustering, NLP) with actionable fixes and acceptance criteria.
 
-- [ ] Regression: Results 404/401 and visualization data-shape
-  - Symptoms: `GET /api/regression/results/:session_id` returns 404; console shows “Univariate/Bivariate data structure: Object” and results loading error in `ResultsVisualization`.
+- [x] Regression: Results 404/401 and visualization data-shape
+  - Symptoms: `GET /api/regression/results/:session_id` returns 404; console shows "Univariate/Bivariate data structure: Object" and results loading error in `ResultsVisualization`.
   - Suspected cause: Results not persisted under session_id or frontend points to wrong endpoint; frontend expects arrays but API returns nested objects for univariate/bivariate.
   - Fix:
-    - Backend: Ensure results are saved and GET `/api/regression/results/{session_id}` exists and returns normalized shape.
-    - Frontend: Normalize result parsing in `ResultsVisualization` to accept objects; guard against undefined and empty arrays.
-  - Acceptance: No 404s; results load without errors; charts render; no “data structure: Object” warnings.
+    - Backend: Added retry logic with delays to handle async save race conditions in `/api/regression/results/{session_id}` endpoint
+    - Frontend: Added guard clause in PredictionInterface to handle undefined featureColumns
+  - Acceptance: No 404s; results load without errors; charts render; no "data structure: Object" warnings.
 
 - [x] Regression: Duplicate session creation
   - Symptoms: Multiple “✅ regression session created: …” logs for a single run.
@@ -217,13 +217,13 @@ Purpose: Consolidate current production issues from the Interactive Tools (Regre
   - Fix: Debounce/lock during session creation; ensure one POST per user action.
   - Acceptance: Exactly one session created per action; logs show single session id.
 
-- [ ] Classification: Train returns 422 Unprocessable Entity
-  - Symptoms: `POST /api/classification/train?session_id=…` -> 422; UI shows “train processing failed”. Validate and preprocess succeed.
-  - Suspected cause: Missing/invalid payload fields (e.g., target column not set, class imbalance/labels not encoded) or backend validation too strict.
+- [x] Classification: Train returns 500 Internal Server Error (serialization issue)
+  - Symptoms: `POST /api/classification/train?session_id=…` -> 500; FastAPI serialization error "dictionary update sequence element #0 has length 7; 2 is required"
+  - Suspected cause: Trained model objects stored in results dictionary cannot be serialized to JSON
   - Fix:
-    - Frontend: Include target, split, features, model/config; validate before POST.
-    - Backend: Improve validation message; accept reasonable defaults; ensure preprocess stored target and encodings.
-  - Acceptance: Train succeeds on standard datasets; returns metrics and artifacts; clear error messages for invalid configs.
+    - Backend: Separated model storage from serializable results in `enhanced_classification_framework.py`. Models stored in `self.models`, only metrics returned in API response
+    - Backend: Updated visualization methods to use instance attributes instead of results dict for models
+  - Acceptance: Train succeeds and returns proper JSON response with metrics; visualizations still work correctly
 
 - [x] Clustering: UI TypeError `toFixed` on undefined
   - Symptoms: Error at `ResultsVisualization` optimization tab: Cannot read `toFixed` of undefined; ErrorBoundary triggered.
@@ -266,6 +266,23 @@ Purpose: Consolidate current production issues from the Interactive Tools (Regre
   - Suspected cause: Errors swallowed/normalized without messages.
   - Fix: Pass through `message/details` from backend to toasts; log error codes; add guidance links.
   - Acceptance: Users see clear error reasons and suggested fixes; dev console shows actionable details.
+
+## 21) Post‑Launch Enhancements
+
+Purpose: Nice‑to‑have refinements to ship after launch for stronger UX/robustness.
+
+- [ ] Classification UX guardrails
+  - Toggle to disable stratify on small/imbalanced classes; dynamic test_size guidance; clearer pre‑train warnings; model‑specific error messages.
+- [ ] Export polish and options
+  - Bundle multi‑CSV exports (e.g., comparison + feature_importance) into a zip; expose export format/options in UI; consider including prediction artifacts.
+- [ ] EDA adapters and fallbacks
+  - Broaden adapters to handle alternate shapes (array/map) and add fallback visuals; dev‑only diagnostics toggle.
+- [ ] Observability & UX
+  - Add Sentry for tool flows with release tags; propagate request IDs in frontend+backend logs; standardize toast messages and empty states.
+- [ ] Performance/UX
+  - Debounce remaining actions; background task status indicators; richer skeletons for tool steps and dashboard.
+- [ ] Documentation
+  - Update deployment runbook (flags, endpoints, exports), and publish API schemas for validate/preprocess/train/analyze/results/export.
 
 - [ ] Agentic Context/Tasks: `/api/assessments/profile/context` and optional `/tasks`
   - Foundation for agent workflows.

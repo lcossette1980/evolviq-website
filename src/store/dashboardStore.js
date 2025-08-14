@@ -78,11 +78,9 @@ export const useDashboardStore = create((set, get) => ({
     const loadKey = `${user.uid}:${projectId || 'none'}`;
 
     // Dedupe: if we already loaded this key in the last 10 seconds, skip
-    const { lastLoadKey, lastLoadedAt, isLoading } = get();
+    const { lastLoadKey, lastLoadedAt } = get();
     const recentlyLoaded = lastLoadKey === loadKey && lastLoadedAt && (Date.now() - lastLoadedAt < 10000);
-    if (recentlyLoaded || isLoading) {
-      return;
-    }
+    if (recentlyLoaded) return;
 
     set({ isLoading: true, lastLoadKey: loadKey });
     

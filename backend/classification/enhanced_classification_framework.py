@@ -398,23 +398,25 @@ class ClassificationWorkflow:
             y_pred_best = best_model.predict(X_test)
             conf_matrix = confusion_matrix(y_test, y_pred_best)
             
-            # Store results
+            # Store results (keep models separate for internal use)
+            self.models = model_results  # Store models separately
             self.results = {
-                'model_results': model_results,
+                'model_metrics': {name: result['metrics'] for name, result in model_results.items()},
                 'comparison_df': comparison_df.to_dict('records'),
                 'cross_validation': cross_validation_scores,
                 'best_model_name': best_model_name,
-                'best_model': best_model,
                 'feature_importance': feature_importance,
                 'confusion_matrix': conf_matrix.tolist(),
-                'X_test': X_test,
-                'y_test': y_test,
                 'split_info': {
                     'train_size': len(X_train),
                     'test_size': len(X_test),
                     'test_ratio': self.config.test_size
                 }
             }
+            # Store test data separately for predictions (not serializable)
+            self.X_test = X_test
+            self.y_test = y_test
+            self.best_model = best_model
             
             return {
                 'success': True,
@@ -472,10 +474,10 @@ class ClassificationWorkflow:
 
             # ROC curve (binary) if probabilities available
             try:
-                if 'best_model' in self.results and 'X_test' in self.results:
-                    best = self.results['best_model']
-                    X_test = self.results['X_test']
-                    y_test = self.results['y_test']
+                if hasattr(self, 'best_model') and hasattr(self, 'X_test') and hasattr(self, 'y_test'):
+                    best = self.best_model
+                    X_test = self.X_test
+                    y_test = self.y_test
                     # Try proba
                     proba = None
                     try:

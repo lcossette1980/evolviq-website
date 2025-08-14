@@ -7,6 +7,17 @@ const PredictionInterface = ({ sessionId, featureColumns, trainingResults }) => 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [predictionHistory, setPredictionHistory] = useState([]);
+  
+  // Guard against missing feature columns
+  if (!featureColumns || !Array.isArray(featureColumns) || featureColumns.length === 0) {
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="text-gray-500">
+          No feature columns available. Please complete the training step first.
+        </div>
+      </div>
+    );
+  }
 
   const handleInputChange = (feature, value) => {
     setInputValues(prev => ({
