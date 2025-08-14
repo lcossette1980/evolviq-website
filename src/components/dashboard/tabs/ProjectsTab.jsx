@@ -32,26 +32,26 @@ const ProjectsTab = () => {
   // Fallback metadata when registry is not yet loaded
   const guideCatalog = {
     implementation_playbook: {
-      title: 'AI Implementation Playbook',
-      path: '/guides/AIImplementationPlaybook',
+      title: 'AI Project Implementation (Master)',
+      path: '/guides/AIProjectImplementation',
       icon: PlayCircle,
       color: colors.chestnut
     },
     ai_readiness_assessment: {
-      title: 'AI Readiness Assessment',
-      path: '/guides/AIReadinessAssessment',
+      title: 'AI Project Implementation (Master)',
+      path: '/guides/AIProjectImplementation',
       icon: Target,
       color: colors.chestnut
     },
     ai_use_case_roi_toolkit: {
-      title: 'AI Use Case ROI Toolkit',
-      path: '/guides/AIUseCaseROIToolkit',
+      title: 'AI Project Implementation (Master)',
+      path: '/guides/AIProjectImplementation',
       icon: TrendingUp,
       color: colors.khaki
     },
     ai_strategy_starter_kit: {
-      title: 'AI Strategy Starter Kit',
-      path: '/guides/AIStrategyStarterKit',
+      title: 'AI Project Implementation (Master)',
+      path: '/guides/AIProjectImplementation',
       icon: BookOpen,
       color: colors.navy
     }

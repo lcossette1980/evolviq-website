@@ -44,11 +44,8 @@ const WhyAINow = lazy(() => import('./pages/WhyAINow'));
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess.jsx'));
 const PaymentCancelled = lazy(() => import('./pages/PaymentCancelled.jsx'));
 
-// Lazy load guides
-const AIImplementationPlaybook = lazy(() => import('./components/guides/ai-implementation-playbook.tsx'));
-const AIReadinessAssessment = lazy(() => import('./components/guides/ai-readiness-assessment.tsx'));
-const AIUseCaseROIToolkit = lazy(() => import('./components/guides/ai-use-case-roi-toolkit.tsx'));
-const AIStrategyStarterKit = lazy(() => import('./components/guides/ai-strategy-starter-kit.tsx'));
+// Master guide (consolidated)
+const MasterImplementationGuide = lazy(() => import('./pages/MasterImplementationGuide'));
 
 // Lazy load assessments
 const AssessmentResultsView = lazy(() => import('./components/assessments/AssessmentResultsView.jsx'));
@@ -222,47 +219,21 @@ const AppContent = () => {
             } 
           />
           
-          {/* Protected Premium Guide Routes */}
+          {/* Master Guide Route and legacy redirects */}
           <Route 
-            path="/guides/AIImplementationPlaybook" 
+            path="/guides/AIProjectImplementation" 
             element={
               <ProtectedRoute requiresPremium={true}>
                 <PageSuspense>
-                  <AIImplementationPlaybook />
+                  <MasterImplementationGuide />
                 </PageSuspense>
               </ProtectedRoute>
             } 
           />
-          <Route 
-            path="/guides/AIReadinessAssessment" 
-            element={
-              <ProtectedRoute requiresPremium={true}>
-                <PageSuspense>
-                  <AIReadinessAssessment />
-                </PageSuspense>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/guides/AIUseCaseROIToolkit" 
-            element={
-              <ProtectedRoute requiresPremium={true}>
-                <PageSuspense>
-                  <AIUseCaseROIToolkit />
-                </PageSuspense>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/guides/AIStrategyStarterKit" 
-            element={
-              <ProtectedRoute requiresPremium={true}>
-                <PageSuspense>
-                  <AIStrategyStarterKit />
-                </PageSuspense>
-              </ProtectedRoute>
-            } 
-          />
+          <Route path="/guides/AIImplementationPlaybook" element={<Navigate to="/guides/AIProjectImplementation" replace />} />
+          <Route path="/guides/AIReadinessAssessment" element={<Navigate to="/guides/AIProjectImplementation" replace />} />
+          <Route path="/guides/AIUseCaseROIToolkit" element={<Navigate to="/guides/AIProjectImplementation" replace />} />
+          <Route path="/guides/AIStrategyStarterKit" element={<Navigate to="/guides/AIProjectImplementation" replace />} />
         </Routes>
       </main>
 

@@ -216,3 +216,10 @@ Purpose: Single source of truth for getting the app production‑ready on Railwa
   - Continue logging issues/decisions with links to TODO items for traceability.
 
 > Recommendation: Use this file as the master execution checklist. Keep roadmap/spec/schemas/registry separate as references. Merge the older profile TODO into this doc to avoid split task tracking.
+## Top Priority: Consolidate Implementation Guides
+- [x] Replace multiple overlapping guides with a single Master AI Project Implementation Guide
+  - Rationale: remove redundancy, present a coherent end‑to‑end plan (Strategy → Readiness → Use Cases/ROI → Implementation/MLOps → Governance).
+- [x] Update all routes and registry mappings to point to the master guide
+  - Avoid duplication and stale links; redirect legacy guide paths.
+- [x] Remove deprecated guide components/files and ensure no imports remain
+  - Prevent dead code and confusion.
