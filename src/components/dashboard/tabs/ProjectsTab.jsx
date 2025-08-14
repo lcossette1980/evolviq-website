@@ -1,234 +1,94 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { BookOpen, PlayCircle, Target, TrendingUp, CheckCircle, AlertTriangle, Plus } from 'lucide-react';
+import React from 'react';
+import { PlayCircle, CheckCircle, AlertTriangle, Plus, Briefcase } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDashboardStore } from '../../../store/dashboardStore';
 import { useProject } from '../../../contexts/ProjectContext';
-import guidesAPI from '../../../services/guidesAPI';
 import { colors } from '../../../utils/colors';
 
 /**
- * Projects & Guides Tab Component
- * Displays available guides and learning resources
+ * Projects Tab Component
+ * Simplified to show projects and single master implementation guide
  */
 const ProjectsTab = () => {
   const navigate = useNavigate();
-  const { setActiveTab, hasCompletedCoreAssessments, getCoreAssessmentChecklist, setShowCreateProject, guideProgress } = useDashboardStore();
-  const { projects, currentProject, updateGuideProgress, addGuideToProject } = useProject();
-  const [registry, setRegistry] = useState([]);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      const reg = await guidesAPI.getRegistry();
-      if (mounted) setRegistry(reg);
-    })();
-    return () => { mounted = false; };
-  }, []);
+  const { setActiveTab, hasCompletedCoreAssessments, getCoreAssessmentChecklist, setShowCreateProject } = useDashboardStore();
+  const { projects, currentProject } = useProject();
 
   // Core assessment gating
   const coreComplete = hasCompletedCoreAssessments();
   const checklist = getCoreAssessmentChecklist();
 
-  // Fallback metadata when registry is not yet loaded
-  const guideCatalog = {
-    implementation_playbook: {
-      title: 'AI Project Implementation (Master)',
-      path: '/guides/AIProjectImplementation',
-      icon: PlayCircle,
-      color: colors.chestnut
-    },
-    ai_readiness_assessment: {
-      title: 'AI Project Implementation (Master)',
-      path: '/guides/AIProjectImplementation',
-      icon: Target,
-      color: colors.chestnut
-    },
-    ai_use_case_roi_toolkit: {
-      title: 'AI Project Implementation (Master)',
-      path: '/guides/AIProjectImplementation',
-      icon: TrendingUp,
-      color: colors.khaki
-    },
-    ai_strategy_starter_kit: {
-      title: 'AI Project Implementation (Master)',
-      path: '/guides/AIProjectImplementation',
-      icon: BookOpen,
-      color: colors.navy
-    }
-  };
-
-  const metaByClientKey = useMemo(() => {
-    const map = {};
-    (registry || []).forEach(g => {
-      map[g.client_key] = {
-        title: g.title,
-        tags: g.tags,
-        dimensions: g.dimensions,
-        sections: g.sections,
-        icon: guideCatalog[g.client_key]?.icon || BookOpen,
-        color: guideCatalog[g.client_key]?.color || colors.charcoal,
-        path: guideCatalog[g.client_key]?.path || `/guides/${g.guide_id}`
-      };
-    });
-    return map;
-  }, [registry]);
-
-  const projectGuides = currentProject?.guides || {};
-  const missingGuides = useMemo(() => {
-    const existing = new Set(Object.keys(projectGuides));
-    return (registry || []).filter(g => !existing.has(g.client_key));
-  }, [registry, projectGuides]);
-
-  // Gated flow: require assessments first
+  // Not ready: show assessment requirements
   if (!coreComplete) {
     return (
       <div className="space-y-6">
         <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-start mb-4">
-            <AlertTriangle className="w-6 h-6 mr-2" style={{ color: colors.chestnut }} />
-            <div>
-              <h3 className="text-lg font-semibold" style={{ color: colors.charcoal }}>
-                Complete your baseline assessments first
-              </h3>
-              <p className="text-sm text-gray-600">Take these two assessments to unlock projects and implementation guides.</p>
-            </div>
+          <div className="flex items-center mb-4">
+            <AlertTriangle className="w-6 h-6 text-yellow-500 mr-3" />
+            <h3 className="text-lg font-semibold" style={{ color: colors.charcoal }}>
+              Complete Core Assessments First
+            </h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* AI Knowledge */}
-            <div className="border rounded-lg p-4 flex items-center justify-between">
-              <div>
-                <div className="font-medium">AI Knowledge Assessment</div>
-                <div className="text-xs text-gray-500">
-                  {checklist.aiKnowledge.completed ? `Completed on ${new Date(checklist.aiKnowledge.lastCompleted).toLocaleDateString()}` : 'Not started'}
+          <p className="text-gray-600 mb-4">
+            Projects and implementation guides require completing core assessments to provide personalized recommendations.
+          </p>
+          <div className="space-y-3">
+            {Object.entries(checklist).map(([key, { completed, label }]) => (
+              <div key={key} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center">
+                  {completed ? (
+                    <CheckCircle className="w-5 h-5 text-green-500 mr-3" />
+                  ) : (
+                    <div className="w-5 h-5 border-2 border-gray-300 rounded-full mr-3" />
+                  )}
+                  <span className={completed ? 'text-gray-600 line-through' : 'text-gray-900'}>
+                    {label}
+                  </span>
                 </div>
+                {!completed && (
+                  <button
+                    onClick={() => setActiveTab('assessments')}
+                    className="text-sm px-3 py-1 rounded bg-chestnut text-white hover:bg-chestnut/90"
+                  >
+                    Take Assessment
+                  </button>
+                )}
               </div>
-              <button
-                className={`px-3 py-2 rounded-lg text-sm ${checklist.aiKnowledge.completed ? 'bg-green-50 text-green-700' : 'bg-chestnut text-white'}`}
-                onClick={() => navigate('/dashboard/assessments/ai-knowledge')}
-              >
-                {checklist.aiKnowledge.completed ? 'View' : 'Start'}
-              </button>
-            </div>
-            {/* Org Readiness */}
-            <div className="border rounded-lg p-4 flex items-center justify-between">
-              <div>
-                <div className="font-medium">Organizational AI Readiness</div>
-                <div className="text-xs text-gray-500">
-                  {checklist.orgReadiness.completed ? `Completed on ${new Date(checklist.orgReadiness.lastCompleted).toLocaleDateString()}` : 'Not started'}
-                </div>
-              </div>
-              <button
-                className={`px-3 py-2 rounded-lg text-sm ${checklist.orgReadiness.completed ? 'bg-green-50 text-green-700' : 'bg-chestnut text-white'}`}
-                onClick={() => navigate('/dashboard/assessments/org-readiness')}
-              >
-                {checklist.orgReadiness.completed ? 'View' : 'Start'}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold" style={{ color: colors.charcoal }}>
-                Projects are locked
-              </h3>
-              <p className="text-sm text-gray-600">Finish both assessments to create your first project and unlock project-specific guides.</p>
-            </div>
-            <button disabled className="px-4 py-2 rounded-lg bg-gray-200 text-gray-500 cursor-not-allowed flex items-center">
-              <Plus className="w-4 h-4 mr-2" /> Create Project
-            </button>
+            ))}
           </div>
         </div>
       </div>
     );
   }
 
-  // No project yet: nudge to create first project
-  if (coreComplete && projects.length === 0) {
-    return (
-      <div className="bg-white rounded-lg shadow p-8 text-center">
-        <h3 className="text-xl font-semibold mb-2" style={{ color: colors.charcoal }}>
-          Create your first project
-        </h3>
-        <p className="text-gray-600 mb-6">We’ll attach a dedicated set of implementation guides to each project.</p>
-        <button
-          onClick={() => setShowCreateProject(true)}
-          className="px-5 py-3 rounded-lg bg-chestnut text-white inline-flex items-center hover:bg-chestnut/90"
-        >
-          <Plus className="w-4 h-4 mr-2" /> New Project
-        </button>
-      </div>
-    );
-  }
-
-  // Render project cards linking to the Master Implementation Guide
-  if (coreComplete && projects.length > 0) {
+  // No projects: prompt to create one
+  if (projects.length === 0) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold" style={{ color: colors.charcoal }}>
-            Your Projects
+        <div className="bg-white rounded-lg shadow p-8 text-center">
+          <h3 className="text-xl font-semibold mb-4" style={{ color: colors.charcoal }}>
+            Create Your First AI Project
           </h3>
+          <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+            Each project gets its own tailored implementation guide based on your assessments, organization details, and specific objectives.
+          </p>
           <button
             onClick={() => setShowCreateProject(true)}
-            className="px-4 py-2 rounded-lg bg-chestnut text-white inline-flex items-center hover:bg-chestnut/90"
+            className="px-6 py-3 rounded-lg bg-chestnut text-white inline-flex items-center hover:bg-chestnut/90"
           >
-            <Plus className="w-4 h-4 mr-2" /> New Project
+            <Plus className="w-5 h-5 mr-2" /> Create First Project
           </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {projects.map(project => {
-            const org = project.organization || {};
-            return (
-              <div key={project.id} className="border rounded-lg p-6 bg-white hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center">
-                    <div className="w-12 h-12 rounded-lg flex items-center justify-center mr-4" style={{ backgroundColor: `${colors.chestnut}20` }}>
-                      <Briefcase className="w-6 h-6" style={{ color: colors.chestnut }} />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{project.name}</h4>
-                      <p className="text-xs text-gray-500 mt-1">{org.name || '—'}{org.industry ? ` • ${org.industry}` : ''}{org.size ? ` • ${org.size}` : ''}</p>
-                    </div>
-                  </div>
-                  <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700 capitalize">{project.stage || 'exploring'}</span>
-                </div>
-
-                {project.objective && (
-                  <p className="text-sm text-gray-700 mb-3">Objective: {project.objective}</p>
-                )}
-                <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-4">
-                  <div>Type: <span className="font-medium">{project.type || 'general'}</span></div>
-                  <div>Timeline: <span className="font-medium">{project.timeline || '6_months'}</span></div>
-                  <div>Budget: <span className="font-medium">{project.budget || '10k_50k'}</span></div>
-                  <div>Updated: <span className="font-medium">{project.lastUpdated ? new Date(project.lastUpdated).toLocaleDateString() : '—'}</span></div>
-                </div>
-
-                <div className="flex justify-end">
-                  <button
-                    className="px-4 py-2 rounded bg-chestnut text-white hover:bg-chestnut/90 text-sm"
-                    onClick={() => navigate('/guides/AIProjectImplementation', { state: { projectId: project.id } })}
-                  >
-                    Open Implementation Plan
-                  </button>
-                </div>
-              </div>
-            );
-          })}
         </div>
       </div>
     );
   }
 
-  // Project selected: show project-scoped guides
+  // Show projects list with master guide access
   return (
     <div className="space-y-6">
-      {/* Top actions outside the guides card */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold" style={{ color: colors.charcoal }}>
-          {currentProject ? `${currentProject.name}: Implementation Guides` : 'Implementation Guides'}
+          Your AI Projects
         </h3>
         <button
           onClick={() => setShowCreateProject(true)}
@@ -238,105 +98,92 @@ const ProjectsTab = () => {
         </button>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="mb-6" />
-        {missingGuides.length > 0 && (
-          <div className="mb-6">
-            <div className="text-sm text-gray-700 mb-2">Available guides to add</div>
-            <div className="flex flex-wrap gap-2">
-              {missingGuides.map((g) => (
-                <button
-                  key={g.client_key}
-                  className="px-3 py-1.5 border rounded-full text-xs hover:bg-gray-50"
-                  onClick={() => addGuideToProject(currentProject.id, g.client_key, { title: g.title })}
-                >
-                  + {g.title}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {Object.entries(projectGuides).map(([guideKey, guide]) => {
-            const meta = metaByClientKey[guideKey] || guideCatalog[guideKey] || {};
-            const Icon = meta.icon || BookOpen;
-            const color = meta.color || colors.charcoal;
-            // Fallback to user-level guide progress until full project integration
-            const fallbackKeyMap = {
-              implementation_playbook: 'AIImplementationPlaybook',
-              ai_readiness_assessment: 'AIReadinessAssessment',
-              ai_use_case_roi_toolkit: 'AIUseCaseROIToolkit',
-              ai_strategy_starter_kit: 'AIStrategyStarterKit'
-            };
-            const fallback = guideProgress[fallbackKeyMap[guideKey] || ''] || null;
-            const progress = typeof guide.progress === 'number' && guide.progress > 0 ? guide.progress : (fallback?.progress || 0);
-            const status = guide.status || 'not_started';
-            return (
-              <div
-                key={guideKey}
-                className="border rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => navigate(meta.path)}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center">
-                    <div
-                      className="w-12 h-12 rounded-lg flex items-center justify-center mr-4"
-                      style={{ backgroundColor: `${color}20` }}
-                    >
-                      <Icon className="w-6 h-6" style={{ color }} />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{meta.title || guide.title}</h4>
-                      <p className="text-xs text-gray-500 mt-1 capitalize">{status.replace('_', ' ')}</p>
-                    </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {projects.map(project => {
+          const org = project.organization || {};
+          const isCurrentProject = currentProject?.id === project.id;
+          
+          return (
+            <div 
+              key={project.id} 
+              className={`border rounded-lg p-6 bg-white hover:shadow-md transition-shadow ${
+                isCurrentProject ? 'ring-2 ring-chestnut' : ''
+              }`}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center mr-4" style={{ backgroundColor: `${colors.chestnut}20` }}>
+                    <Briefcase className="w-6 h-6" style={{ color: colors.chestnut }} />
                   </div>
-                  <div className="flex items-center gap-2">
-                    {status === 'completed' && (
-                      <span className="text-green-600 text-sm inline-flex items-center">
-                        <CheckCircle className="w-4 h-4 mr-1" /> Completed
-                      </span>
-                    )}
-                    {status !== 'completed' && (
-                      <button
-                        className="text-sm px-3 py-1.5 rounded bg-chestnut text-white hover:bg-chestnut/90"
-                        onClick={(e) => { e.stopPropagation(); updateGuideProgress(currentProject.id, guideKey, { status: 'in_progress', progress: progress || 1 }); navigate(meta.path); }}
-                      >
-                        {progress > 0 ? 'Resume' : 'Start'}
-                      </button>
-                    )}
+                  <div>
+                    <h4 className="font-semibold text-gray-900">{project.name}</h4>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {org.name || '—'}
+                      {org.industry ? ` • ${org.industry}` : ''}
+                      {org.size ? ` • ${org.size}` : ''}
+                    </p>
                   </div>
                 </div>
-                <div className="mt-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-gray-500">
-                      {progress > 0 ? 'In Progress' : 'Not Started'}
-                    </span>
-                    <span className="text-xs font-medium">{progress}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="h-2 rounded-full"
-                      style={{ width: `${progress}%`, backgroundColor: color }}
-                    />
-                  </div>
-                </div>
-                {meta.dimensions && meta.dimensions.length > 0 && (
-                  <div className="mt-4">
-                    <div className="text-[11px] text-gray-500 mb-1">Dimensions covered</div>
-                    <div className="flex flex-wrap gap-1">
-                      {meta.dimensions.slice(0, 3).map((d) => (
-                        <span key={d} className="px-2 py-0.5 rounded-full bg-gray-100 text-[11px] text-gray-700">{d}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700 capitalize">
+                  {project.stage || 'exploring'}
+                </span>
               </div>
-            );
-          })}
-        </div>
+
+              {project.objective && (
+                <p className="text-sm text-gray-700 mb-3">
+                  <span className="font-medium">Objective:</span> {project.objective}
+                </p>
+              )}
+
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-4">
+                <div>Type: <span className="font-medium">{project.type || 'general'}</span></div>
+                <div>Timeline: <span className="font-medium">{project.timeline || '6 months'}</span></div>
+                <div>Budget: <span className="font-medium">{project.budget || '$10k-50k'}</span></div>
+                <div>Updated: <span className="font-medium">
+                  {project.lastUpdated ? new Date(project.lastUpdated).toLocaleDateString() : '—'}
+                </span></div>
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  className="px-4 py-2 rounded bg-chestnut text-white hover:bg-chestnut/90 text-sm inline-flex items-center"
+                  onClick={() => navigate('/guides/AIProjectImplementation', { 
+                    state: { projectId: project.id } 
+                  })}
+                >
+                  <PlayCircle className="w-4 h-4 mr-2" />
+                  Open Implementation Guide
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Quick Actions removed as requested */}
+      {/* Master Guide Card */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <div className="flex items-start">
+          <div className="flex-shrink-0">
+            <PlayCircle className="w-8 h-8 text-blue-600" />
+          </div>
+          <div className="ml-4">
+            <h4 className="text-lg font-semibold text-gray-900 mb-2">
+              AI Project Implementation Guide (Master)
+            </h4>
+            <p className="text-sm text-gray-700 mb-4">
+              Comprehensive guide covering all aspects of AI project implementation, from strategy to deployment. 
+              Personalized based on your assessments and project details.
+            </p>
+            <button
+              onClick={() => navigate('/guides/AIProjectImplementation')}
+              className="text-sm px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 inline-flex items-center"
+            >
+              <PlayCircle className="w-4 h-4 mr-2" />
+              Access Master Guide
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

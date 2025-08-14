@@ -49,6 +49,8 @@ Purpose: Single source of truth for getting the app production‑ready on Railwa
   - Parity with regression visuals; better insights.
 - [x] Clustering export endpoint (summary/labels CSV)
   - Enables downstream usage and documentation.
+- [x] GET /api/assessments/profile endpoint (stub with mock data)
+  - Foundation for unified capability profile.
 - [ ] EDA completeness (quality, univariate, bivariate; Plotly option if needed)
   - Consistent visualization layer across tools.
 - [ ] Export endpoints (JSON/CSV/Excel) with ownership checks
@@ -88,11 +90,15 @@ Purpose: Single source of truth for getting the app production‑ready on Railwa
   - Smooth transitions back to the dashboard.
 
 ## 9) Guides & Projects UX
+- [x] Simplified ProjectsTab to show projects and single master guide
+  - Cleaner UX with consolidated implementation guide.
+- [x] Updated GUIDE_REGISTRY.md to single master entry architecture
+  - Unified guide system with dynamic content adaptation.
 - [ ] Clicking a guide opens it; Start/Resume updates progress and opens
   - Reduces confusion; direct navigation.
-- [ ] Keep “New Project” CTA above guides list
+- [ ] Keep "New Project" CTA above guides list
   - Clear separation of actions vs content.
-- [ ] Remove Projects tab quick actions (clean layout)
+- [x] Remove Projects tab quick actions (clean layout)
   - Less visual noise.
 - [ ] Support dynamic `/guides/:guideId` viewer and protect routes
   - Registry-driven guide access and fallback renderer.
@@ -100,6 +106,8 @@ Purpose: Single source of truth for getting the app production‑ready on Railwa
   - Saves time and keeps data consistent.
 
 ## 10) UI/UX Polish
+- [x] ProfileCard component integrated in dashboard Overview tab
+  - Shows unified AI capability profile when assessments completed.
 - [ ] Consistent styles, spacing, and copy tone
   - Professional and predictable UI.
 - [ ] Skeletons/toasts/empty states across tools & dashboard
