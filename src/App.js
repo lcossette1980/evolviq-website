@@ -41,6 +41,7 @@ const CookiePolicy = lazy(() => import('./pages/CookiePolicy'));
 // Lazy load other pages
 const ServiceIntake = lazy(() => import('./pages/ServiceIntake'));
 const WhyAINow = lazy(() => import('./pages/WhyAINow'));
+const AgenticAI = lazy(() => import('./pages/AgenticAI.jsx'));
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess.jsx'));
 const PaymentCancelled = lazy(() => import('./pages/PaymentCancelled.jsx'));
 
@@ -76,6 +77,7 @@ const AppContent = () => {
           <Route path="/" element={<HomePage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/why-ai-now" element={<PageSuspense><WhyAINow /></PageSuspense>} />
+          <Route path="/agentic-ai" element={<PageSuspense><AgenticAI /></PageSuspense>} />
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/projects" element={<PageSuspense><ProjectsPage /></PageSuspense>} />
           <Route path="/blog" element={<PageSuspense><BlogPage /></PageSuspense>} />

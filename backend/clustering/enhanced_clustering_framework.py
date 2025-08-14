@@ -382,7 +382,16 @@ class ClusteringWorkflow:
                         if algo_name == 'gaussian_mixture':
                             model = algo_info['algorithm'](n_components=n_clusters, random_state=self.config.random_state)
                             labels = model.fit_predict(self.processed_data)
+                        elif algo_name == 'hierarchical' or algo_info['algorithm'] is AgglomerativeClustering:
+                            # AgglomerativeClustering does not accept random_state
+                            model = algo_info['algorithm'](n_clusters=n_clusters)
+                            labels = model.fit_predict(self.processed_data)
+                        elif algo_name == 'birch' or algo_info['algorithm'] is Birch:
+                            # Birch does not accept random_state
+                            model = algo_info['algorithm'](n_clusters=n_clusters)
+                            labels = model.fit_predict(self.processed_data)
                         else:
+                            # Safe default for algorithms that accept random_state (e.g., KMeans, MiniBatchKMeans, SpectralClustering)
                             model = algo_info['algorithm'](n_clusters=n_clusters, random_state=self.config.random_state)
                             labels = model.fit_predict(self.processed_data)
                     else:

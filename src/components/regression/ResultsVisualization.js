@@ -10,8 +10,9 @@ const ResultsVisualization = ({ trainingResults, sessionId, onContinue }) => {
 
   useEffect(() => {
     if (trainingResults && Object.keys(trainingResults || {}).length > 0) {
-      // Prefer provided training results; enhance and use directly
-      const enhanced = enhanceResultsWithFallbacks(trainingResults);
+      // Prefer provided training results; normalize + enhance
+      const normalized = normalizeResults(trainingResults);
+      const enhanced = enhanceResultsWithFallbacks(normalized);
       setFullResults(enhanced);
       setIsLoading(false);
       return;
@@ -22,6 +23,31 @@ const ResultsVisualization = ({ trainingResults, sessionId, onContinue }) => {
       setIsLoading(false);
     }
   }, [sessionId, trainingResults]);
+
+  const normalizeResults = (results) => {
+    const r = { ...results };
+    // Normalize comparison data to array of records when an object map is returned
+    if (!Array.isArray(r.comparison_data) && r.model_results && typeof r.model_results === 'object') {
+      // Convert model_results dict into comparison_data array using metrics field
+      try {
+        r.comparison_data = Object.entries(r.model_results).map(([name, val]) => ({
+          Model: name,
+          ...(val.metrics || val || {})
+        }));
+      } catch {}
+    }
+    // Ensure training_summary fields if missing
+    if (!r.training_summary && Array.isArray(r.comparison_data) && r.comparison_data.length) {
+      const sorted = [...r.comparison_data].sort((a, b) => (b.test_r2 || 0) - (a.test_r2 || 0));
+      r.training_summary = {
+        models_trained: r.comparison_data.length,
+        best_r2_score: sorted[0]?.test_r2 || 0,
+        best_rmse: sorted[0]?.test_rmse || 0
+      };
+      r.best_model = sorted[0]?.Model || sorted[0]?.model || r.best_model;
+    }
+    return r;
+  };
 
   const enhanceResultsWithFallbacks = (results) => {
     if (!results) return results;

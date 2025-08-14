@@ -87,6 +87,14 @@ const Footer = () => {
                   Why AI Now
                 </button>
               </li>
+              <li>
+                <button 
+                  onClick={() => navigate('/agentic-ai')}
+                  className="hover:text-chestnut transition-colors text-left py-1 touch-manipulation min-h-[36px] w-full flex items-center"
+                >
+                  Agentic AI Future
+                </button>
+              </li>
             </ul>
           </div>
 

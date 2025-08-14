@@ -28,7 +28,15 @@ const ResultsVisualization = ({ trainingResults, validationResults, onNext }) =>
     { id: 'insights', label: 'Insights', icon: Target }
   ];
 
-  const models = trainingResults.comparison_data || [];
+  const modelsRaw = trainingResults.comparison_data || [];
+  const models = modelsRaw.map(row => ({
+    name: row.name || row.model || row.Model || 'Model',
+    accuracy: Number(row.test_accuracy ?? row.accuracy ?? 0),
+    precision: Number(row.test_precision ?? row.precision ?? 0),
+    recall: Number(row.test_recall ?? row.recall ?? 0),
+    f1_score: Number(row.test_f1 ?? row.f1_score ?? 0),
+    training_time: Number(row.training_time ?? 0)
+  }));
   const bestModel = models[0];
 
   // Prepare data for radar chart

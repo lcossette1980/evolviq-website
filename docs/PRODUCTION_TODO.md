@@ -198,6 +198,75 @@ Purpose: Single source of truth for getting the app production‑ready on Railwa
 ## 19) Follow‑Ups (Phase 2)
 - [ ] Learning Plan: POST `/api/profile/learning-plan` + UI with progress
   - Personalized next steps from profile gaps.
+
+## 20) Member Dashboard — Interactive Tools Fixes
+
+Purpose: Consolidate current production issues from the Interactive Tools (Regression, Classification, Clustering, NLP) with actionable fixes and acceptance criteria.
+
+- [ ] Regression: Results 404 and visualization data-shape
+  - Symptoms: `GET /api/regression/results/:session_id` returns 404; console shows “Univariate/Bivariate data structure: Object” and results loading error in `ResultsVisualization`.
+  - Suspected cause: Results not persisted under session_id or frontend points to wrong endpoint; frontend expects arrays but API returns nested objects for univariate/bivariate.
+  - Fix:
+    - Backend: Ensure results are saved and GET `/api/regression/results/{session_id}` exists and returns normalized shape.
+    - Frontend: Normalize result parsing in `ResultsVisualization` to accept objects; guard against undefined and empty arrays.
+  - Acceptance: No 404s; results load without errors; charts render; no “data structure: Object” warnings.
+
+- [ ] Regression: Duplicate session creation
+  - Symptoms: Multiple “✅ regression session created: …” logs for a single run.
+  - Suspected cause: Effect or handler firing multiple times (React StrictMode/multiple submits).
+  - Fix: Debounce/lock during session creation; ensure one POST per user action.
+  - Acceptance: Exactly one session created per action; logs show single session id.
+
+- [ ] Classification: Train returns 422 Unprocessable Entity
+  - Symptoms: `POST /api/classification/train?session_id=…` -> 422; UI shows “train processing failed”. Validate and preprocess succeed.
+  - Suspected cause: Missing/invalid payload fields (e.g., target column not set, class imbalance/labels not encoded) or backend validation too strict.
+  - Fix:
+    - Frontend: Include target, split, features, model/config; validate before POST.
+    - Backend: Improve validation message; accept reasonable defaults; ensure preprocess stored target and encodings.
+  - Acceptance: Train succeeds on standard datasets; returns metrics and artifacts; clear error messages for invalid configs.
+
+- [ ] Clustering: UI TypeError `toFixed` on undefined
+  - Symptoms: Error at `ResultsVisualization` optimization tab: Cannot read `toFixed` of undefined; ErrorBoundary triggered.
+  - Suspected cause: Optimization metrics missing from API response or not mapped yet.
+  - Fix: Frontend guards (optional chaining/defaults) and display placeholders; align response contract to always include numeric metrics.
+  - Acceptance: Clustering results render without exceptions even when metrics are missing; optimization tab shows values or clear placeholders.
+
+- [ ] Clustering: Tab config `.component` undefined
+  - Symptoms: `ClusteringExplorePage.jsx` reads `tab.component` but gets undefined; ErrorBoundary logs.
+  - Suspected cause: Tab registry item missing `component` or mismatch in key names.
+  - Fix: Ensure all tabs define a valid React component; add guards in renderer.
+  - Acceptance: Tabs switch without errors; all expected tab content renders.
+
+- [ ] Clustering: Hierarchical algorithm `random_state` warning
+  - Symptoms: Backend warning: `AgglomerativeClustering.__init__() got an unexpected keyword argument 'random_state'`.
+  - Suspected cause: Passing unsupported param to scikit-learn AgglomerativeClustering.
+  - Fix: Remove `random_state` from AgglomerativeClustering; rely on determinism from inputs or document non-determinism.
+  - Acceptance: No warnings in logs; hierarchical clustering runs successfully when selected.
+
+- [ ] NLP: Validate requires `text_column`
+  - Symptoms: 400 Bad Request; `NLPWorkflow.validate_data() missing 1 required positional argument: 'text_column'`.
+  - Suspected cause: Frontend upload/validate not passing selected text column.
+  - Fix: Update UI to require selection of a text column pre-validate; pass `text_column` to backend; backend to return helpful error if missing.
+  - Acceptance: Validate succeeds when column selected; helpful error when not; pipeline proceeds to analyze/results.
+
+- [ ] Dashboard store: noisy duplicate “data loaded” logs
+  - Symptoms: Repeated `dashboardStore.js:132 Dashboard data loaded: Object` messages.
+  - Suspected cause: Multiple subscriptions/effects; StrictMode double-invoke.
+  - Fix: Add idempotent guards and conditional logging; dedupe fetch on mount.
+  - Acceptance: Single load per mount; concise logs.
+
+- [ ] ResultsVisualization: Robust to object vs array inputs
+  - Symptoms: Logs show univariate/bivariate data reported as `Object` and subsequent render issues.
+  - Suspected cause: Mismatch between API contract and front-end expectations.
+  - Fix: Introduce an adapter layer to coerce API results into consistent arrays for charts; add runtime checks and fallbacks.
+  - Acceptance: All chart tabs render without errors across regression/classification/EDA.
+
+- [ ] Error handling: Surface backend messages to UI
+  - Symptoms: Generic “Failed to get results” / “train processing failed” with no detail.
+  - Suspected cause: Errors swallowed/normalized without messages.
+  - Fix: Pass through `message/details` from backend to toasts; log error codes; add guidance links.
+  - Acceptance: Users see clear error reasons and suggested fixes; dev console shows actionable details.
+
 - [ ] Agentic Context/Tasks: `/api/assessments/profile/context` and optional `/tasks`
   - Foundation for agent workflows.
 - [ ] Classification visuals (Plotly) wired into Results

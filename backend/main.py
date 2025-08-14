@@ -311,8 +311,8 @@ class PredictionRequest(BaseModel):
     data: Dict[str, Union[float, int, str]]
 
 class TrainingRequest(BaseModel):
-    config: TrainingConfig
-    target_column: str
+    config: Optional[TrainingConfig] = TrainingConfig()
+    target_column: Optional[str] = None
 
 class PreprocessingRequest(BaseModel):
     config: PreprocessingConfig
@@ -1073,11 +1073,18 @@ async def train_models(
 
         data = session_data['dataframe']
 
+        # Determine target column: prefer request, fallback to session (from preprocess)
+        target_col = request.target_column
+        if not target_col:
+            target_col = (session_data.get('target_column') if isinstance(session_data, dict) else None)
+            if not target_col:
+                raise HTTPException(status_code=400, detail="target_column is required (provide in request or run preprocess).")
+
         # Ensure preprocessing has set feature columns if needed
         if tool_type in ['regression', 'classification']:
             # If no preprocess results or feature_columns missing, run preprocessing with provided target
             if not session_data.get('preprocess') or not session_data['preprocess'].get('feature_columns'):
-                _ = workflow.preprocess_data(data, request.target_column)
+                _ = workflow.preprocess_data(data, target_col)
 
         # Train using respective workflow
         if tool_type == 'regression':
@@ -1085,7 +1092,7 @@ async def train_models(
             if session_data.get('preprocess') and session_data['preprocess'].get('processed_data'):
                 import pandas as pd
                 train_input_df = pd.DataFrame(session_data['preprocess']['processed_data'])
-            train_out = workflow.train_models(train_input_df, request.target_column)
+            train_out = workflow.train_models(train_input_df, target_col)
             # Attach rich visualizations if training succeeded
             try:
                 if train_out.get('success'):
@@ -1099,7 +1106,7 @@ async def train_models(
             if session_data.get('preprocess') and session_data['preprocess'].get('processed_data'):
                 import pandas as pd
                 train_input_df = pd.DataFrame(session_data['preprocess']['processed_data'])
-            train_out = workflow.train_models(train_input_df, request.target_column)
+            train_out = workflow.train_models(train_input_df, target_col)
             # Attach visualizations if available
             try:
                 if train_out.get('success'):
@@ -1322,6 +1329,43 @@ async def stripe_webhook(
 
 # Existing endpoints remain the same...
 # Add the remaining endpoints from the original main.py here
+
+# REGRESSION RESULTS ENDPOINT
+@app.get("/api/regression/results/{session_id}")
+async def get_regression_results(
+    session_id: str,
+    current_user: dict = Depends(get_current_user),
+    _: dict = Depends(rate_limit_default)
+):
+    """Return stored regression training results for a session."""
+    session_data = await session_storage.get_session(session_id)
+    if not session_data:
+        raise HTTPException(status_code=404, detail="Session not found")
+    # Ownership check (if available)
+    if session_data.get('user_id') and session_data.get('user_id') != current_user.get('user_id') and not current_user.get('is_admin'):
+        raise HTTPException(status_code=403, detail="Not authorized to access this session")
+    results = session_data.get('training_results')
+    if not results:
+        raise HTTPException(status_code=404, detail="No training results found for this session")
+    return results
+
+# CLASSIFICATION RESULTS ENDPOINT
+@app.get("/api/classification/results/{session_id}")
+async def get_classification_results(
+    session_id: str,
+    current_user: dict = Depends(get_current_user),
+    _: dict = Depends(rate_limit_default)
+):
+    """Return stored classification training results for a session."""
+    session_data = await session_storage.get_session(session_id)
+    if not session_data:
+        raise HTTPException(status_code=404, detail="Session not found")
+    if session_data.get('user_id') and session_data.get('user_id') != current_user.get('user_id') and not current_user.get('is_admin'):
+        raise HTTPException(status_code=403, detail="Not authorized to access this session")
+    results = session_data.get('training_results')
+    if not results:
+        raise HTTPException(status_code=404, detail="No training results found for this session")
+    return results
 
 if __name__ == "__main__":
     import uvicorn

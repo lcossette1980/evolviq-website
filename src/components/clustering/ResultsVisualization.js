@@ -30,7 +30,8 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
   ];
 
   // Mock data for demonstration
-  const optimizationData = analysisResults.optimization_data || [
+  const optimizationData = (analysisResults.optimization_data || []).filter(Boolean);
+  const fallbackOptimization = [
     { k: 2, elbow: 1567, silhouette: 0.642, calinski: 158.2, davies: 0.821 },
     { k: 3, elbow: 956, silhouette: 0.731, calinski: 234.7, davies: 0.643 },
     { k: 4, elbow: 743, silhouette: 0.687, calinski: 201.3, davies: 0.754 },
@@ -39,13 +40,28 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
     { k: 7, elbow: 467, silhouette: 0.534, calinski: 134.8, davies: 1.089 },
     { k: 8, elbow: 428, silhouette: 0.489, calinski: 121.6, davies: 1.234 }
   ];
+  const optDataSafe = (optimizationData.length ? optimizationData : fallbackOptimization).map(d => ({
+    k: Number(d.k ?? 0),
+    elbow: Number(d.elbow ?? 0),
+    silhouette: Number(d.silhouette ?? 0),
+    calinski: Number(d.calinski ?? 0),
+    davies: Number(d.davies ?? 0)
+  }));
 
-  const clusteringResults = analysisResults.clustering_results || [
+  const clusteringResultsRaw = analysisResults.clustering_results || [
     { algorithm: 'K-Means', silhouette: 0.731, calinski: 234.7, davies: 0.643, n_clusters: 3, n_noise: 0 },
     { algorithm: 'Hierarchical', silhouette: 0.702, calinski: 198.6, davies: 0.723, n_clusters: 3, n_noise: 0 },
     { algorithm: 'DBSCAN', silhouette: 0.645, calinski: 167.8, davies: 0.834, n_clusters: 4, n_noise: 12 },
     { algorithm: 'Gaussian Mixture', silhouette: 0.718, calinski: 221.4, davies: 0.667, n_clusters: 3, n_noise: 0 }
   ];
+  const clusteringResults = clusteringResultsRaw.map(r => ({
+    algorithm: r.algorithm || r.name || 'Unknown',
+    silhouette: Number(r.silhouette ?? r?.evaluation?.silhouette_score ?? 0),
+    calinski: Number(r.calinski ?? r?.evaluation?.calinski_harabasz_score ?? 0),
+    davies: Number(r.davies ?? r?.evaluation?.davies_bouldin_score ?? 0),
+    n_clusters: Number(r.n_clusters ?? 0),
+    n_noise: Number(r.n_noise ?? r?.evaluation?.n_noise_points ?? 0)
+  }));
 
   // Mock cluster visualization data
   const clusterVisualizationData = analysisResults.visualization_data || [
@@ -60,11 +76,12 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
     { x: 1.9, y: -1.3, cluster: 2, size: 42 }
   ];
 
-  const bestK = optimizationData.reduce((best, current) => 
-    current.silhouette > best.silhouette ? current : best
-  ).k;
+  const bestOpt = optDataSafe.length
+    ? optDataSafe.reduce((best, current) => (current.silhouette > best.silhouette ? current : best))
+    : { k: 0, silhouette: 0 };
+  const bestK = Number(bestOpt.k ?? 0);
 
-  const bestAlgorithm = clusteringResults[0];
+  const bestAlgorithm = clusteringResults[0] || { algorithm: 'Unknown', silhouette: 0, calinski: 0, davies: 0, n_clusters: 0, n_noise: 0 };
 
   const COLORS = ['#8B4513', '#A59E8C', '#D4B08A', '#E8C6A0', '#F2E2C7'];
 
@@ -81,13 +98,13 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
           </div>
           <div className="text-center p-4 bg-bone rounded-lg">
             <div className="text-2xl font-bold text-chestnut mb-1">
-              {optimizationData.find(d => d.k === bestK)?.silhouette.toFixed(3)}
+              {Number((optDataSafe.find(d => d.k === bestK) || {}).silhouette ?? 0).toFixed(3)}
             </div>
             <div className="text-sm text-charcoal/60">Silhouette Score</div>
           </div>
           <div className="text-center p-4 bg-bone rounded-lg">
             <div className="text-2xl font-bold text-chestnut mb-1">
-              {optimizationData.find(d => d.k === bestK)?.calinski.toFixed(1)}
+              {Number((optDataSafe.find(d => d.k === bestK) || {}).calinski ?? 0).toFixed(1)}
             </div>
             <div className="text-sm text-charcoal/60">Calinski-Harabasz</div>
           </div>
@@ -103,7 +120,7 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
             <XAxis dataKey="k" tick={{ fill: '#2A2A2A', fontSize: 12 }} />
             <YAxis tick={{ fill: '#2A2A2A', fontSize: 12 }} />
             <Tooltip 
-              formatter={(value, name) => [value.toFixed(0), 'WCSS']}
+              formatter={(value, name) => [Number(value ?? 0).toFixed(0), 'WCSS']}
               labelFormatter={(label) => `k = ${label}`}
             />
             <Line 
@@ -126,7 +143,7 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
             <XAxis dataKey="k" tick={{ fill: '#2A2A2A', fontSize: 12 }} />
             <YAxis tick={{ fill: '#2A2A2A', fontSize: 12 }} domain={[0, 1]} />
             <Tooltip 
-              formatter={(value) => [value.toFixed(3), 'Silhouette Score']}
+              formatter={(value) => [Number(value ?? 0).toFixed(3), 'Silhouette Score']}
               labelFormatter={(label) => `k = ${label}`}
             />
             <Bar dataKey="silhouette" fill="#8B4513">
@@ -164,9 +181,9 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
                     {result.algorithm}
                     {idx === 0 && <span className="ml-2 text-xs bg-green-600 text-white px-2 py-1 rounded">Best</span>}
                   </td>
-                  <td className="py-3 px-4 text-center">{result.silhouette.toFixed(3)}</td>
-                  <td className="py-3 px-4 text-center">{result.calinski.toFixed(1)}</td>
-                  <td className="py-3 px-4 text-center">{result.davies.toFixed(3)}</td>
+                  <td className="py-3 px-4 text-center">{Number(result.silhouette ?? 0).toFixed(3)}</td>
+                  <td className="py-3 px-4 text-center">{Number(result.calinski ?? 0).toFixed(1)}</td>
+                  <td className="py-3 px-4 text-center">{Number(result.davies ?? 0).toFixed(3)}</td>
                   <td className="py-3 px-4 text-center">{result.n_clusters}</td>
                   <td className="py-3 px-4 text-center">{result.n_noise}</td>
                 </tr>
@@ -224,7 +241,7 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
             />
             <Tooltip 
               cursor={{ strokeDasharray: '3 3' }}
-              formatter={(value, name) => [value.toFixed(2), name === 'x' ? 'PC1' : 'PC2']}
+              formatter={(value, name) => [Number(value ?? 0).toFixed(2), name === 'x' ? 'PC1' : 'PC2']}
               labelFormatter={() => 'Data Point'}
             />
             <Scatter dataKey="y" fill="#8B4513">
@@ -277,15 +294,15 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div className="text-center">
-              <div className="font-bold text-green-700">{bestAlgorithm?.silhouette.toFixed(3)}</div>
+              <div className="font-bold text-green-700">{Number(bestAlgorithm?.silhouette ?? 0).toFixed(3)}</div>
               <div className="text-green-600">Silhouette Score</div>
             </div>
             <div className="text-center">
-              <div className="font-bold text-green-700">{bestAlgorithm?.calinski.toFixed(1)}</div>
+              <div className="font-bold text-green-700">{Number(bestAlgorithm?.calinski ?? 0).toFixed(1)}</div>
               <div className="text-green-600">Calinski-Harabasz</div>
             </div>
             <div className="text-center">
-              <div className="font-bold text-green-700">{bestAlgorithm?.davies.toFixed(3)}</div>
+              <div className="font-bold text-green-700">{Number(bestAlgorithm?.davies ?? 0).toFixed(3)}</div>
               <div className="text-green-600">Davies-Bouldin</div>
             </div>
             <div className="text-center">
@@ -303,7 +320,7 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
           <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
             <h4 className="font-medium text-green-800 mb-2">Optimal Clustering</h4>
             <p className="text-green-700 text-sm">
-              Analysis suggests {bestK} clusters provide the best separation with a Silhouette score of {optimizationData.find(d => d.k === bestK)?.silhouette.toFixed(3)}.
+              Analysis suggests {bestK} clusters provide the best separation with a Silhouette score of {Number((optDataSafe.find(d => d.k === bestK) || {}).silhouette ?? 0).toFixed(3)}.
               {bestAlgorithm?.algorithm} algorithm performs best for this dataset.
             </p>
           </div>

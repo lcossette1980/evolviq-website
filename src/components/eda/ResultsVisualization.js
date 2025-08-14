@@ -46,7 +46,10 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
       );
     }
 
-    console.log('Quality data structure:', qualityResponse);
+    if (process.env.NODE_ENV !== 'production') {
+      // Helpful in dev; avoid noisy logs in production
+      console.log('[EDA] Quality data structure type:', typeof qualityResponse);
+    }
     
     // Extract the actual assessment data from the API response
     const quality = qualityResponse.assessment;
@@ -120,7 +123,9 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
       );
     }
 
-    console.log('Univariate data structure:', univariate);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[EDA] Univariate shape keys:', Object.keys(univariate || {}));
+    }
     
     if (!univariate?.numeric_analysis?.summary_stats) {
       return (
@@ -260,7 +265,9 @@ const ResultsVisualization = ({ analysisResults, validationResults, onNext }) =>
       );
     }
 
-    console.log('Bivariate data structure:', bivariateResponse);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[EDA] Bivariate shape keys:', Object.keys(bivariateResponse || {}));
+    }
 
     // Extract the actual correlation data from the API response
     const bivariate = bivariateResponse.correlation_analysis;

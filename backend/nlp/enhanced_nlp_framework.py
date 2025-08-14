@@ -493,6 +493,54 @@ class NLPWorkflow:
         self.classifier = TextClassifier(self.config)
         self.analytics = TextAnalytics()
         self.results = {}
+
+    def validate_data(self, data: pd.DataFrame, text_column: Optional[str] = None) -> Dict[str, Any]:
+        """Validate NLP dataset and determine text column.
+
+        If text_column is not provided, attempt to infer a suitable column by
+        selecting the first object/category column. Returns a validation summary
+        including the resolved text column or an error with guidance.
+        """
+        validation = {
+            'is_valid': True,
+            'errors': [],
+            'warnings': [],
+            'recommendations': []
+        }
+
+        if data is None or data.empty:
+            validation['is_valid'] = False
+            validation['errors'].append('Dataset is empty')
+            return {
+                'validation': validation,
+                'summary': {'shape': (0, 0), 'text_column': None}
+            }
+
+        # Resolve text column if not provided
+        resolved_text_col = text_column
+        if not resolved_text_col:
+            candidate_cols = data.select_dtypes(include=['object', 'string', 'category']).columns.tolist()
+            if candidate_cols:
+                resolved_text_col = candidate_cols[0]
+                validation['warnings'].append(
+                    f"text_column not provided; inferred '{resolved_text_col}'"
+                )
+            else:
+                validation['is_valid'] = False
+                validation['errors'].append('No text-like column found. Please select a text column.')
+
+        summary = {
+            'shape': data.shape,
+            'columns': data.columns.tolist(),
+            'text_column': resolved_text_col,
+            'missing_values': {k: int(v) for k, v in data.isnull().sum().to_dict().items()},
+            'dtypes': {str(k): str(v) for k, v in data.dtypes.to_dict().items()}
+        }
+
+        return {
+            'validation': validation,
+            'summary': summary
+        }
     
     def validate_data(self, data: pd.DataFrame, text_column: str) -> Dict[str, Any]:
         """Validate data for NLP analysis."""

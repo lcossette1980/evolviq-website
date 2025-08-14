@@ -10,7 +10,7 @@
  * - NLPExplorePage
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSecureAPI } from '../../utils/secureAPI';
@@ -62,8 +62,12 @@ const UnifiedInteractiveTool = ({
   }, [toolConfig.requiresPremium, isAuthenticated, verifyPremiumAccess, navigate]);
 
   // Create secure session for the tool
+  const isCreatingRef = useRef(false);
+
   const createSession = useCallback(async () => {
+    if (isCreatingRef.current || sessionId) return; // debounce duplicate calls
     try {
+      isCreatingRef.current = true;
       setIsLoading(true);
       setError(null);
 
@@ -90,8 +94,9 @@ const UnifiedInteractiveTool = ({
     } finally {
       setIsLoading(false);
       setIsInitializing(false);
+      isCreatingRef.current = false;
     }
-  }, [toolType, toolConfig, user, secureCall]);
+  }, [toolType, toolConfig, user, secureCall, sessionId]);
 
   // Initialize session on mount
   useEffect(() => {
@@ -137,7 +142,7 @@ const UnifiedInteractiveTool = ({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Upload failed');
+        throw new Error(errorData.message || errorData.detail || 'Upload failed');
       }
 
       const raw = await response.json();
@@ -244,7 +249,7 @@ const UnifiedInteractiveTool = ({
         });
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || `${stepName} processing failed`);
+          throw new Error(errorData.message || errorData.detail || `${stepName} processing failed`);
         }
         const raw = await response.json();
         // Normalize known step payloads
