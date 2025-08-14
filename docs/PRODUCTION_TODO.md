@@ -5,6 +5,7 @@ Purpose: Single source of truth for getting the app production‑ready on Railwa
 ## 1) Environment & Configuration
 - [ ] Configure Railway env vars (FIREBASE_SERVICE_ACCOUNT_KEY, ADMIN_EMAILS, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, CORS_ALLOWED_ORIGINS, PROFILE_ENABLED, LEARNING_PLAN_ENABLED)
   - Ensures secure auth, Stripe, allowed origins, and feature flags.
+  - CORS_ALLOWED_ORIGINS should be: "https://evolviq.ai,https://www.evolviq.ai,http://localhost:3000,http://localhost:3001"
 - [ ] Restrict CORS to Vercel domain(s) and localhost only
   - Avoids wildcard access; reduces attack surface.
 - [ ] Configure Vercel env vars (REACT_APP_FIREBASE_*, REACT_APP_API_BASE_URL, STRIPE_PUBLISHABLE_KEY)
@@ -119,6 +120,16 @@ Purpose: Single source of truth for getting the app production‑ready on Railwa
   - Show guide phase completion count and ROI saved indicator.
 - [x] Append tool events to project timeline
   - Events like `tool_saved` with summary and timestamps.
+- [x] Update ProjectInteractiveGuide to match new_files/interactive_ai_guide.tsx
+  - Implemented Likert scale assessments (1-5 radio buttons) with detailed descriptions
+  - Added Phase 0 (Readiness Assessment) with 5 dimensions
+  - Added Phase 1 (Strategy & Vision) with problem definition and value hypothesis
+  - Includes readiness scoring, strengths/improvements analysis, and recommendations
+- [x] Update ProjectRoiCalculator to match new_files/updated_roi_calculator.html
+  - Complete input restructure: Baseline Metrics, Implementation Costs, Expected Improvements
+  - Added scenario buttons (Conservative, Realistic, Optimistic) 
+  - Exact calculation logic from HTML including labor savings, error reduction, retention value
+  - Instructions section and detailed financial breakdown
 
 ## 10) UI/UX Polish
 - [x] ProfileCard component integrated in dashboard Overview tab
@@ -223,6 +234,7 @@ Purpose: Consolidate current production issues from the Interactive Tools (Regre
   - Suspected cause: Results not persisted under session_id or frontend points to wrong endpoint; frontend expects arrays but API returns nested objects for univariate/bivariate.
   - Fix:
     - Backend: Added retry logic with delays to handle async save race conditions in `/api/regression/results/{session_id}` endpoint
+    - Backend: Fixed feature_columns not being set in workflow - added auto-detection fallback and restore from preprocess session data
     - Frontend: Added guard clause in PredictionInterface to handle undefined featureColumns
   - Acceptance: No 404s; results load without errors; charts render; no "data structure: Object" warnings.
 
@@ -238,6 +250,7 @@ Purpose: Consolidate current production issues from the Interactive Tools (Regre
   - Fix:
     - Backend: Separated model storage from serializable results in `enhanced_classification_framework.py`. Models stored in `self.models`, only metrics returned in API response
     - Backend: Updated visualization methods to use instance attributes instead of results dict for models
+    - Backend: Fixed make_prediction method to use self.best_model instead of self.results['best_model']
   - Acceptance: Train succeeds and returns proper JSON response with metrics; visualizations still work correctly
 
 - [x] Clustering: UI TypeError `toFixed` on undefined
@@ -261,7 +274,10 @@ Purpose: Consolidate current production issues from the Interactive Tools (Regre
 - [x] NLP: Validate requires `text_column`
   - Symptoms: 400 Bad Request; `NLPWorkflow.validate_data() missing 1 required positional argument: 'text_column'`.
   - Suspected cause: Frontend upload/validate not passing selected text column.
-  - Fix: Update UI to require selection of a text column pre-validate; pass `text_column` to backend; backend to return helpful error if missing.
+  - Fix: 
+    - Frontend: Updated UnifiedInteractiveTool to pass 'text' as default text_column instead of empty string
+    - Backend will validate if the column exists and return appropriate error if not found
+  - Acceptance: NLP file upload succeeds when text column exists; helpful error when missing
   - Acceptance: Validate succeeds when column selected; helpful error when not; pipeline proceeds to analyze/results.
 
 - [ ] Dashboard store: noisy duplicate “data loaded” logs

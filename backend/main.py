@@ -1092,6 +1092,12 @@ async def train_models(
             if session_data.get('preprocess') and session_data['preprocess'].get('processed_data'):
                 import pandas as pd
                 train_input_df = pd.DataFrame(session_data['preprocess']['processed_data'])
+            # Ensure workflow has feature_columns from preprocess
+            try:
+                if session_data.get('preprocess') and session_data['preprocess'].get('feature_columns'):
+                    workflow.feature_columns = session_data['preprocess']['feature_columns']
+            except Exception:
+                pass
             train_out = workflow.train_models(train_input_df, target_col)
             # Attach rich visualizations if training succeeded
             try:

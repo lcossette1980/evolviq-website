@@ -511,7 +511,7 @@ class ClassificationWorkflow:
     def make_prediction(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """Make prediction with the best model."""
         try:
-            if 'best_model' not in self.results:
+            if not hasattr(self, 'best_model') or self.best_model is None:
                 return {
                     'success': False,
                     'error': 'No trained model available'
@@ -529,11 +529,11 @@ class ClassificationWorkflow:
             input_df = input_df[self.feature_columns]
             
             # Make prediction
-            prediction = self.results['best_model'].predict(input_df)[0]
+            prediction = self.best_model.predict(input_df)[0]
             prediction_proba = None
             
             try:
-                prediction_proba = self.results['best_model'].predict_proba(input_df)[0].tolist()
+                prediction_proba = self.best_model.predict_proba(input_df)[0].tolist()
             except:
                 pass
             

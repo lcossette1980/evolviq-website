@@ -451,6 +451,10 @@ class RegressionWorkflow:
     def train_models(self, data: pd.DataFrame, target_column: str) -> Dict[str, Any]:
         """Train and evaluate models."""
         try:
+            # Ensure feature_columns is set
+            if self.feature_columns is None:
+                self.feature_columns = [col for col in data.columns if col != target_column]
+            
             # Prepare data
             X = data[self.feature_columns]
             y = data[target_column]
