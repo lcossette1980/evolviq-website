@@ -1,12 +1,36 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BarChart3, TrendingUp, Target, Eye } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ScatterChart, Scatter, Cell } from 'recharts';
 import StepContainer from '../shared/StepContainer';
+import { useAuth } from '../../contexts/AuthContext';
+import API_CONFIG, { buildUrl } from '../../config/apiConfig';
 
-const ResultsVisualization = ({ trainingResults, validationResults, onNext }) => {
+const ResultsVisualization = ({ trainingResults, validationResults, sessionId, onNext }) => {
   const [activeTab, setActiveTab] = useState('performance');
+  const [results, setResults] = useState(trainingResults || null);
+  const { user } = useAuth();
 
-  if (!trainingResults?.comparison_data) {
+  useEffect(() => {
+    setResults(trainingResults || null);
+  }, [trainingResults]);
+
+  useEffect(() => {
+    const fetchResults = async () => {
+      if (results || !sessionId || !user) return;
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch(buildUrl(`/api/classification/results/${encodeURIComponent(sessionId)}`), {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) return; // silently skip
+        const json = await res.json();
+        setResults(json);
+      } catch {}
+    };
+    fetchResults();
+  }, [results, sessionId, user]);
+
+  if (!results?.comparison_data) {
     return (
       <StepContainer
         title="Model Results"
@@ -28,7 +52,7 @@ const ResultsVisualization = ({ trainingResults, validationResults, onNext }) =>
     { id: 'insights', label: 'Insights', icon: Target }
   ];
 
-  const modelsRaw = trainingResults.comparison_data || [];
+  const modelsRaw = results.comparison_data || [];
   const models = modelsRaw.map(row => ({
     name: row.name || row.model || row.Model || 'Model',
     accuracy: Number(row.test_accuracy ?? row.accuracy ?? 0),
@@ -49,13 +73,13 @@ const ResultsVisualization = ({ trainingResults, validationResults, onNext }) =>
   }));
 
   // Mock confusion matrix data
-  const confusionMatrix = trainingResults.confusion_matrix || {
+  const confusionMatrix = results.confusion_matrix || {
     'Class A': { 'Class A': 85, 'Class B': 7 },
     'Class B': { 'Class A': 5, 'Class B': 103 }
   };
 
   // Feature importance data
-  const featureImportance = trainingResults.feature_importance || [
+  const featureImportance = results.feature_importance || [
     { feature: 'Feature 1', importance: 0.24 },
     { feature: 'Feature 2', importance: 0.18 },
     { feature: 'Feature 3', importance: 0.15 },

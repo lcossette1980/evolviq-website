@@ -91,6 +91,7 @@ const ClassificationExplorePage = () => {
               <ResultsVisualization
                 trainingResults={stepData.train}
                 validationResults={stepData.uploadResults}
+                sessionId={toolContext.sessionId}
                 onNext={() => navigate('/dashboard')}
               />
             );

@@ -3,6 +3,12 @@ import { Play } from 'lucide-react';
 import StepContainer from '../shared/StepContainer';
 
 const ModelTrainingStep = ({ selectedModels, validationResults, onTrain, isLoading }) => {
+  const targetClasses = validationResults?.summary?.target_classes || {};
+  const classCounts = Object.values(targetClasses);
+  const minClass = classCounts.length ? Math.min(...classCounts) : 0;
+  const hasRareClass = minClass < 2; // stratified split needs at least 2 per class
+  const warnings = [];
+  if (hasRareClass) warnings.push('One or more classes have fewer than 2 samples. Stratified split may fail; we will retry without stratify. Consider collecting more samples.');
   return (
     <StepContainer
       title="Train Models"
@@ -15,6 +21,14 @@ const ModelTrainingStep = ({ selectedModels, validationResults, onTrain, isLoadi
       isLoading={isLoading}
     >
       <div className="space-y-6">
+        {warnings.length > 0 && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <h3 className="font-semibold text-yellow-800 mb-2">Before You Train</h3>
+            <ul className="list-disc list-inside text-yellow-800 text-sm">
+              {warnings.map((w, i) => <li key={i}>{w}</li>)}
+            </ul>
+          </div>
+        )}
         {/* Selected Models */}
         <div className="bg-white border rounded-lg p-6">
           <h3 className="text-lg font-semibold text-charcoal mb-4">

@@ -134,10 +134,15 @@ const UnifiedInteractiveTool = ({
       }
 
       // Upload with secure API
+      const additional = { session_id: sessionId };
+      if (toolType === 'nlp') {
+        // Provide placeholder for older backends requiring text_column
+        additional['text_column'] = '';
+      }
       const response = await uploadFile(
         `/api/${toolType}/validate-data?session_id=${encodeURIComponent(sessionId)}`,
         file,
-        { session_id: sessionId }
+        additional
       );
 
       if (!response.ok) {

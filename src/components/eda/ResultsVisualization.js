@@ -4,6 +4,26 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import StepContainer from '../shared/StepContainer';
 
 const ResultsVisualization = ({ analysisResults, validationResults, onNext }) => {
+  const normalizeAnalysis = (raw) => {
+    if (!raw || typeof raw !== 'object') return raw;
+    const out = { ...raw };
+    // Unwrap common nesting patterns
+    const uni = out.univariate || {};
+    const num = uni.numeric_analysis || uni.numeric || {};
+    const stats = num.summary_stats || num.stats || {};
+    if (!uni.numeric_analysis) {
+      out.univariate = { numeric_analysis: { summary_stats: stats, ...(num || {}) }, ...(uni || {}) };
+    }
+    // Bivariate correlation
+    const biv = out.bivariate || {};
+    const corr = biv.correlation_analysis || biv.correlation || {};
+    if (!biv.correlation_analysis) {
+      out.bivariate = { correlation_analysis: corr, ...(biv || {}) };
+    }
+    return out;
+  };
+
+  analysisResults = normalizeAnalysis(analysisResults);
   const [activeTab, setActiveTab] = useState('quality');
   const [selectedVariable, setSelectedVariable] = useState(
     analysisResults?.univariate?.numeric_analysis?.summary_stats ? 

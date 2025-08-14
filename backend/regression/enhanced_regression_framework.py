@@ -615,6 +615,39 @@ class RegressionWorkflow:
                 'success': False,
                 'error': str(e)
             }
+
+    def export_results(self, format: str = 'json', include_models: bool = False) -> Any:
+        """Export training results in the requested format (json/csv/excel)."""
+        import io as _io
+        import pandas as _pd
+        import json as _json
+
+        payload = {
+            'comparison_data': self.results.get('comparison_df', []),
+            'feature_importance': self.results.get('feature_importance', []),
+            'best_model': self.results.get('best_model_name'),
+            'training_summary': self.results.get('split_info', {})
+        }
+
+        if format == 'json':
+            return _json.dumps(payload)
+
+        if format == 'csv':
+            df = _pd.DataFrame(payload['comparison_data'])
+            return df.to_csv(index=False)
+
+        if format == 'excel':
+            bio = _io.BytesIO()
+            with _pd.ExcelWriter(bio, engine='openpyxl') as writer:
+                _pd.DataFrame(payload['comparison_data']).to_excel(writer, index=False, sheet_name='comparison')
+                _pd.DataFrame(payload['feature_importance']).to_excel(writer, index=False, sheet_name='feature_importance')
+                summ = _pd.DataFrame([payload['training_summary']])
+                summ.to_excel(writer, index=False, sheet_name='summary')
+            bio.seek(0)
+            return bio.getvalue()
+
+        # Default to JSON if unknown
+        return _json.dumps(payload)
     
     def export_model(self) -> Dict[str, Any]:
         """Export the best model."""

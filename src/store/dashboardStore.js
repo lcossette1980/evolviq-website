@@ -12,6 +12,8 @@ export const useDashboardStore = create((set, get) => ({
   // UI State
   activeTab: 'overview',
   isLoading: true,
+  lastLoadKey: null,
+  lastLoadedAt: null,
   showCreateProject: false,
   showProjectSelector: false,
   expandedActionItems: new Set(),
@@ -72,11 +74,20 @@ export const useDashboardStore = create((set, get) => ({
   // Data Loading Actions
   loadDashboardData: async (user, currentProject) => {
     if (!user) return;
-    
-    set({ isLoading: true });
+    const projectId = currentProject?.id || null;
+    const loadKey = `${user.uid}:${projectId || 'none'}`;
+
+    // Dedupe: if we already loaded this key in the last 10 seconds, skip
+    const { lastLoadKey, lastLoadedAt, isLoading } = get();
+    const recentlyLoaded = lastLoadKey === loadKey && lastLoadedAt && (Date.now() - lastLoadedAt < 10000);
+    if (recentlyLoaded || isLoading) {
+      return;
+    }
+
+    set({ isLoading: true, lastLoadKey: loadKey });
     
     try {
-      const projectId = currentProject?.id || null;
+      // already computed projectId above
       
       // Load all data in parallel
       const [
@@ -126,17 +137,20 @@ export const useDashboardStore = create((set, get) => ({
         userAssessments: allAssessments,
         assessmentSummaries,
         guideProgress: allGuideProgress,
-        isLoading: false
+        isLoading: false,
+        lastLoadedAt: Date.now()
       });
 
-      console.log('Dashboard data loaded:', {
-        guides: guides.length,
-        actionItems: items.length,
-        assessments: allAssessments.length,
-        completedAssessments: allAssessments.filter(a => a.isComplete).length,
-        analytics,
-        currentProject: currentProject?.id
-      });
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Dashboard data loaded:', {
+          guides: guides.length,
+          actionItems: items.length,
+          assessments: allAssessments.length,
+          completedAssessments: allAssessments.filter(a => a.isComplete).length,
+          analytics,
+          currentProject: projectId
+        });
+      }
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);

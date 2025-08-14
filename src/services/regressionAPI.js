@@ -19,12 +19,23 @@ import {
   getDownloadURL, 
   deleteObject 
 } from 'firebase/storage';
-import { db, storage } from './firebase';
+import { db, storage, auth } from './firebase';
 
 class RegressionAPI {
   constructor() {
     // Use production API for regression tool - it's running and active
     this.baseURL = 'https://evolviq-website-production.up.railway.app';
+  }
+
+  async authHeaders() {
+    try {
+      const user = auth.currentUser;
+      if (!user) return {};
+      const token = await user.getIdToken();
+      return { Authorization: `Bearer ${token}` };
+    } catch (e) {
+      return {};
+    }
   }
 
   // Session Management
@@ -234,11 +245,10 @@ class RegressionAPI {
         target_column: preprocessingConfig.target_column
       });
 
+      const headers = await this.authHeaders();
       const response = await fetch(`${this.baseURL}/api/regression/preprocess?session_id=${sessionId}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json', ...headers },
         body: JSON.stringify({
           config: preprocessingConfig.config,
           target_column: preprocessingConfig.target_column
@@ -272,11 +282,10 @@ class RegressionAPI {
       
       console.log('Starting model training with config:', trainingConfig);
       
+      const headers = await this.authHeaders();
       const response = await fetch(`${this.baseURL}/api/regression/train?session_id=${sessionId}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json', ...headers },
         body: JSON.stringify({
           config: trainingConfig.config,
           target_column: trainingConfig.target_column
@@ -313,7 +322,8 @@ class RegressionAPI {
 
   async getTrainingStatus(sessionId) {
     try {
-      const response = await fetch(`${this.baseURL}/api/regression/training-status/${sessionId}`);
+      const headers = await this.authHeaders();
+      const response = await fetch(`${this.baseURL}/api/regression/training-status/${sessionId}`, { headers });
       
       if (!response.ok) {
         throw new Error(`Failed to get training status: ${response.statusText}`);
@@ -328,7 +338,8 @@ class RegressionAPI {
 
   async getResults(sessionId) {
     try {
-      const response = await fetch(`${this.baseURL}/api/regression/results/${sessionId}`);
+      const headers = await this.authHeaders();
+      const response = await fetch(`${this.baseURL}/api/regression/results/${sessionId}`, { headers });
       
       if (!response.ok) {
         throw new Error(`Failed to get results: ${response.statusText}`);
@@ -348,11 +359,10 @@ class RegressionAPI {
 
   async makePrediction(sessionId, predictionData) {
     try {
+      const headers = await this.authHeaders();
       const response = await fetch(`${this.baseURL}/api/regression/predict?session_id=${sessionId}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json', ...headers },
         body: JSON.stringify({
           data: predictionData
         })
@@ -376,11 +386,10 @@ class RegressionAPI {
 
   async exportModel(sessionId, exportFormat = 'joblib') {
     try {
+      const headers = await this.authHeaders();
       const response = await fetch(`${this.baseURL}/api/regression/export/${sessionId}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json', ...headers },
         body: JSON.stringify({
           format: exportFormat
         })

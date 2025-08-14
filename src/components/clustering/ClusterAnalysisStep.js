@@ -47,8 +47,8 @@ const ClusterAnalysisStep = ({ config, validationResults, onAnalyze, isLoading }
       currentStep={4}
       totalSteps={6}
       onNext={onAnalyze}
-      canGoNext={!isLoading}
-      nextLabel={isLoading ? "Analyzing..." : "Start Analysis"}
+      canGoNext={!isLoading && (config?.algorithms?.length > 0)}
+      nextLabel={isLoading ? "Analyzing..." : (config?.algorithms?.length > 0 ? "Start Analysis" : "Select Algorithms First")}
       isLoading={isLoading}
     >
       <div className="space-y-6">

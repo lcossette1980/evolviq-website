@@ -1106,6 +1106,12 @@ async def train_models(
             if session_data.get('preprocess') and session_data['preprocess'].get('processed_data'):
                 import pandas as pd
                 train_input_df = pd.DataFrame(session_data['preprocess']['processed_data'])
+            # Ensure workflow has feature_columns from preprocess
+            try:
+                if session_data.get('preprocess') and session_data['preprocess'].get('feature_columns'):
+                    workflow.feature_columns = session_data['preprocess']['feature_columns']
+            except Exception:
+                pass
             train_out = workflow.train_models(train_input_df, target_col)
             # Attach visualizations if available
             try:
@@ -1118,8 +1124,15 @@ async def train_models(
         else:
             raise HTTPException(status_code=400, detail="Training not supported for this tool")
 
+        # If training failed, return 422 with error details
+        if not train_out.get('success'):
+            session_data['status'] = 'training_failed'
+            session_data['training_results'] = train_out
+            await session_storage.save_session(session_id, session_data)
+            raise HTTPException(status_code=422, detail=train_out.get('error') or 'Training failed')
+
         # Update session
-        session_data['status'] = 'training_complete' if train_out.get('success') else 'training_failed'
+        session_data['status'] = 'training_complete'
         session_data['training_results'] = train_out
         await session_storage.save_session(session_id, session_data)
 

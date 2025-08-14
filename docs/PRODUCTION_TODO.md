@@ -203,7 +203,7 @@ Purpose: Single source of truth for getting the app production‑ready on Railwa
 
 Purpose: Consolidate current production issues from the Interactive Tools (Regression, Classification, Clustering, NLP) with actionable fixes and acceptance criteria.
 
-- [ ] Regression: Results 404 and visualization data-shape
+- [ ] Regression: Results 404/401 and visualization data-shape
   - Symptoms: `GET /api/regression/results/:session_id` returns 404; console shows “Univariate/Bivariate data structure: Object” and results loading error in `ResultsVisualization`.
   - Suspected cause: Results not persisted under session_id or frontend points to wrong endpoint; frontend expects arrays but API returns nested objects for univariate/bivariate.
   - Fix:
@@ -211,7 +211,7 @@ Purpose: Consolidate current production issues from the Interactive Tools (Regre
     - Frontend: Normalize result parsing in `ResultsVisualization` to accept objects; guard against undefined and empty arrays.
   - Acceptance: No 404s; results load without errors; charts render; no “data structure: Object” warnings.
 
-- [ ] Regression: Duplicate session creation
+- [x] Regression: Duplicate session creation
   - Symptoms: Multiple “✅ regression session created: …” logs for a single run.
   - Suspected cause: Effect or handler firing multiple times (React StrictMode/multiple submits).
   - Fix: Debounce/lock during session creation; ensure one POST per user action.
@@ -225,7 +225,7 @@ Purpose: Consolidate current production issues from the Interactive Tools (Regre
     - Backend: Improve validation message; accept reasonable defaults; ensure preprocess stored target and encodings.
   - Acceptance: Train succeeds on standard datasets; returns metrics and artifacts; clear error messages for invalid configs.
 
-- [ ] Clustering: UI TypeError `toFixed` on undefined
+- [x] Clustering: UI TypeError `toFixed` on undefined
   - Symptoms: Error at `ResultsVisualization` optimization tab: Cannot read `toFixed` of undefined; ErrorBoundary triggered.
   - Suspected cause: Optimization metrics missing from API response or not mapped yet.
   - Fix: Frontend guards (optional chaining/defaults) and display placeholders; align response contract to always include numeric metrics.
@@ -237,13 +237,13 @@ Purpose: Consolidate current production issues from the Interactive Tools (Regre
   - Fix: Ensure all tabs define a valid React component; add guards in renderer.
   - Acceptance: Tabs switch without errors; all expected tab content renders.
 
-- [ ] Clustering: Hierarchical algorithm `random_state` warning
+- [x] Clustering: Hierarchical algorithm `random_state` warning
   - Symptoms: Backend warning: `AgglomerativeClustering.__init__() got an unexpected keyword argument 'random_state'`.
   - Suspected cause: Passing unsupported param to scikit-learn AgglomerativeClustering.
   - Fix: Remove `random_state` from AgglomerativeClustering; rely on determinism from inputs or document non-determinism.
   - Acceptance: No warnings in logs; hierarchical clustering runs successfully when selected.
 
-- [ ] NLP: Validate requires `text_column`
+- [x] NLP: Validate requires `text_column`
   - Symptoms: 400 Bad Request; `NLPWorkflow.validate_data() missing 1 required positional argument: 'text_column'`.
   - Suspected cause: Frontend upload/validate not passing selected text column.
   - Fix: Update UI to require selection of a text column pre-validate; pass `text_column` to backend; backend to return helpful error if missing.
@@ -255,13 +255,13 @@ Purpose: Consolidate current production issues from the Interactive Tools (Regre
   - Fix: Add idempotent guards and conditional logging; dedupe fetch on mount.
   - Acceptance: Single load per mount; concise logs.
 
-- [ ] ResultsVisualization: Robust to object vs array inputs
+- [x] ResultsVisualization: Robust to object vs array inputs
   - Symptoms: Logs show univariate/bivariate data reported as `Object` and subsequent render issues.
   - Suspected cause: Mismatch between API contract and front-end expectations.
   - Fix: Introduce an adapter layer to coerce API results into consistent arrays for charts; add runtime checks and fallbacks.
   - Acceptance: All chart tabs render without errors across regression/classification/EDA.
 
-- [ ] Error handling: Surface backend messages to UI
+- [x] Error handling: Surface backend messages to UI
   - Symptoms: Generic “Failed to get results” / “train processing failed” with no detail.
   - Suspected cause: Errors swallowed/normalized without messages.
   - Fix: Pass through `message/details` from backend to toasts; log error codes; add guidance links.

@@ -304,20 +304,40 @@ class ClassificationWorkflow:
         """Train and evaluate models."""
         try:
             # Prepare data
+            # Ensure feature_columns are set (may be provided via preprocess or infer here)
+            if not self.feature_columns:
+                self.feature_columns = [c for c in data.columns if c != target_column]
+            if not self.feature_columns:
+                raise ValueError("No feature columns available after preprocessing")
+
             X = data[self.feature_columns]
             y = data[target_column]
             
             # Split data
             stratify_param = y if self.config.stratify else None
-            X_train, X_test, y_train, y_test = train_test_split(
-                X, y,
-                test_size=self.config.test_size,
-                random_state=self.config.random_state,
-                stratify=stratify_param
-            )
+            try:
+                X_train, X_test, y_train, y_test = train_test_split(
+                    X, y,
+                    test_size=self.config.test_size,
+                    random_state=self.config.random_state,
+                    stratify=stratify_param
+                )
+            except Exception as split_err:
+                # Fallback: retry without stratification (handles rare-class issues)
+                logger.warning(f"Stratified split failed: {split_err}. Retrying without stratify.")
+                X_train, X_test, y_train, y_test = train_test_split(
+                    X, y,
+                    test_size=self.config.test_size,
+                    random_state=self.config.random_state,
+                    stratify=None
+                )
             
             # Initialize models
             models = self.model_trainer.initialize_models()
+            if not models:
+                # Safety fallback to a small default set
+                self.config.models_to_include = ['logistic', 'random_forest']
+                models = self.model_trainer.initialize_models()
             
             # Train and evaluate each model
             model_results = {}
@@ -532,3 +552,39 @@ class ClassificationWorkflow:
                 'success': False,
                 'error': str(e)
             }
+
+    def export_results(self, format: str = 'json', include_models: bool = False) -> Any:
+        """Export classification training results (json/csv/excel)."""
+        import io as _io
+        import pandas as _pd
+        import json as _json
+
+        payload = {
+            'comparison_data': self.results.get('comparison_df', []),
+            'feature_importance': self.results.get('feature_importance', []),
+            'best_model': self.results.get('best_model_name'),
+            'confusion_matrix': self.results.get('confusion_matrix', []),
+            'training_summary': self.results.get('split_info', {})
+        }
+
+        if format == 'json':
+            return _json.dumps(payload)
+
+        if format == 'csv':
+            df = _pd.DataFrame(payload['comparison_data'])
+            return df.to_csv(index=False)
+
+        if format == 'excel':
+            bio = _io.BytesIO()
+            with _pd.ExcelWriter(bio, engine='openpyxl') as writer:
+                _pd.DataFrame(payload['comparison_data']).to_excel(writer, index=False, sheet_name='comparison')
+                _pd.DataFrame(payload['feature_importance']).to_excel(writer, index=False, sheet_name='feature_importance')
+                cm = _pd.DataFrame(payload['confusion_matrix'])
+                cm.to_excel(writer, index=False, sheet_name='confusion_matrix')
+                summ = _pd.DataFrame([payload['training_summary']])
+                summ.to_excel(writer, index=False, sheet_name='summary')
+            bio.seek(0)
+            return bio.getvalue()
+
+        # Default
+        return _json.dumps(payload)
