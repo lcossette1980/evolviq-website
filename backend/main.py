@@ -851,6 +851,43 @@ async def detailed_health_check(admin_data: dict = Depends(verify_admin_access))
     
     return health_info
 
+# Tools health endpoint for quick diagnostics
+@app.get("/api/tools/health")
+async def tools_health():
+    try:
+        return {
+            "status": "ok",
+            "version": "3.0.0",
+            "cors_allowed": os.getenv("CORS_ALLOWED_ORIGINS", "*"),
+            "endpoints": {
+                "regression": {
+                    "validate": "/api/regression/validate-data",
+                    "preprocess": "/api/regression/preprocess",
+                    "train": "/api/regression/train",
+                    "results": "/api/regression/results/{session_id}"
+                },
+                "classification": {
+                    "validate": "/api/classification/validate-data",
+                    "preprocess": "/api/classification/preprocess",
+                    "train": "/api/classification/train",
+                    "results": "/api/classification/results/{session_id}"
+                },
+                "clustering": {
+                    "validate": "/api/clustering/validate-data",
+                    "analyze": "/api/clustering/analyze"
+                },
+                "eda": {
+                    "analyze": "/api/eda/analyze"
+                },
+                "nlp": {
+                    "validate": "/api/nlp/validate-data"
+                }
+            }
+        }
+    except Exception as e:
+        logger.error(f"Tools health error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # SESSION ENDPOINTS
 @app.post("/api/{tool_type}/session", response_model=SessionResponse)
 async def create_session(

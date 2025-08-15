@@ -61,6 +61,15 @@ const UnifiedInteractiveTool = ({
     checkAccess();
   }, [toolConfig.requiresPremium, isAuthenticated, verifyPremiumAccess, navigate]);
 
+  // Rehydrate prior session (avoid accidental new sessions on remount)
+  useEffect(() => {
+    const key = `session:${toolType}`;
+    const existing = sessionStorage.getItem(key);
+    if (existing && !sessionId) {
+      setSessionId(existing);
+    }
+  }, [toolType, sessionId]);
+
   // Create secure session for the tool
   const isCreatingRef = useRef(false);
 
@@ -84,6 +93,8 @@ const UnifiedInteractiveTool = ({
       if (response.ok) {
         const data = await response.json();
         setSessionId(data.session_id);
+        // Persist within tab lifetime
+        try { sessionStorage.setItem(`session:${toolType}`, data.session_id); } catch {}
         console.log(`✅ ${toolType} session created:`, data.session_id);
       } else {
         throw new Error(`Failed to create ${toolType} session`);
@@ -306,6 +317,7 @@ const UnifiedInteractiveTool = ({
     setCurrentStep(1);
     setStepData({});
     setError(null);
+    try { sessionStorage.removeItem(`session:${toolType}`); } catch {}
     createSession(); // Create new session
   };
 
