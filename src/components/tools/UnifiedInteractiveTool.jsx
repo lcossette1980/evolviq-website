@@ -485,27 +485,11 @@ const UnifiedInteractiveTool = ({
               {children({ toolContext, currentStepConfig })}
             </div>
 
-            {/* Step Navigation Buttons */}
-            <div className="flex justify-between mt-8 pt-6 border-t border-gray-100">
-              <button
-                onClick={prevStep}
-                disabled={currentStep === 1}
-                className="px-4 py-2 text-charcoal border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              
+            {/* Step Progress Indicator */}
+            <div className="flex justify-center mt-8 pt-6 border-t border-gray-100">
               <div className="text-sm text-charcoal/60">
                 Step {currentStep} of {toolConfig.steps.length}
               </div>
-              
-              <button
-                onClick={nextStep}
-                disabled={currentStep === toolConfig.steps.length}
-                className="px-4 py-2 bg-chestnut text-white rounded-lg hover:bg-chestnut/90 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
             </div>
           </div>
         </div>

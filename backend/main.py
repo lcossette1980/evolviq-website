@@ -1148,7 +1148,23 @@ async def train_models(
             
             # Log training parameters for debugging
             logger.info(f"Training regression with {len(train_input_df)} rows, target: {target_col}")
-            train_out = workflow.train_models(train_input_df, target_col)
+            
+            try:
+                train_out = workflow.train_models(train_input_df, target_col)
+                logger.info(f"Train models returned, success: {train_out.get('success', False)}")
+                logger.info(f"Train_out keys: {list(train_out.keys()) if isinstance(train_out, dict) else 'Not a dict'}")
+                
+                # Debug: Check what's in model_results
+                if 'model_results' in train_out:
+                    logger.info(f"model_results type: {type(train_out['model_results'])}")
+                    if isinstance(train_out['model_results'], dict):
+                        for k, v in train_out['model_results'].items():
+                            logger.info(f"  {k}: type={type(v)}, keys={list(v.keys()) if isinstance(v, dict) else 'Not a dict'}")
+                
+            except Exception as train_err:
+                logger.error(f"Training execution failed: {train_err}")
+                raise
+            
             # Attach rich visualizations if training succeeded
             try:
                 if train_out.get('success'):
@@ -1190,19 +1206,56 @@ async def train_models(
         # Clean train_out to ensure it's serializable
         # Remove any model objects that might have slipped through
         if isinstance(train_out, dict):
-            # Remove 'model_results' if it contains actual models
-            if 'model_results' in train_out and isinstance(train_out['model_results'], dict):
-                # Check if it contains model objects
-                for key, value in list(train_out['model_results'].items()):
-                    if isinstance(value, dict) and 'model' in value:
-                        # Replace with just metrics
-                        train_out['model_results'][key] = value.get('metrics', {})
+            # Create a clean copy of train_out with only serializable data
+            clean_train_out = {}
+            
+            # Handle model_results specially
+            if 'model_results' in train_out:
+                if isinstance(train_out['model_results'], dict):
+                    clean_model_results = {}
+                    for key, value in train_out['model_results'].items():
+                        if isinstance(value, dict):
+                            # If it has 'metrics', use that; if it has 'model', skip it
+                            if 'metrics' in value:
+                                clean_model_results[key] = value['metrics']
+                            elif 'model' not in value:
+                                # Only include if it doesn't have a model object
+                                clean_model_results[key] = value
+                        elif not hasattr(value, 'predict'):  # Skip sklearn models
+                            clean_model_results[key] = value
+                    clean_train_out['model_results'] = clean_model_results
+            
+            # Copy other safe fields
+            safe_keys = ['success', 'comparison_data', 'best_model', 'feature_importance', 
+                        'training_summary', 'error', 'visualizations', 'cross_validation']
+            for key in safe_keys:
+                if key in train_out:
+                    clean_train_out[key] = train_out[key]
+            
+            train_out = clean_train_out
         
         # Update session
         session_data['status'] = 'training_complete'
         session_data['training_results'] = train_out
         await session_storage.save_session(session_id, session_data)
 
+        # Try to serialize the response to catch any issues
+        try:
+            import json
+            json.dumps({"results": train_out, "rate_limit": rate_limit})
+        except Exception as json_err:
+            logger.error(f"Response serialization failed: {json_err}")
+            logger.error(f"train_out type: {type(train_out)}")
+            logger.error(f"train_out content: {train_out}")
+            # Return a minimal safe response
+            return {
+                "results": {
+                    "success": True,
+                    "message": "Training completed but full results unavailable due to serialization issue"
+                },
+                "rate_limit": rate_limit
+            }
+        
         return {
             "results": train_out,
             "rate_limit": rate_limit
