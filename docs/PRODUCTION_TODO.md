@@ -247,22 +247,27 @@ Purpose: Consolidate current production issues from the Interactive Tools (Regre
     - Backend: Correctly updates session status to 'training_complete' when finished
   - Acceptance: Background training completes and results are available after processing
 
-- [x] Regression/Classification: Train endpoint fails with serialization error
+- [x] Regression/Classification: Train endpoint fails with serialization error (RECURRING ISSUE)
   - Symptoms: POST to /api/regression/train returns 500 with "dictionary update sequence element #0 has length 6; 2 is required"
-  - Suspected cause: Train endpoint returning non-serializable model objects in response
-  - Fix:
-    - Backend: Separated model storage from serializable results in RegressionWorkflow
+  - Root cause: Train endpoint returning non-serializable model objects in response from workflows
+  - Fixes applied (multiple iterations due to persistence of issue):
+    - Backend: Separated model storage from serializable results in RegressionWorkflow and ClassificationWorkflow
     - Backend: Store models in self.models, self.best_model, keep only metrics in self.results
     - Backend: Updated make_prediction and visualization methods to use new attributes
+    - Backend: Added aggressive cleanup in main.py train endpoint to strip non-serializable objects
+    - Backend: Added field-by-field serialization testing with fallback to minimal response
+    - Backend: Enhanced logging to identify problematic fields
   - Acceptance: Train endpoint returns proper JSON response without serialization errors
+  - NOTE: This issue keeps recurring - need to ensure Railway deployment has latest code
 
 - [x] CORS: Train endpoints missing CORS headers in production
   - Symptoms: "No 'Access-Control-Allow-Origin' header is present" for regression/classification train endpoints
-  - Current state: CORS error was secondary to 500 error from serialization issue
+  - Root cause: CORS error was secondary to 500 error from serialization issue
   - Fix:
-    - Backend: Fixed serialization error which was causing 500 response that bypassed CORS
+    - Backend: Fixed underlying serialization errors which were causing 500 responses
     - Backend: CORS middleware already properly configured for all endpoints
-  - Acceptance: All endpoints return proper CORS headers in production
+    - Backend: Added fallback responses to ensure endpoint always returns valid response
+  - Acceptance: All endpoints return proper CORS headers even on error conditions
 
 - [x] Regression: Duplicate session creation
   - Symptoms: Multiple “✅ regression session created: …” logs for a single run.
@@ -320,10 +325,37 @@ Purpose: Consolidate current production issues from the Interactive Tools (Regre
   - Acceptance: All chart tabs render without errors across regression/classification/EDA.
 
 - [x] Error handling: Surface backend messages to UI
-  - Symptoms: Generic “Failed to get results” / “train processing failed” with no detail.
+  - Symptoms: Generic "Failed to get results" / "train processing failed" with no detail.
   - Suspected cause: Errors swallowed/normalized without messages.
   - Fix: Pass through `message/details` from backend to toasts; log error codes; add guidance links.
   - Acceptance: Users see clear error reasons and suggested fixes; dev console shows actionable details.
+
+## 20.5) Production Deployment Issues
+
+- [ ] Railway deployment lag
+  - Symptoms: Fixes pushed to GitHub but production still shows old errors
+  - Issue: Railway may not be automatically redeploying or using cached Docker layers
+  - Action needed:
+    - Manual trigger Railway redeploy after pushes
+    - Verify Railway webhook is configured for auto-deploy
+    - Check Railway build logs to ensure latest commit is being deployed
+    - Consider adding deployment version endpoint for verification
+
+- [ ] Persistent serialization errors
+  - Symptoms: Same serialization errors keep appearing despite multiple fixes
+  - Root causes identified:
+    - Model objects being included in API responses
+    - DataFrames not properly converted to dicts
+    - Workflow methods returning different structures than expected
+  - Comprehensive fixes applied:
+    - Separated model storage from results in all workflows
+    - Added aggressive cleanup in API endpoints
+    - Field-by-field serialization testing
+    - Fallback to minimal response on serialization failure
+  - Next steps:
+    - Add unit tests for serialization of all workflow outputs
+    - Consider using Pydantic models for response validation
+    - Add endpoint to check deployment version
 
 ## 21) Post‑Launch Enhancements
 

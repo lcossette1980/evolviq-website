@@ -158,10 +158,19 @@ app = FastAPI(
 @app.get("/")
 async def root():
     """Root endpoint for Railway health checks"""
+    import subprocess
+    try:
+        # Get current git commit hash for deployment verification
+        commit_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('utf-8').strip()[:8]
+    except:
+        commit_hash = "unknown"
+    
     return {
         "status": "online",
         "message": "EvolvIQ ML Tools API",
-        "version": "3.0.0",
+        "version": "3.0.1",  # Bumped version to track deployment
+        "commit": commit_hash,
+        "deployed_at": datetime.now().isoformat(),
         "docs": "/docs",
         "health": "/health"
     }
