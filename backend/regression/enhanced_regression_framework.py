@@ -409,6 +409,10 @@ class RegressionWorkflow:
         self.model_evaluator = ModelEvaluator(self.config)
         self.results = {}
         self.feature_columns = None
+        self.models = {}  # Store models separately from results
+        self.best_model = None  # Store best model separately
+        self.X_test = None  # Store test data for predictions
+        self.y_test = None
     
     def validate_data(self, data: pd.DataFrame, target_column: str) -> Dict[str, Any]:
         """Validate uploaded data."""
@@ -517,16 +521,19 @@ class RegressionWorkflow:
                 }).sort_values('importance', ascending=False)
                 feature_importance = importance_df.to_dict('records')
             
-            # Store results
+            # Store models separately (not serializable)
+            self.models = model_results  # Contains actual model objects
+            self.best_model = best_model
+            self.X_test = X_test
+            self.y_test = y_test
+            
+            # Store only serializable results
             self.results = {
-                'model_results': model_results,
+                'model_metrics': {name: result['metrics'] for name, result in model_results.items()},
                 'comparison_df': comparison_df.to_dict('records'),
                 'cross_validation': cross_validation_scores,
                 'best_model_name': best_model_name,
-                'best_model': best_model,
                 'feature_importance': feature_importance,
-                'X_test': X_test,
-                'y_test': y_test,
                 'split_info': {
                     'train_size': len(X_train),
                     'test_size': len(X_test),
@@ -557,7 +564,7 @@ class RegressionWorkflow:
     def make_prediction(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """Make prediction with the best model."""
         try:
-            if 'best_model' not in self.results:
+            if not hasattr(self, 'best_model') or self.best_model is None:
                 return {
                     'success': False,
                     'error': 'No trained model available'
@@ -575,7 +582,7 @@ class RegressionWorkflow:
             input_df = input_df[self.feature_columns]
             
             # Make prediction
-            prediction = self.results['best_model'].predict(input_df)[0]
+            prediction = self.best_model.predict(input_df)[0]
             
             return {
                 'success': True,
@@ -603,10 +610,10 @@ class RegressionWorkflow:
                 importance_df = pd.DataFrame(self.results['feature_importance'])
                 visualizations['feature_importance'] = ModelVisualizer.create_feature_importance_chart(importance_df)
             
-            if 'best_model' in self.results and 'X_test' in self.results:
-                y_pred = self.results['best_model'].predict(self.results['X_test'])
+            if hasattr(self, 'best_model') and hasattr(self, 'X_test') and self.best_model is not None:
+                y_pred = self.best_model.predict(self.X_test)
                 visualizations['residual_analysis'] = ModelVisualizer.create_residual_plots(
-                    self.results['y_test'], y_pred
+                    self.y_test, y_pred
                 )
             
             return {
@@ -656,14 +663,14 @@ class RegressionWorkflow:
     def export_model(self) -> Dict[str, Any]:
         """Export the best model."""
         try:
-            if 'best_model' not in self.results:
+            if not hasattr(self, 'best_model') or self.best_model is None:
                 return {
                     'success': False,
                     'error': 'No trained model available'
                 }
             
             # Serialize model
-            model_bytes = joblib.dumps(self.results['best_model'])
+            model_bytes = joblib.dumps(self.best_model)
             model_b64 = base64.b64encode(model_bytes).decode('utf-8')
             
             # Create metadata

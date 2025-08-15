@@ -948,6 +948,27 @@ async def validate_data(
                 )
             target_column = numeric_columns[-1]
             validation_result = workflow.validate_data(data, target_column)
+        elif tool_type == 'nlp':
+            # For NLP, try to detect text column or use provided one
+            text_column = None
+            # Check if text_column was provided in form data
+            if hasattr(file, 'text_column'):
+                text_column = file.text_column
+            # Try to auto-detect text column
+            if not text_column:
+                text_cols = data.select_dtypes(include=['object', 'string']).columns.tolist()
+                # Look for common text column names
+                for col in ['text', 'content', 'body', 'message', 'description', 'comment']:
+                    if col in [c.lower() for c in text_cols]:
+                        text_column = next(c for c in text_cols if c.lower() == col)
+                        break
+                if not text_column and text_cols:
+                    text_column = text_cols[0]  # Use first text column as fallback
+            
+            if text_column:
+                validation_result = workflow.validate_data(data, text_column)
+            else:
+                validation_result = workflow.validate_data(data)
         else:
             validation_result = workflow.validate_data(data)
         
@@ -960,6 +981,10 @@ async def validate_data(
             'upload_time': datetime.now(),
             'dataframe': data
         }
+        
+        # For NLP, also store the detected/selected text column
+        if tool_type == 'nlp' and 'text_column' in locals():
+            session_update['text_column'] = text_column
         
         # Get existing session data and update
         existing_session = await session_storage.get_session(session_id)
@@ -994,6 +1019,16 @@ async def validate_data(
                 "numerical_columns": data.select_dtypes(include=[np.number]).columns.tolist(),
                 "categorical_columns": data.select_dtypes(include=['object', 'category']).columns.tolist()
             }
+            
+            # Add text column info for NLP
+            if tool_type == 'nlp':
+                text_columns = data.select_dtypes(include=['object', 'string']).columns.tolist()
+                summary['text_columns'] = text_columns
+                if 'text_column' in locals() and text_column:
+                    summary['selected_text_column'] = text_column
+                else:
+                    summary['selected_text_column'] = None
+                    
             return {
                 "validation": validation_result,
                 "summary": summary,

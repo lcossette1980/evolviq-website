@@ -247,6 +247,23 @@ Purpose: Consolidate current production issues from the Interactive Tools (Regre
     - Backend: Correctly updates session status to 'training_complete' when finished
   - Acceptance: Background training completes and results are available after processing
 
+- [x] Regression/Classification: Train endpoint fails with serialization error
+  - Symptoms: POST to /api/regression/train returns 500 with "dictionary update sequence element #0 has length 6; 2 is required"
+  - Suspected cause: Train endpoint returning non-serializable model objects in response
+  - Fix:
+    - Backend: Separated model storage from serializable results in RegressionWorkflow
+    - Backend: Store models in self.models, self.best_model, keep only metrics in self.results
+    - Backend: Updated make_prediction and visualization methods to use new attributes
+  - Acceptance: Train endpoint returns proper JSON response without serialization errors
+
+- [x] CORS: Train endpoints missing CORS headers in production
+  - Symptoms: "No 'Access-Control-Allow-Origin' header is present" for regression/classification train endpoints
+  - Current state: CORS error was secondary to 500 error from serialization issue
+  - Fix:
+    - Backend: Fixed serialization error which was causing 500 response that bypassed CORS
+    - Backend: CORS middleware already properly configured for all endpoints
+  - Acceptance: All endpoints return proper CORS headers in production
+
 - [x] Regression: Duplicate session creation
   - Symptoms: Multiple “✅ regression session created: …” logs for a single run.
   - Suspected cause: Effect or handler firing multiple times (React StrictMode/multiple submits).
@@ -280,14 +297,15 @@ Purpose: Consolidate current production issues from the Interactive Tools (Regre
   - Fix: Remove `random_state` from AgglomerativeClustering; rely on determinism from inputs or document non-determinism.
   - Acceptance: No warnings in logs; hierarchical clustering runs successfully when selected.
 
-- [x] NLP: Validate requires `text_column`
+- [x] NLP: Validate requires `text_column` selection
   - Symptoms: 400 Bad Request; `NLPWorkflow.validate_data() missing 1 required positional argument: 'text_column'`.
-  - Suspected cause: Frontend upload/validate not passing selected text column.
+  - Current state: Frontend passes 'text' as default but this doesn't work if column has different name
   - Fix: 
-    - Frontend: Updated UnifiedInteractiveTool to pass 'text' as default text_column instead of empty string
-    - Backend will validate if the column exists and return appropriate error if not found
-  - Acceptance: NLP file upload succeeds when text column exists; helpful error when missing
-  - Acceptance: Validate succeeds when column selected; helpful error when not; pipeline proceeds to analyze/results.
+    - Backend: Added auto-detection logic for text column in validate endpoint
+    - Backend: Looks for common text column names (text, content, body, message, etc.)
+    - Backend: Returns available text_columns and selected_text_column in response
+    - Backend: Stores detected text_column in session for downstream use
+  - Acceptance: NLP automatically detects text column; returns available columns for user selection if needed.
 
 - [ ] Dashboard store: noisy duplicate “data loaded” logs
   - Symptoms: Repeated `dashboardStore.js:132 Dashboard data loaded: Object` messages.
