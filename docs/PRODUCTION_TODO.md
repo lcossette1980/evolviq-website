@@ -432,6 +432,12 @@ Purpose: Consolidate current production issues from the Interactive Tools (Regre
   - Created missing Regression components: DataPreprocessingStep, ModelTrainingStep
   - Build now compiles successfully with only ESLint warnings (no errors)
 
+- [x] Fixed production runtime issues (2025-01-15)
+  - Fixed 422 preprocess endpoint errors - corrected request format to match backend API
+  - Fixed error display showing [object Object] - now shows actual error messages
+  - Fixed NLP text column detection - no longer throws error, allows user selection
+  - Fixed clustering tool button locking - proper initialization of feature columns
+
 - [ ] Future UI enhancements (nice-to-have):
   - Add animations for step transitions
   - Implement keyboard shortcuts for navigation
