@@ -238,6 +238,15 @@ Purpose: Consolidate current production issues from the Interactive Tools (Regre
     - Frontend: Added guard clause in PredictionInterface to handle undefined featureColumns
   - Acceptance: No 404s; results load without errors; charts render; no "data structure: Object" warnings.
 
+- [x] Regression: Background training returns "Training still in progress" indefinitely
+  - Symptoms: When >3 models requested, training goes to background but results endpoint always returns HTTP 202 "Training still in progress"
+  - Suspected cause: Background task was only simulating work with sleep instead of actually training models
+  - Fix:
+    - Backend: Replaced simulated training with actual model training in `train_models_background` function
+    - Backend: Background task now properly calls workflow.train_models() with preprocessed data and feature_columns
+    - Backend: Correctly updates session status to 'training_complete' when finished
+  - Acceptance: Background training completes and results are available after processing
+
 - [x] Regression: Duplicate session creation
   - Symptoms: Multiple “✅ regression session created: …” logs for a single run.
   - Suspected cause: Effect or handler firing multiple times (React StrictMode/multiple submits).

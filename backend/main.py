@@ -1159,32 +1159,75 @@ async def train_models_background(
     user_id: str
 ):
     """Background task for model training"""
+    session_data = None
     try:
         # Update session status
         session_data = await session_storage.get_session(session_id)
-        if session_data:
-            session_data['status'] = 'training_in_progress'
-            session_data['training_started_at'] = datetime.now()
-            await session_storage.save_session(session_id, session_data)
+        if not session_data:
+            logger.error(f"Session {session_id} not found for background training")
+            return
+            
+        session_data['status'] = 'training_in_progress'
+        session_data['training_started_at'] = datetime.now()
+        await session_storage.save_session(session_id, session_data)
         
-        # Get workflow and train
+        # Get workflow and data
         workflow = await get_session_workflow(session_id, tool_type, user_id)
         
-        # Simulate training (replace with actual implementation)
-        await asyncio.sleep(10)  # Simulate work
+        data = session_data.get('dataframe')
+        if not data:
+            raise ValueError("No data available for training")
         
-        results = {
-            "status": "completed",
-            "models_trained": len(request.config.models_to_include),
-            "training_time": datetime.now().isoformat()
-        }
+        # Get target column
+        target_col = request.target_column
+        if not target_col:
+            target_col = session_data.get('target_column')
+        if not target_col:
+            raise ValueError("No target column specified")
+        
+        # Perform actual training based on tool type
+        if tool_type == 'regression':
+            # Get preprocessed data if available
+            train_input_df = data
+            if session_data.get('preprocess') and session_data['preprocess'].get('processed_data'):
+                import pandas as pd
+                train_input_df = pd.DataFrame(session_data['preprocess']['processed_data'])
+            
+            # Ensure workflow has feature_columns from preprocess
+            if session_data.get('preprocess') and session_data['preprocess'].get('feature_columns'):
+                workflow.feature_columns = session_data['preprocess']['feature_columns']
+            
+            # Apply config
+            workflow.config = RegressionConfig(**request.config.dict())
+            
+            # Train models
+            results = workflow.train_models(train_input_df, target_col)
+            
+        elif tool_type == 'classification':
+            # Get preprocessed data if available
+            train_input_df = data
+            if session_data.get('preprocess') and session_data['preprocess'].get('processed_data'):
+                import pandas as pd
+                train_input_df = pd.DataFrame(session_data['preprocess']['processed_data'])
+            
+            # Ensure workflow has feature_columns from preprocess
+            if session_data.get('preprocess') and session_data['preprocess'].get('feature_columns'):
+                workflow.feature_columns = session_data['preprocess']['feature_columns']
+                
+            # Apply config
+            workflow.config = ClassificationConfig(**request.config.dict())
+            
+            # Train models
+            results = workflow.train_models(train_input_df, target_col)
+            
+        else:
+            raise ValueError(f"Background training not implemented for {tool_type}")
         
         # Update status when complete
-        if session_data:
-            session_data['status'] = 'training_complete'
-            session_data['training_completed_at'] = datetime.now()
-            session_data['training_results'] = results
-            await session_storage.save_session(session_id, session_data)
+        session_data['status'] = 'training_complete'
+        session_data['training_completed_at'] = datetime.now()
+        session_data['training_results'] = results
+        await session_storage.save_session(session_id, session_data)
             
     except Exception as e:
         logger.error(f"Background training failed: {e}")

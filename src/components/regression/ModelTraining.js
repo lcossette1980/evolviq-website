@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 const ModelTraining = ({ preprocessingResults, onTrain, isLoading }) => {
   const [config, setConfig] = useState({
     test_size: 0.2,
-    models_to_include: ['linear', 'ridge', 'lasso', 'elastic_net', 'random_forest'],
+    models_to_include: ['linear', 'ridge', 'random_forest'],  // Default to 3 models to avoid background processing
     hyperparameter_tuning: true,
     cv_folds: 5
   });
