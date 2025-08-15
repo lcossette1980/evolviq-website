@@ -71,14 +71,14 @@ const LinearRegressionPageSidebar = () => {
               <DataPreprocessingStep
                 validationResults={stepData.uploadResults}
                 onPreprocess={(config) => {
-                  const target = config.target_column;
-                  const features = config.feature_columns || [];
+                  // Backend expects { config: {...}, target_column: "..." }
                   processStep('preprocess', { 
-                    target_column: target,
-                    feature_columns: features.length > 0 ? features : undefined,
-                    handle_missing: config.handle_missing || 'drop',
-                    scaling_method: config.scaling_method || 'standard',
-                    encoding_method: config.encoding_method || 'onehot'
+                    config: {
+                      handle_missing: config.handle_missing || 'drop',
+                      encode_categorical: config.encoding_method || 'onehot',
+                      scale_features: config.scaling_method !== 'none'
+                    },
+                    target_column: config.target_column
                   })
                     .then(() => nextStep())
                     .catch(console.error);

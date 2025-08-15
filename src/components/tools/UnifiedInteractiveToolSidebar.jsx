@@ -186,11 +186,25 @@ const UnifiedInteractiveToolSidebar = ({
 
       // Additional NLP-specific checks
       if (toolType === 'nlp') {
-        const cols = result?.summary?.columns || [];
-        const textCol = cols.find(c => ['text', 'content', 'body', 'message'].includes(String(c).toLowerCase()));
-        if (!textCol) {
-          throw new Error('NLP CSV/JSON must include a text column (e.g., "text", "content", "body", or "message").');
+        // Check various possible locations for column info
+        const textColumns = result?.summary?.text_columns || 
+                           result?.text_columns || 
+                           [];
+        const allColumns = result?.summary?.columns || 
+                          result?.columns || 
+                          [];
+        
+        // If no text columns explicitly identified, check all columns for text-like names
+        if (textColumns.length === 0 && allColumns.length > 0) {
+          const textCol = allColumns.find(c => 
+            ['text', 'content', 'body', 'message', 'review', 'comment', 'description']
+              .includes(String(c).toLowerCase())
+          );
+          if (!textCol) {
+            console.warn('NLP: No obvious text column found. User will need to select one.');
+          }
         }
+        // Don't throw error - let user select column in the UI
       }
 
       // Store upload results
@@ -241,7 +255,10 @@ const UnifiedInteractiveToolSidebar = ({
         });
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || errorData.detail || `${stepName} processing failed`);
+          console.error(`${toolType} ${stepName} error response:`, errorData);
+          const errorMessage = errorData.message || errorData.detail || 
+                              (typeof errorData === 'string' ? errorData : `${stepName} processing failed`);
+          throw new Error(errorMessage);
         }
         const raw = await response.json();
         

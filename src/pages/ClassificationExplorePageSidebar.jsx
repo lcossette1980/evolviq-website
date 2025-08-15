@@ -74,13 +74,14 @@ const ClassificationExplorePageSidebar = () => {
                   processStep('selectTarget', { target_column: target })
                     .then(() => {
                       // After selecting target, preprocess the data
+                      // Backend expects { config: {...}, target_column: "..." }
                       return processStep('preprocess', {
-                        target_column: target,
-                        handle_missing: 'drop',
-                        scaling_method: 'standard',
-                        encoding_method: 'onehot',
-                        stratify: true,
-                        test_size: 0.2
+                        config: {
+                          handle_missing: 'drop',
+                          encode_categorical: 'onehot',
+                          scale_features: true
+                        },
+                        target_column: target
                       });
                     })
                     .then(() => nextStep())

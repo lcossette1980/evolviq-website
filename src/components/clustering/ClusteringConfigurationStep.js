@@ -2,13 +2,17 @@ import React, { useState } from 'react';
 import { Settings, Layers } from 'lucide-react';
 
 const ClusteringConfigurationStep = ({ validationResults, onConfigure, onPrevious, isLoading }) => {
-  const numericColumns = validationResults?.summary?.numerical_columns || [];
+  const numericColumns = validationResults?.summary?.numerical_columns || 
+                         validationResults?.numeric_columns || 
+                         [];
+  
+  // Initialize with all numeric columns selected by default
   const [config, setConfig] = useState({
     algorithms: ['kmeans'],
     n_clusters_range: [2, 10],
     scaling_method: 'standard',
     handle_missing: 'drop',
-    feature_columns: numericColumns,
+    feature_columns: numericColumns.length > 0 ? numericColumns : [],
     optimization_metric: 'silhouette'
   });
 
@@ -136,7 +140,7 @@ const ClusteringConfigurationStep = ({ validationResults, onConfigure, onPreviou
         </div>
 
         {/* Feature Selection */}
-        {numericColumns.length > 0 && (
+        {numericColumns.length > 0 ? (
           <div className="mb-6">
             <h4 className="font-medium text-charcoal mb-3">Features for Clustering</h4>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -152,6 +156,15 @@ const ClusteringConfigurationStep = ({ validationResults, onConfigure, onPreviou
                 </label>
               ))}
             </div>
+          </div>
+        ) : (
+          <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-yellow-800">
+              No numeric columns detected in your dataset. Clustering requires numeric features.
+            </p>
+            <p className="text-sm text-yellow-700 mt-2">
+              Please ensure your data contains numeric columns or upload a different dataset.
+            </p>
           </div>
         )}
 
