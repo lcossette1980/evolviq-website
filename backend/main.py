@@ -168,21 +168,27 @@ async def root():
 
 # Configure CORS for React frontend
 cors_origins_env = os.getenv("CORS_ALLOWED_ORIGINS", "*")
+cors_kwargs = {
+    "allow_credentials": True,  # Enable for auth
+    "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    "allow_headers": ["*"],
+    "expose_headers": ["*", "X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"],
+}
+
 if cors_origins_env == "*":
-    cors_origins = ["*"]
+    # When credentials are used, wildcard origins are not permitted by browsers.
+    # Use a permissive regex to echo back the requesting Origin.
+    cors_kwargs["allow_origin_regex"] = ".*"
 else:
-    cors_origins = cors_origins_env.split(",")
+    cors_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
+    # Always include localhost for local development
     if "http://localhost:3000" not in cors_origins:
         cors_origins.append("http://localhost:3000")
+    if "https://localhost:3000" not in cors_origins:
+        cors_origins.append("https://localhost:3000")
+    cors_kwargs["allow_origins"] = cors_origins
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=cors_origins,
-    allow_credentials=True,  # Enable for auth
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-    expose_headers=["*", "X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"]
-)
+app.add_middleware(CORSMiddleware, **cors_kwargs)
 
 # Security Middleware
 @app.middleware("http")
@@ -1172,6 +1178,17 @@ async def train_models(
             await session_storage.save_session(session_id, session_data)
             raise HTTPException(status_code=422, detail=train_out.get('error') or 'Training failed')
 
+        # Clean train_out to ensure it's serializable
+        # Remove any model objects that might have slipped through
+        if isinstance(train_out, dict):
+            # Remove 'model_results' if it contains actual models
+            if 'model_results' in train_out and isinstance(train_out['model_results'], dict):
+                # Check if it contains model objects
+                for key, value in list(train_out['model_results'].items()):
+                    if isinstance(value, dict) and 'model' in value:
+                        # Replace with just metrics
+                        train_out['model_results'][key] = value.get('metrics', {})
+        
         # Update session
         session_data['status'] = 'training_complete'
         session_data['training_results'] = train_out
@@ -1184,7 +1201,15 @@ async def train_models(
         
     except Exception as e:
         logger.error(f"Training failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        logger.error(f"Training traceback: {traceback.format_exc()}")
+        
+        # Try to provide more helpful error message
+        error_msg = str(e)
+        if "dictionary update sequence" in error_msg:
+            error_msg = "Serialization error in training results. Please try again or contact support."
+        
+        raise HTTPException(status_code=500, detail=error_msg)
 
 # Background training task
 async def train_models_background(
