@@ -53,6 +53,7 @@ const ClassificationExplorePage = () => {
                     .then(() => nextStep())
                     .catch(console.error);
                 }}
+                onPrevious={prevStep}
                 isLoading={false}
               />
             );
@@ -66,6 +67,7 @@ const ClassificationExplorePage = () => {
                     .then(() => nextStep())
                     .catch(console.error);
                 }}
+                onPrevious={prevStep}
                 isLoading={false}
               />
             );
@@ -82,6 +84,7 @@ const ClassificationExplorePage = () => {
                     .then(() => nextStep())
                     .catch(console.error);
                 }}
+                onPrevious={prevStep}
                 isLoading={false}
               />
             );

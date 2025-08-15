@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import StepContainer from '../shared/StepContainer';
 
-const TargetSelectionStep = ({ validationResults, onSelectTarget, isLoading }) => {
+const TargetSelectionStep = ({ validationResults, onSelectTarget, onPrevious, isLoading }) => {
   const categorical = validationResults?.summary?.categorical_columns || [];
   const allColumns = validationResults?.summary?.columns || [];
   // Heuristic: prefer non-numeric columns; fallback to last column
@@ -19,6 +19,7 @@ const TargetSelectionStep = ({ validationResults, onSelectTarget, isLoading }) =
       currentStep={3}
       totalSteps={6}
       onNext={() => onSelectTarget(target)}
+      onPrevious={onPrevious}
       canGoNext={Boolean(target)}
       nextLabel="Continue"
       isLoading={isLoading}

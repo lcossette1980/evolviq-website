@@ -31,6 +31,12 @@ const EDAExplorePage = lazy(() => import('./pages/EDAExplorePage'));
 const ClassificationExplorePage = lazy(() => import('./pages/ClassificationExplorePage'));
 const ClusteringExplorePage = lazy(() => import('./pages/ClusteringExplorePage'));
 const NLPExplorePage = lazy(() => import('./pages/NLPExplorePage'));
+
+// New sidebar layout versions
+const LinearRegressionPageSidebar = lazy(() => import('./pages/LinearRegressionPageSidebar'));
+const ClassificationExplorePageSidebar = lazy(() => import('./pages/ClassificationExplorePageSidebar'));
+const NLPExplorePageSidebar = lazy(() => import('./pages/NLPExplorePageSidebar'));
+
 const GuideViewer = lazy(() => import('./pages/GuideViewer'));
 const ProjectInteractiveGuide = lazy(() => import('./pages/ProjectInteractiveGuide'));
 const ProjectRoiCalculator = lazy(() => import('./pages/ProjectRoiCalculator'));
@@ -140,6 +146,30 @@ const AppContent = () => {
               </PageSuspense>
             </ProtectedRoute>
           } />
+          
+          {/* New sidebar layout tool routes - these will replace the above once testing is complete */}
+          <Route path="/tools/linear-regression-v2" element={
+            <ProtectedRoute requiresPremium={false}>
+              <PageSuspense>
+                <LinearRegressionPageSidebar />
+              </PageSuspense>
+            </ProtectedRoute>
+          } />
+          <Route path="/tools/classification-explorer-v2" element={
+            <ProtectedRoute requiresPremium={true}>
+              <PageSuspense>
+                <ClassificationExplorePageSidebar />
+              </PageSuspense>
+            </ProtectedRoute>
+          } />
+          <Route path="/tools/nlp-explorer-v2" element={
+            <ProtectedRoute requiresPremium={false}>
+              <PageSuspense>
+                <NLPExplorePageSidebar />
+              </PageSuspense>
+            </ProtectedRoute>
+          } />
+          
           {/* Dynamic Guide Viewer (fallback for registry-driven paths) */}
           <Route path="/guides/:guideId" element={
             <ProtectedRoute requiresPremium={true}>

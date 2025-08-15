@@ -2,7 +2,7 @@ import React from 'react';
 import { Play } from 'lucide-react';
 import StepContainer from '../shared/StepContainer';
 
-const ModelTrainingStep = ({ selectedModels, validationResults, onTrain, isLoading }) => {
+const ModelTrainingStep = ({ selectedModels, validationResults, onTrain, onPrevious, isLoading }) => {
   const targetClasses = validationResults?.summary?.target_classes || {};
   const classCounts = Object.values(targetClasses);
   const minClass = classCounts.length ? Math.min(...classCounts) : 0;
@@ -16,6 +16,7 @@ const ModelTrainingStep = ({ selectedModels, validationResults, onTrain, isLoadi
       currentStep={4}
       totalSteps={6}
       onNext={onTrain}
+      onPrevious={onPrevious}
       canGoNext={!isLoading}
       nextLabel={isLoading ? "Training..." : "Start Training"}
       isLoading={isLoading}

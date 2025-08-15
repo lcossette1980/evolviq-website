@@ -225,7 +225,7 @@ Purpose: Single source of truth for getting the app production‑ready on Railwa
 - [ ] Learning Plan: POST `/api/profile/learning-plan` + UI with progress
   - Personalized next steps from profile gaps.
 
-## 20) Member Dashboard — Interactive Tools Fixes
+## 20) Member Dashboard — Interactive Tools Fixes (UPDATED 2025-01-15)
 
 Purpose: Consolidate current production issues from the Interactive Tools (Regression, Classification, Clustering, NLP) with actionable fixes and acceptance criteria.
 
@@ -330,6 +330,32 @@ Purpose: Consolidate current production issues from the Interactive Tools (Regre
   - Fix: Pass through `message/details` from backend to toasts; log error codes; add guidance links.
   - Acceptance: Users see clear error reasons and suggested fixes; dev console shows actionable details.
 
+- [x] Regression: Results showing mock/placeholder data instead of actual results
+  - Symptoms: Training completes successfully but results show fake data like "age", "income" features
+  - Cause: Frontend was passing stepData.train?.results instead of stepData.train to ResultsVisualization
+  - Fix: Updated LinearRegressionPage.jsx to pass correct data structure
+  - Acceptance: Results show actual training data and metrics from the uploaded dataset
+
+- [x] Classification: Missing navigation buttons after removing global Next/Previous
+  - Symptoms: Classification tool steps have no way to navigate after global buttons were removed
+  - Cause: StepContainer components weren't receiving onPrevious prop
+  - Fix: Added onPrevious prop to all classification step components
+  - Acceptance: All classification steps have working Previous/Next navigation
+
+- [x] NLP: Add text column selection UI
+  - Symptoms: NLP tool fails when text data isn't in a column named "text"
+  - Cause: Tool was hardcoded to look for "text" column
+  - Fix: 
+    - Created TextColumnSelectionStep component
+    - Added column selection step to NLP flow
+    - Backend auto-detects common text column names
+  - Acceptance: Users can select which column contains text data
+
+- [x] UI Flow: Removed confusing generic Next/Previous buttons
+  - Symptoms: Users confused by duplicate navigation buttons
+  - Fix: Removed generic buttons from UnifiedInteractiveTool, kept step-specific action buttons
+  - Acceptance: Each step has clear, context-specific action buttons
+
 ## 20.5) Production Deployment Issues
 
 - [ ] Railway deployment lag
@@ -356,6 +382,48 @@ Purpose: Consolidate current production issues from the Interactive Tools (Regre
     - Add unit tests for serialization of all workflow outputs
     - Consider using Pydantic models for response validation
     - Add endpoint to check deployment version
+
+## 20.6) UI/UX Redesign for Interactive Tools (COMPLETED)
+
+- [x] Redesign tool layout with sidebar navigation
+  - Current: Steps shown horizontally at top, requires scrolling up/down
+  - Implemented: 
+    - Left sidebar with vertical step list showing progress/completion status
+    - Main content area for current step with clean layout
+    - Tabbed results/visualizations integrated into sidebar
+    - Visual indicators for completed steps (green checkmarks)
+    - Active step highlighting with chestnut color
+    - Session ID display in sidebar header
+    - Reset tool and dashboard navigation in sidebar footer
+  - Benefits: Better use of screen space, clearer navigation, persistent step visibility
+  - Implementation: 
+    - Created UnifiedInteractiveToolSidebar component
+    - Created LinearRegressionPageSidebar, ClassificationExplorePageSidebar, NLPExplorePageSidebar
+    - Added new routes with -v2 suffix for testing before full migration
+    - Maintained backward compatibility with existing tool pages
+
+## 20.7) Testing and Migration Plan for New UI
+
+- [ ] Test new sidebar UI versions
+  - Access via: /tools/linear-regression-v2, /tools/classification-explorer-v2, /tools/nlp-explorer-v2
+  - Verify all functionality works as before
+  - Check responsiveness on different screen sizes
+  - Test step navigation and completion tracking
+  - Verify result tabs work correctly
+  
+- [ ] Migrate remaining tools
+  - Create sidebar versions for EDA and Clustering tools
+  - Update ToolsTab in dashboard to link to new versions
+  - Remove -v2 suffix once testing complete
+  - Update original tool pages to redirect to new versions
+  - Remove old UnifiedInteractiveTool component
+
+- [ ] UI Polish
+  - Add animations for step transitions
+  - Implement keyboard shortcuts for navigation
+  - Add tooltips for step descriptions
+  - Consider dark mode support
+  - Mobile responsive sidebar (collapsible on small screens)
 
 ## 21) Post‑Launch Enhancements
 

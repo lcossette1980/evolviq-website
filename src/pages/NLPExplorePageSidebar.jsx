@@ -1,29 +1,41 @@
 /**
- * Unified NLP Tool - Replaces SecureNLPTool.jsx
- * Uses UnifiedInteractiveTool for shared UI/UX
+ * NLP Tool with Sidebar Layout
+ * Uses new UnifiedInteractiveToolSidebar for improved UX
  */
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import UnifiedInteractiveTool from '../components/tools/UnifiedInteractiveTool';
+import UnifiedInteractiveToolSidebar from '../components/tools/UnifiedInteractiveToolSidebar';
 import { NLP_TOOL_CONFIG } from '../config/toolConfigs';
 
-// Shared + NLP-specific components
+// Step components
 import DataUploadStep from '../components/shared/DataUploadStep';
 import TextColumnSelectionStep from '../components/nlp/TextColumnSelectionStep';
 import NLPConfigurationStep from '../components/nlp/NLPConfigurationStep';
 import NLPAnalysisStep from '../components/nlp/NLPAnalysisStep';
 import ResultsVisualization from '../components/nlp/ResultsVisualization';
 
-const NLPExplorePage = () => {
+const NLPExplorePageSidebar = () => {
   const navigate = useNavigate();
+
   return (
-    <UnifiedInteractiveTool
+    <UnifiedInteractiveToolSidebar
       toolConfig={NLP_TOOL_CONFIG}
       toolType="nlp"
     >
       {({ toolContext, currentStepConfig }) => {
-        const { stepData, handleFileUpload, processStep, nextStep, goToStep, isLoading } = toolContext;
+        const { 
+          stepData, 
+          handleFileUpload, 
+          processStep, 
+          nextStep, 
+          prevStep,
+          goToStep, 
+          isLoading,
+          resultTabs,
+          activeResultTab,
+          setActiveResultTab
+        } = toolContext;
 
         switch (currentStepConfig.component) {
           case 'upload':
@@ -34,7 +46,7 @@ const NLPExplorePage = () => {
                 validationResults={stepData.uploadResults}
                 showValidationResults={Boolean(stepData.uploadResults && stepData.uploadedFile)}
                 onNext={nextStep}
-                acceptedFormats={'.csv,.json,.txt'}
+                acceptedFormats=".csv,.json,.txt"
                 title="Upload Text Dataset"
                 description="Upload a CSV, JSON, or TXT file with your text data"
               />
@@ -79,7 +91,13 @@ const NLPExplorePage = () => {
                       </div>
                     )}
 
-                    <div>
+                    <div className="flex justify-between">
+                      <button
+                        onClick={prevStep}
+                        className="text-charcoal/60 hover:text-charcoal"
+                      >
+                        ← Previous
+                      </button>
                       <button
                         onClick={nextStep}
                         className="bg-chestnut text-white px-6 py-2 rounded-lg hover:bg-chestnut/90"
@@ -108,7 +126,6 @@ const NLPExplorePage = () => {
               <TextColumnSelectionStep
                 validationResults={stepData.uploadResults}
                 onSelectColumn={(column) => {
-                  // Store the selected column and move to configuration
                   processStep('selectColumn', { text_column: column })
                     .then(() => nextStep())
                     .catch(console.error);
@@ -123,7 +140,6 @@ const NLPExplorePage = () => {
                 validationResults={stepData.uploadResults}
                 selectedColumn={stepData.selectColumn?.text_column}
                 onConfigure={(config) => {
-                  // Include the selected text column in the config
                   const configWithColumn = { 
                     ...config, 
                     text_column: stepData.selectColumn?.text_column || 'text' 
@@ -151,6 +167,42 @@ const NLPExplorePage = () => {
             );
 
           case 'results':
+            // Handle tabbed results if available
+            if (resultTabs.length > 0) {
+              const activeTab = resultTabs[activeResultTab];
+              return (
+                <div>
+                  {/* Tab Navigation */}
+                  <div className="border-b border-gray-200 mb-6">
+                    <nav className="-mb-px flex space-x-8">
+                      {resultTabs.map((tab, index) => (
+                        <button
+                          key={tab.key}
+                          onClick={() => setActiveResultTab(index)}
+                          className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                            activeResultTab === index
+                              ? 'border-chestnut text-chestnut'
+                              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                          }`}
+                        >
+                          {tab.name}
+                        </button>
+                      ))}
+                    </nav>
+                  </div>
+
+                  {/* Tab Content */}
+                  <ResultsVisualization
+                    analysisResults={stepData.analyze}
+                    validationResults={stepData.uploadResults}
+                    activeTab={activeTab?.key}
+                    onNext={() => navigate('/dashboard')}
+                  />
+                </div>
+              );
+            }
+            
+            // Default results view
             return (
               <ResultsVisualization
                 analysisResults={stepData.analyze}
@@ -163,12 +215,18 @@ const NLPExplorePage = () => {
             return (
               <div className="text-center py-8">
                 <p className="text-charcoal/60">Step component not found: {currentStepConfig.component}</p>
+                <button
+                  onClick={() => goToStep(1)}
+                  className="mt-4 text-chestnut hover:text-chestnut/80"
+                >
+                  Return to Start
+                </button>
               </div>
             );
         }
       }}
-    </UnifiedInteractiveTool>
+    </UnifiedInteractiveToolSidebar>
   );
 };
 
-export default NLPExplorePage;
+export default NLPExplorePageSidebar;

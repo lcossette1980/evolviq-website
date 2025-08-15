@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import StepContainer from '../shared/StepContainer';
 
-const ModelSelectionStep = ({ validationResults, onSelectModels, isLoading }) => {
+const ModelSelectionStep = ({ validationResults, onSelectModels, onPrevious, isLoading }) => {
   const [selectedModels, setSelectedModels] = useState(['logistic_regression', 'random_forest', 'gradient_boosting']);
 
   const availableModels = [
@@ -35,6 +35,7 @@ const ModelSelectionStep = ({ validationResults, onSelectModels, isLoading }) =>
       currentStep={3}
       totalSteps={6}
       onNext={handleSubmit}
+      onPrevious={onPrevious}
       canGoNext={selectedModels.length > 0}
       nextLabel="Train Models"
       isLoading={isLoading}

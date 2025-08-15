@@ -249,18 +249,24 @@ export const NLP_TOOL_CONFIG = {
     },
     {
       id: 3,
+      name: 'Select Column',
+      description: 'Choose the text column to analyze',
+      component: 'select-column'
+    },
+    {
+      id: 4,
       name: 'Analysis Configuration',
       description: 'Choose NLP analysis techniques',
       component: 'configure'
     },
     {
-      id: 4,
+      id: 5,
       name: 'Run Analysis',
       description: 'Perform sentiment, topic, and entity analysis',
       component: 'analyze'
     },
     {
-      id: 5,
+      id: 6,
       name: 'View Results',
       description: 'Explore insights and visualizations',
       component: 'results'
