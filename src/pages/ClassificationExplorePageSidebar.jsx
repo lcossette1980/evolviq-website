@@ -114,12 +114,17 @@ const ClassificationExplorePageSidebar = () => {
                 validationResults={stepData.uploadResults}
                 onTrain={() => {
                   const models = stepData.selectModels?.models || ['logistic_regression'];
-                  processStep('train', {
-                    models: models,
-                    cross_validation: true,
-                    cv_folds: 5,
-                    scoring_metric: 'accuracy'
-                  })
+                  // Backend expects { config: TrainingConfig, target_column: str }
+                  const trainRequest = {
+                    config: {
+                      test_size: 0.2,
+                      models_to_include: models,
+                      hyperparameter_tuning: true,
+                      cv_folds: 5
+                    },
+                    target_column: stepData.selectTarget?.target_column || stepData.preprocess?.target_column || null
+                  };
+                  processStep('train', trainRequest)
                     .then(() => nextStep())
                     .catch(console.error);
                 }}

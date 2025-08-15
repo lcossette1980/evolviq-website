@@ -150,7 +150,7 @@ const UnifiedInteractiveToolSidebar = ({
         
         if (input?.validation?.summary || input?.validation?.validation) {
           validation = input.validation.validation || input.validation;
-          summary = input.validation.summary || null;
+          summary = input.validation.summary || input.summary || null;
         } else if (input?.validation || input?.data_info) {
           validation = input.validation || null;
           if (input.summary) {
@@ -166,7 +166,12 @@ const UnifiedInteractiveToolSidebar = ({
           summary = input?.summary || null;
         }
 
-        const numericColumns = summary?.numerical_columns || input?.numeric_columns || [];
+        // Get numeric columns from various possible locations
+        const numericColumns = summary?.numerical_columns || 
+                              summary?.numeric_columns ||
+                              input?.summary?.numerical_columns ||
+                              input?.numeric_columns || 
+                              [];
         const suggestedTarget = input?.suggested_target || (numericColumns.length ? numericColumns[numericColumns.length - 1] : undefined);
 
         return {
@@ -177,6 +182,7 @@ const UnifiedInteractiveToolSidebar = ({
           warnings: validation?.warnings || [],
           recommendations: validation?.recommendations || [],
           numeric_columns: numericColumns,
+          numerical_columns: numericColumns, // Also provide under this key
           suggested_target: suggestedTarget,
           _raw: input
         };

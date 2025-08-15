@@ -1354,7 +1354,8 @@ async def train_models_background(
         workflow = await get_session_workflow(session_id, tool_type, user_id)
         
         data = session_data.get('dataframe')
-        if not data:
+        # Fix: Check if DataFrame is None or empty, not using "if not data"
+        if data is None or (hasattr(data, 'empty') and data.empty):
             raise ValueError("No data available for training")
         
         # Get target column

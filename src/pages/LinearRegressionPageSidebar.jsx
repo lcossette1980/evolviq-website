@@ -94,15 +94,18 @@ const LinearRegressionPageSidebar = () => {
                 preprocessResults={stepData.preprocess}
                 validationResults={stepData.uploadResults}
                 onTrain={(config) => {
-                  const models = config.models || ['linear_regression'];
-                  const trainConfig = {
-                    models: models,
-                    test_size: config.test_size || 0.2,
-                    cross_validation: config.cross_validation !== false,
-                    cv_folds: config.cv_folds || 5
+                  // Backend expects { config: TrainingConfig, target_column: str }
+                  const trainRequest = {
+                    config: {
+                      test_size: config.test_size || 0.2,
+                      models_to_include: config.models || ['linear_regression'],
+                      hyperparameter_tuning: true,
+                      cv_folds: config.cv_folds || 5
+                    },
+                    target_column: stepData.preprocess?.target_column || null
                   };
                   
-                  processStep('train', trainConfig)
+                  processStep('train', trainRequest)
                     .then(() => nextStep())
                     .catch(console.error);
                 }}

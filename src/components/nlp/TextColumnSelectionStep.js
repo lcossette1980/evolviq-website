@@ -2,10 +2,15 @@ import React, { useState } from 'react';
 import { FileText } from 'lucide-react';
 
 const TextColumnSelectionStep = ({ validationResults, onSelectColumn, isLoading }) => {
+  // Try multiple locations for text columns
   const textColumns = validationResults?.summary?.text_columns || 
+                       validationResults?.text_columns ||
                        validationResults?.summary?.categorical_columns || 
+                       validationResults?.categorical_columns ||
                        [];
-  const selectedDefault = validationResults?.summary?.selected_text_column || textColumns[0] || '';
+  const selectedDefault = validationResults?.summary?.selected_text_column || 
+                         validationResults?.selected_text_column ||
+                         textColumns[0] || '';
   const [selectedColumn, setSelectedColumn] = useState(selectedDefault);
 
   const handleContinue = () => {
