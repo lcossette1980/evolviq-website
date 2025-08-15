@@ -25,16 +25,11 @@ const MemberDashboard = lazy(() => import('./pages/MemberDashboard.jsx'));
 const AccountSettings = lazy(() => import('./pages/AccountSettings'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard.jsx'));
 
-// Lazy load all interactive tools
-const LinearRegressionPage = lazy(() => import('./pages/LinearRegressionPage'));
-const EDAExplorePage = lazy(() => import('./pages/EDAExplorePage'));
-const ClassificationExplorePage = lazy(() => import('./pages/ClassificationExplorePage'));
-const ClusteringExplorePage = lazy(() => import('./pages/ClusteringExplorePage'));
-const NLPExplorePage = lazy(() => import('./pages/NLPExplorePage'));
-
-// New sidebar layout versions
+// Interactive tools with sidebar layout
 const LinearRegressionPageSidebar = lazy(() => import('./pages/LinearRegressionPageSidebar'));
+const EDAExplorePageSidebar = lazy(() => import('./pages/EDAExplorePageSidebar'));
 const ClassificationExplorePageSidebar = lazy(() => import('./pages/ClassificationExplorePageSidebar'));
+const ClusteringExplorePageSidebar = lazy(() => import('./pages/ClusteringExplorePageSidebar'));
 const NLPExplorePageSidebar = lazy(() => import('./pages/NLPExplorePageSidebar'));
 
 const GuideViewer = lazy(() => import('./pages/GuideViewer'));
@@ -114,55 +109,32 @@ const AppContent = () => {
           <Route path="/tools/linear-regression" element={
             <ProtectedRoute requiresPremium={false}>
               <PageSuspense>
-                <LinearRegressionPage />
+                <LinearRegressionPageSidebar />
               </PageSuspense>
             </ProtectedRoute>
           } />
           <Route path="/tools/eda-explorer" element={
             <ProtectedRoute requiresPremium={false}>
               <PageSuspense>
-                <EDAExplorePage />
+                <EDAExplorePageSidebar />
               </PageSuspense>
             </ProtectedRoute>
           } />
           <Route path="/tools/classification-explorer" element={
             <ProtectedRoute requiresPremium={true}>
               <PageSuspense>
-                <ClassificationExplorePage />
+                <ClassificationExplorePageSidebar />
               </PageSuspense>
             </ProtectedRoute>
           } />
           <Route path="/tools/clustering-explorer" element={
             <ProtectedRoute requiresPremium={true}>
               <PageSuspense>
-                <ClusteringExplorePage />
+                <ClusteringExplorePageSidebar />
               </PageSuspense>
             </ProtectedRoute>
           } />
           <Route path="/tools/nlp-explorer" element={
-            <ProtectedRoute requiresPremium={false}>
-              <PageSuspense>
-                <NLPExplorePage />
-              </PageSuspense>
-            </ProtectedRoute>
-          } />
-          
-          {/* New sidebar layout tool routes - these will replace the above once testing is complete */}
-          <Route path="/tools/linear-regression-v2" element={
-            <ProtectedRoute requiresPremium={false}>
-              <PageSuspense>
-                <LinearRegressionPageSidebar />
-              </PageSuspense>
-            </ProtectedRoute>
-          } />
-          <Route path="/tools/classification-explorer-v2" element={
-            <ProtectedRoute requiresPremium={true}>
-              <PageSuspense>
-                <ClassificationExplorePageSidebar />
-              </PageSuspense>
-            </ProtectedRoute>
-          } />
-          <Route path="/tools/nlp-explorer-v2" element={
             <ProtectedRoute requiresPremium={false}>
               <PageSuspense>
                 <NLPExplorePageSidebar />
