@@ -1133,12 +1133,21 @@ async def train_models(
             if session_data.get('preprocess') and session_data['preprocess'].get('processed_data'):
                 import pandas as pd
                 train_input_df = pd.DataFrame(session_data['preprocess']['processed_data'])
+            
+            # Validate that train_input_df is a DataFrame
+            if not isinstance(train_input_df, pd.DataFrame):
+                logger.error(f"Invalid training data type: {type(train_input_df)}")
+                raise HTTPException(status_code=400, detail="Invalid training data format")
+                
             # Ensure workflow has feature_columns from preprocess
             try:
                 if session_data.get('preprocess') and session_data['preprocess'].get('feature_columns'):
                     workflow.feature_columns = session_data['preprocess']['feature_columns']
             except Exception:
                 pass
+            
+            # Log training parameters for debugging
+            logger.info(f"Training regression with {len(train_input_df)} rows, target: {target_col}")
             train_out = workflow.train_models(train_input_df, target_col)
             # Attach rich visualizations if training succeeded
             try:
